@@ -1,0 +1,224 @@
+import {
+  ROLE,
+  BUTTON,
+  A11Y,
+  ARIA_CONTROLS,
+  ARIA_EXPANDED,
+  DEFAULT_OPTIONS,
+  EVENT_BEFORE_INIT,
+  EVENT_INIT,
+  EVENT_BEFORE_DESTROY,
+  EVENT_DESTROY,
+  EVENT_BEFORE_SHOW,
+  EVENT_SHOW,
+  EVENT_SHOWN,
+  EVENT_BEFORE_HIDE,
+  EVENT_HIDE,
+  EVENT_HIDDEN,
+  EVENT_CLICK,
+  DEFAULT_AUTOFOCUS,
+  OPTION_ARIA_CONTROLS,
+  OPTION_ARIA_EXPANDED,
+  CLASS_ACTIVE,
+  CLASS_ACTIVE_SUFFIX,
+  TOGGLER,
+} from "./helpers/constants";
+import Base from "./helpers/Base.js";
+import ToggleMixin from "./helpers/ToggleMixin.js";
+import Transition from "./helpers/Transition.js";
+import Teleport from "./helpers/Teleport.js";
+import { removeAttr, setAttribute, toggleClass } from "./helpers/dom";
+import {
+  normalizeToggleParameters,
+  replaceWord,
+  arrayUnique,
+  arrayFrom,
+  getEventsPrefix,
+  getDefaultToggleSelector,
+  updateModule,
+} from "./helpers/utils";
+import {
+  addDismiss,
+  baseDestroy,
+  callAutofocus,
+  callInitShow,
+} from "./helpers/modules";
+
+const COLLAPSE = "collapse";
+const OPTION_TOGGLER_ROLE = TOGGLER + "Role";
+
+class Collapse extends ToggleMixin(Base, COLLAPSE) {
+  static DefaultA11y = {
+    [OPTION_ARIA_CONTROLS]: true,
+    [OPTION_ARIA_EXPANDED]: true,
+    [OPTION_TOGGLER_ROLE]: BUTTON,
+  };
+  static Default = {
+    ...DEFAULT_OPTIONS,
+    transition: null,
+    teleport: null,
+    eventPrefix: getEventsPrefix(COLLAPSE),
+    autofocus: DEFAULT_AUTOFOCUS,
+    hashNavigation: true,
+    dismiss: true,
+    [TOGGLER]: true,
+    [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [COLLAPSE + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+  };
+
+  constructor(elem, opts) {
+    super({ elem, opts });
+  }
+  _update() {
+    const { base, opts, transition, teleport } = this;
+
+    addDismiss(this);
+    updateModule(this, A11Y);
+
+    this.teleport = Teleport.createOrUpdate(
+      teleport,
+      base,
+      opts.teleport,
+    )?.move(this);
+    this.transition = Transition.createOrUpdate(
+      transition,
+      base,
+      opts.transition,
+    );
+
+    this.updateTriggers();
+
+    return this;
+  }
+  destroy(destroyOpts) {
+    let {
+      opts: { a11y },
+      togglers,
+    } = this;
+
+    if (!this.isInit) return;
+
+    this.emit(EVENT_BEFORE_DESTROY);
+
+    if (a11y[OPTION_ARIA_CONTROLS]) {
+      const otherTogglers = arrayFrom(this.instances.values())
+        .filter((item) => item !== this)
+        .flatMap((item) => item.togglers.filter((t) => togglers.includes(t)));
+      if (otherTogglers.length) {
+        togglers = togglers.filter((toggler) => {
+          if (!otherTogglers.includes(toggler)) {
+            return true;
+          } else {
+            setAttribute(toggler, ARIA_CONTROLS, (v) =>
+              replaceWord(v, this.id),
+            );
+          }
+        });
+      }
+    }
+
+    removeAttr(togglers, [
+      a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
+      a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
+      a11y[ROLE] && ROLE,
+    ]);
+    baseDestroy(this, destroyOpts);
+    return this;
+  }
+
+  init() {
+    if (this.isInit) return;
+
+    this.emit(EVENT_BEFORE_INIT);
+
+    this._update();
+
+    this.instances.set(this.id, this);
+
+    this.isInit = true;
+
+    this.emit(EVENT_INIT);
+
+    return callInitShow(this);
+  }
+  updateTriggers() {
+    const { opts, id } = this;
+
+    return (this.togglers = this.getOptionElems(
+      opts[TOGGLER] === true
+        ? ({ id }) => getDefaultToggleSelector(id, true)
+        : opts[TOGGLER],
+    )
+      .filter(Boolean)
+      .map((toggler) => {
+        if (!this.togglers?.includes(toggler)) {
+          opts.a11y[OPTION_ARIA_CONTROLS] &&
+            setAttribute(toggler, ARIA_CONTROLS, (v) =>
+              v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
+            );
+          opts.a11y[OPTION_TOGGLER_ROLE] &&
+            setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
+          toggleClass(
+            toggler,
+            opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
+            this.isShown,
+          );
+          this.on(toggler, EVENT_CLICK, (event) => {
+            event.preventDefault();
+            this.toggle(null, { trigger: toggler, event });
+          });
+        }
+        return toggler;
+      }));
+  }
+  async toggle(s, params) {
+    const { base, transition, togglers, opts, emit, isEntering, isAnimating } =
+      this;
+    const { awaitAnimation, a11y } = opts;
+    const {
+      animated,
+      silent,
+      trigger,
+      event,
+      ignoreConditions,
+      ignoreAutofocus,
+    } = normalizeToggleParameters(params);
+
+    s ??= !isEntering;
+
+    if (
+      !ignoreConditions &&
+      ((awaitAnimation && isAnimating) || s === isEntering)
+    )
+      return;
+
+    if (isAnimating && !awaitAnimation) {
+      await transition.cancel();
+    }
+
+    const eventParams = { trigger, event };
+
+    !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+
+    a11y[OPTION_ARIA_EXPANDED] && setAttribute(togglers, ARIA_EXPANDED, !!s);
+    toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
+
+    const promise = transition.run(s, animated, {
+      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
+        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams),
+      [EVENT_DESTROY]: () =>
+        this.destroy({ remove: true, destroyTransition: false }),
+    });
+
+    animated && awaitAnimation && (await promise);
+
+    s && !ignoreAutofocus && s && callAutofocus(this);
+
+    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+
+    return this;
+  }
+}
+
+export default Collapse;

@@ -1,0 +1,29 @@
+{
+  "name": "jolty",
+  "version": "0.8.0",
+  "main": "dist/jolty.js",
+  "module": "dist/jolty.esm.js",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joltylabs/jolty.git"
+  },
+  "author": "Anatolii Moldovanov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joltylabs/jolty/issues"
+  },
+  "homepage": "https://github.com/joltylabs/jolty#readme",
+  "keywords": [],
+  "description": "",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.2",
+    "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-terser": "^0.4.3",
+    "eslint": "^8.44.0",
+    "prettier": "3.0.0",
+    "rollup": "^2.79.1"
+  }
+}
