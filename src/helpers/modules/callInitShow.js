@@ -18,4 +18,6 @@ export default (instance, elem = instance.base) => {
       animated: opts.appear ?? elem.hasAttribute(DATA_APPEAR),
       ignoreConditions: true,
     });
+
+  return instance;
 };

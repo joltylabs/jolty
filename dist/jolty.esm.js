@@ -2225,6 +2225,13 @@ var callInitShow = (instance, elem = instance.base) => {
       animated: opts.appear ?? elem.hasAttribute(DATA_APPEAR),
       ignoreConditions: true,
     });
+
+  return instance;
+};
+
+var callToggleAsyncMethods = async (promise, instance, s, eventParams, silent) => {
+  await promise;
+  !silent && instance.emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 };
 
 const COLLAPSE = "collapse";
@@ -2388,11 +2395,11 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
         this.destroy({ remove: true, destroyTransition: false }),
     });
 
+    s && !ignoreAutofocus && callAutofocus(this);
+
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
     animated && awaitAnimation && (await promise);
-
-    s && !ignoreAutofocus && s && callAutofocus(this);
-
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
     return this;
   }
@@ -2456,9 +2463,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       }
     });
 
-    callInitShow(this, dropdown);
-
-    return this;
+    return callInitShow(this, dropdown);
   }
   _update() {
     const { base, opts, transition, teleport, on, off, hide, dropdown } = this;
@@ -2630,11 +2635,11 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       eventParams,
     });
 
-    animated && awaitAnimation && (await promise);
-
     s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
+    animated && awaitAnimation && (await promise);
 
     return this;
   }
@@ -2779,8 +2784,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     return this;
   }
   init() {
-    const { opts, getOptionElem, isInit, modal, id, on, emit, hide, toggle } =
-      this;
+    const { opts, getOptionElem, isInit, modal, on, emit, hide, toggle } = this;
 
     if (isInit) return;
 
@@ -2832,9 +2836,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     // isDialog && SUPPORTS_DIALOG && on(modal, EVENT_CLOSE, (event) => hide({ event }));
 
-    callInitShow(this);
-
-    return this;
+    return callInitShow(this);
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
@@ -3003,8 +3005,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
         focus(this.returnFocusElem);
     }
 
-    animated && opts.awaitAnimation && (await promise);
-
     opts.escapeHide && addEscapeHide(this, s);
 
     if (s) {
@@ -3021,19 +3021,13 @@ class Modal extends ToggleMixin(Base, MODAL) {
       if (isDialog && SUPPORTS_DIALOG) {
         modal.close();
       }
-      (async () => {
-        await promise;
-        transitions[MODAL].toggleRemove(false);
-        const mode = transitions[MODAL].opts[HIDDEN_MODE];
-        if (mode === ACTION_DESTROY) {
-          this.destroy({ remove: true });
-        }
-      })();
     }
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
 
-    return promise;
+    animated && opts.awaitAnimation && (await promise);
+
+    return this;
   }
 
   get isDialog() {
@@ -3552,8 +3546,9 @@ class Tablist extends Base {
     if (!opts.multiExpand && s) {
       for (const selectedTab of selected) {
         if (tabIntstance !== selectedTab && selectedTab.isShown) {
-          const promise = selectedTab.hide(animated);
-          if (opts.awaitePrevious) await promise;
+          selectedTab.hide(animated);
+          if (opts.awaitePrevious)
+            await selectedTab.transition.getAwaitPromises();
         }
       }
     }
@@ -3580,16 +3575,21 @@ class Tablist extends Base {
       [EVENT_DESTROY]: () =>
         tabIntstance.destroy({ remove: true, destroyTransition: false }),
     });
-    animated && opts.awaiteAnimation && (await promise);
 
     if (s) {
       this.lastShownTab = tabIntstance;
       this.currentTabIndex ??= index;
     }
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabIntstance, eventParams);
+    (async () => {
+      await promise;
+      !silent &&
+        emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabIntstance, eventParams);
+    })();
 
-    return s ? tabIntstance : null;
+    animated && opts.awaiteAnimation && (await promise);
+
+    return tabIntstance;
   }
 
   static show(elem, params) {
@@ -3812,9 +3812,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     addDismiss(this);
 
-    callInitShow(this);
-
-    return this;
+    return callInitShow(this);
   }
   async toggle(s, params) {
     const {
@@ -3888,6 +3886,9 @@ class Toast extends ToggleMixin(Base, TOAST) {
       [EVENT_DESTROY]: () =>
         destroy({ remove: true, destroyTransition: false }),
     });
+
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
     animated && (await promise);
 
     const rootWrappers = wrappers.get(root);
@@ -3904,8 +3905,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
       }
       wrapper.remove();
     }
-
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
     return this;
   }
@@ -4034,9 +4033,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     addDismiss(this, target);
 
-    callInitShow(this, target);
-
-    return this;
+    return callInitShow(this, target);
   }
 
   async toggle(s, params) {
@@ -4095,9 +4092,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       eventParams,
     });
 
-    animated && awaitAnimation && (await promise);
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    animated && awaitAnimation && (await promise);
 
     return this;
   }
@@ -4138,9 +4135,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     toggleOnInterection({ anchor: toggler, target: popover, instance: this });
     addDismiss(this, popover);
 
-    callInitShow(this);
-
-    return this;
+    return callInitShow(this);
   }
   _update() {
     const { base, opts, transition, teleport } = this;
@@ -4225,11 +4220,11 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     !s && returnFocus && popover.contains(doc.activeElement) && focus(toggler);
 
-    animated && awaitAnimation && (await promise);
-
     s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
+    animated && awaitAnimation && (await promise);
 
     return this;
   }

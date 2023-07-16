@@ -60,6 +60,7 @@ import {
   toggleOnInterection,
   floatingTransition,
   callInitShow,
+  callToggleAsyncMethods,
 } from "./helpers/modules";
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
@@ -120,9 +121,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       }
     });
 
-    callInitShow(this, dropdown);
-
-    return this;
+    return callInitShow(this, dropdown);
   }
   _update() {
     const { base, opts, transition, teleport, on, off, hide, dropdown } = this;
@@ -296,11 +295,11 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       eventParams,
     });
 
-    animated && awaitAnimation && (await promise);
-
     s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
+    animated && awaitAnimation && (await promise);
 
     return this;
   }

@@ -22,6 +22,9 @@ import {
   CLASS_ACTIVE,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
+  MODAL,
+  HIDDEN_MODE,
+  ACTION_DESTROY,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -42,6 +45,7 @@ import {
   baseDestroy,
   callAutofocus,
   callInitShow,
+  callToggleAsyncMethods,
 } from "./helpers/modules";
 
 const COLLAPSE = "collapse";
@@ -205,11 +209,11 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
         this.destroy({ remove: true, destroyTransition: false }),
     });
 
+    s && !ignoreAutofocus && callAutofocus(this);
+
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
     animated && awaitAnimation && (await promise);
-
-    s && !ignoreAutofocus && s && callAutofocus(this);
-
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
     return this;
   }

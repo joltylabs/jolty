@@ -79,6 +79,7 @@ import {
   callAutofocus,
   addEscapeHide,
   callInitShow,
+  callToggleAsyncMethods,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -224,8 +225,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     return this;
   }
   init() {
-    const { opts, getOptionElem, isInit, modal, id, on, emit, hide, toggle } =
-      this;
+    const { opts, getOptionElem, isInit, modal, on, emit, hide, toggle } = this;
 
     if (isInit) return;
 
@@ -277,9 +277,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     // isDialog && SUPPORTS_DIALOG && on(modal, EVENT_CLOSE, (event) => hide({ event }));
 
-    callInitShow(this);
-
-    return this;
+    return callInitShow(this);
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
@@ -448,8 +446,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
         focus(this.returnFocusElem);
     }
 
-    animated && opts.awaitAnimation && (await promise);
-
     opts.escapeHide && addEscapeHide(this, s);
 
     if (s) {
@@ -466,19 +462,20 @@ class Modal extends ToggleMixin(Base, MODAL) {
       if (isDialog && SUPPORTS_DIALOG) {
         modal.close();
       }
-      (async () => {
-        await promise;
-        transitions[MODAL].toggleRemove(false);
-        const mode = transitions[MODAL].opts[HIDDEN_MODE];
-        if (mode === ACTION_DESTROY) {
-          this.destroy({ remove: true });
-        }
-      })();
     }
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    callToggleAsyncMethods(promise, this, s, eventParams, silent, () => {
+      if (!s) {
+        transitions[MODAL].toggleRemove(false);
+        if (transitions[MODAL].opts[HIDDEN_MODE] === ACTION_DESTROY) {
+          this.destroy({ remove: true });
+        }
+      }
+    });
 
-    return promise;
+    animated && opts.awaitAnimation && (await promise);
+
+    return this;
   }
 
   get isDialog() {

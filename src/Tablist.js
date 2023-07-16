@@ -568,8 +568,9 @@ class Tablist extends Base {
     if (!opts.multiExpand && s) {
       for (const selectedTab of selected) {
         if (tabIntstance !== selectedTab && selectedTab.isShown) {
-          const promise = selectedTab.hide(animated);
-          if (opts.awaitePrevious) await promise;
+          selectedTab.hide(animated);
+          if (opts.awaitePrevious)
+            await selectedTab.transition.getAwaitPromises();
         }
       }
     }
@@ -596,16 +597,21 @@ class Tablist extends Base {
       [EVENT_DESTROY]: () =>
         tabIntstance.destroy({ remove: true, destroyTransition: false }),
     });
-    animated && opts.awaiteAnimation && (await promise);
 
     if (s) {
       this.lastShownTab = tabIntstance;
       this.currentTabIndex ??= index;
     }
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabIntstance, eventParams);
+    (async () => {
+      await promise;
+      !silent &&
+        emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabIntstance, eventParams);
+    })();
 
-    return s ? tabIntstance : null;
+    animated && opts.awaiteAnimation && (await promise);
+
+    return tabIntstance;
   }
 
   static show(elem, params) {

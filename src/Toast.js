@@ -28,7 +28,12 @@ import {
   getEventsPrefix,
   updateModule,
 } from "./helpers/utils";
-import { addDismiss, baseDestroy, callInitShow } from "./helpers/modules";
+import {
+  addDismiss,
+  baseDestroy,
+  callInitShow,
+  callToggleAsyncMethods,
+} from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
@@ -109,9 +114,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     addDismiss(this);
 
-    callInitShow(this);
-
-    return this;
+    return callInitShow(this);
   }
   async toggle(s, params) {
     const {
@@ -185,6 +188,9 @@ class Toast extends ToggleMixin(Base, TOAST) {
       [EVENT_DESTROY]: () =>
         destroy({ remove: true, destroyTransition: false }),
     });
+
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
     animated && (await promise);
 
     const rootWrappers = wrappers.get(root);
@@ -201,8 +207,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
       }
       wrapper.remove();
     }
-
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
     return this;
   }

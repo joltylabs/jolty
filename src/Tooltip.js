@@ -46,6 +46,7 @@ import {
   toggleOnInterection,
   floatingTransition,
   callInitShow,
+  callToggleAsyncMethods,
 } from "./helpers/modules";
 
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
@@ -139,9 +140,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     addDismiss(this, target);
 
-    callInitShow(this, target);
-
-    return this;
+    return callInitShow(this, target);
   }
 
   async toggle(s, params) {
@@ -200,9 +199,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       eventParams,
     });
 
-    animated && awaitAnimation && (await promise);
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    animated && awaitAnimation && (await promise);
 
     return this;
   }

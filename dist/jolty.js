@@ -2231,6 +2231,13 @@
         animated: opts.appear ?? elem.hasAttribute(DATA_APPEAR),
         ignoreConditions: true,
       });
+
+    return instance;
+  };
+
+  var callToggleAsyncMethods = async (promise, instance, s, eventParams, silent) => {
+    await promise;
+    !silent && instance.emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
   };
 
   const COLLAPSE = "collapse";
@@ -2394,11 +2401,11 @@
           this.destroy({ remove: true, destroyTransition: false }),
       });
 
+      s && !ignoreAutofocus && callAutofocus(this);
+
+      callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
       animated && awaitAnimation && (await promise);
-
-      s && !ignoreAutofocus && s && callAutofocus(this);
-
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
       return this;
     }
@@ -2462,9 +2469,7 @@
         }
       });
 
-      callInitShow(this, dropdown);
-
-      return this;
+      return callInitShow(this, dropdown);
     }
     _update() {
       const { base, opts, transition, teleport, on, off, hide, dropdown } = this;
@@ -2636,11 +2641,11 @@
         eventParams,
       });
 
-      animated && awaitAnimation && (await promise);
-
       s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
+      animated && awaitAnimation && (await promise);
 
       return this;
     }
@@ -2785,8 +2790,7 @@
       return this;
     }
     init() {
-      const { opts, getOptionElem, isInit, modal, id, on, emit, hide, toggle } =
-        this;
+      const { opts, getOptionElem, isInit, modal, on, emit, hide, toggle } = this;
 
       if (isInit) return;
 
@@ -2838,9 +2842,7 @@
 
       // isDialog && SUPPORTS_DIALOG && on(modal, EVENT_CLOSE, (event) => hide({ event }));
 
-      callInitShow(this);
-
-      return this;
+      return callInitShow(this);
     }
     destroy(destroyOpts) {
       if (!this.isInit) return;
@@ -3009,8 +3011,6 @@
           focus(this.returnFocusElem);
       }
 
-      animated && opts.awaitAnimation && (await promise);
-
       opts.escapeHide && addEscapeHide(this, s);
 
       if (s) {
@@ -3027,19 +3027,13 @@
         if (isDialog && SUPPORTS_DIALOG) {
           modal.close();
         }
-        (async () => {
-          await promise;
-          transitions[MODAL].toggleRemove(false);
-          const mode = transitions[MODAL].opts[HIDDEN_MODE];
-          if (mode === ACTION_DESTROY) {
-            this.destroy({ remove: true });
-          }
-        })();
       }
 
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      callToggleAsyncMethods(promise, this, s, eventParams, silent);
 
-      return promise;
+      animated && opts.awaitAnimation && (await promise);
+
+      return this;
     }
 
     get isDialog() {
@@ -3558,8 +3552,9 @@
       if (!opts.multiExpand && s) {
         for (const selectedTab of selected) {
           if (tabIntstance !== selectedTab && selectedTab.isShown) {
-            const promise = selectedTab.hide(animated);
-            if (opts.awaitePrevious) await promise;
+            selectedTab.hide(animated);
+            if (opts.awaitePrevious)
+              await selectedTab.transition.getAwaitPromises();
           }
         }
       }
@@ -3586,16 +3581,21 @@
         [EVENT_DESTROY]: () =>
           tabIntstance.destroy({ remove: true, destroyTransition: false }),
       });
-      animated && opts.awaiteAnimation && (await promise);
 
       if (s) {
         this.lastShownTab = tabIntstance;
         this.currentTabIndex ??= index;
       }
 
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabIntstance, eventParams);
+      (async () => {
+        await promise;
+        !silent &&
+          emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabIntstance, eventParams);
+      })();
 
-      return s ? tabIntstance : null;
+      animated && opts.awaiteAnimation && (await promise);
+
+      return tabIntstance;
     }
 
     static show(elem, params) {
@@ -3818,9 +3818,7 @@
 
       addDismiss(this);
 
-      callInitShow(this);
-
-      return this;
+      return callInitShow(this);
     }
     async toggle(s, params) {
       const {
@@ -3894,6 +3892,9 @@
         [EVENT_DESTROY]: () =>
           destroy({ remove: true, destroyTransition: false }),
       });
+
+      callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
       animated && (await promise);
 
       const rootWrappers = wrappers.get(root);
@@ -3910,8 +3911,6 @@
         }
         wrapper.remove();
       }
-
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
       return this;
     }
@@ -4040,9 +4039,7 @@
 
       addDismiss(this, target);
 
-      callInitShow(this, target);
-
-      return this;
+      return callInitShow(this, target);
     }
 
     async toggle(s, params) {
@@ -4101,9 +4098,9 @@
         eventParams,
       });
 
-      animated && awaitAnimation && (await promise);
+      callToggleAsyncMethods(promise, this, s, eventParams, silent);
 
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      animated && awaitAnimation && (await promise);
 
       return this;
     }
@@ -4144,9 +4141,7 @@
       toggleOnInterection({ anchor: toggler, target: popover, instance: this });
       addDismiss(this, popover);
 
-      callInitShow(this);
-
-      return this;
+      return callInitShow(this);
     }
     _update() {
       const { base, opts, transition, teleport } = this;
@@ -4231,11 +4226,11 @@
 
       !s && returnFocus && popover.contains(doc.activeElement) && focus(toggler);
 
-      animated && awaitAnimation && (await promise);
-
       s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
+      animated && awaitAnimation && (await promise);
 
       return this;
     }

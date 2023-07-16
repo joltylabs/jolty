@@ -40,6 +40,7 @@ import {
   toggleOnInterection,
   floatingTransition,
   callInitShow,
+  callToggleAsyncMethods,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -81,9 +82,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     toggleOnInterection({ anchor: toggler, target: popover, instance: this });
     addDismiss(this, popover);
 
-    callInitShow(this);
-
-    return this;
+    return callInitShow(this);
   }
   _update() {
     const { base, opts, transition, teleport } = this;
@@ -168,11 +167,11 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     !s && returnFocus && popover.contains(doc.activeElement) && focus(toggler);
 
-    animated && awaitAnimation && (await promise);
-
     s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
-    !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+
+    animated && awaitAnimation && (await promise);
 
     return this;
   }
