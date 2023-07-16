@@ -135,15 +135,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     this._update();
 
-    instances.set(id, this);
-
     toggleOnInterection({ anchor, target, instance: this });
 
     addDismiss(this, target);
-
-    this.isInit = true;
-
-    emit(EVENT_INIT);
 
     callInitShow(this, target);
 

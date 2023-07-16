@@ -55,8 +55,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   };
   static Default = {
     ...DEFAULT_OPTIONS,
-    transition: null,
-    teleport: null,
     eventPrefix: getEventsPrefix(COLLAPSE),
     autofocus: DEFAULT_AUTOFOCUS,
     hashNavigation: true,
@@ -80,6 +78,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       base,
       opts.teleport,
     )?.move(this);
+
     this.transition = Transition.createOrUpdate(
       transition,
       base,
@@ -122,6 +121,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
       a11y[ROLE] && ROLE,
     ]);
+
     baseDestroy(this, destroyOpts);
     return this;
   }
@@ -132,12 +132,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     this.emit(EVENT_BEFORE_INIT);
 
     this._update();
-
-    this.instances.set(this.id, this);
-
-    this.isInit = true;
-
-    this.emit(EVENT_INIT);
 
     return callInitShow(this);
   }

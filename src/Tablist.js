@@ -134,9 +134,6 @@ class Tablist extends Base {
     [TAB + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [ITEM + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [TABPANEL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    teleport: null,
-    transition: null,
-    // teleport: null,
   };
   static _data = {};
   static instances = new Map();

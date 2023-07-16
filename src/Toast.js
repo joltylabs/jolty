@@ -55,7 +55,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
     root: null,
     container: null,
     appear: true,
-    transition: null,
     template: null,
     dismiss: true,
     limit: false,
@@ -108,13 +107,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     this._update();
 
-    this.instances.set(this.id, this);
-
     addDismiss(this);
-
-    this.isInit = true;
-
-    this.emit(EVENT_INIT);
 
     callInitShow(this);
 

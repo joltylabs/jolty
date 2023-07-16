@@ -240,8 +240,6 @@ export const DEFAULT_OPTIONS = {
   [A11Y]: true,
 };
 export const DEFAULT_FLOATING_OPTIONS = {
-  transition: null,
-  teleport: null,
   awaitAnimation: false,
   placement: BOTTOM,
   absolute: false,

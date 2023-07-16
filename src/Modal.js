@@ -129,8 +129,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
   };
   static Default = {
     ...DEFAULT_OPTIONS,
-    teleport: null,
-    transitions: null,
     eventPrefix: getEventsPrefix(MODAL),
     escapeHide: true,
     backdropHide: true,
@@ -146,7 +144,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     description: getDataSelector(MODAL, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
     group: "",
     autofocus: true,
-    topLayer: true,
+    focusTrap: true,
     awaitAnimation: false,
     [CONTENT]: getDataSelector(MODAL, CONTENT),
     [BACKDROP]: getDataSelector(MODAL, BACKDROP),
@@ -279,12 +277,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     // isDialog && SUPPORTS_DIALOG && on(modal, EVENT_CLOSE, (event) => hide({ event }));
 
-    this.instances.set(id, this);
-
-    this.isInit = true;
-
-    emit(EVENT_INIT);
-
     callInitShow(this);
 
     return this;
@@ -411,7 +403,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       transitions[MODAL].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
       if (isDialog && SUPPORTS_DIALOG) {
-        if (opts.topLayer) {
+        if (opts.focusTrap) {
           modal.showModal();
         } else {
           modal.show();

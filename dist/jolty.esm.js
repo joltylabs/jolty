@@ -235,8 +235,6 @@ const DEFAULT_OPTIONS = {
   [A11Y]: true,
 };
 const DEFAULT_FLOATING_OPTIONS = {
-  transition: null,
-  teleport: null,
   awaitAnimation: false,
   placement: BOTTOM,
   absolute: false,
@@ -2099,7 +2097,7 @@ class Floating {
       name,
       on,
       off,
-      opts: { absolute, interactive, mode, topLayer, escapeHide },
+      opts: { absolute, interactive, mode, focusTrap, escapeHide },
     } = this;
     const attributes = {
       style: {
@@ -2135,7 +2133,7 @@ class Floating {
     ));
     root.append(wrapper);
     if (mode === DIALOG && SUPPORTS_DIALOG) {
-      if (topLayer) {
+      if (focusTrap) {
         wrapper.showModal();
       } else {
         wrapper.show();
@@ -2212,6 +2210,11 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
 
 var callInitShow = (instance, elem = instance.base) => {
   const { opts, isShown, show, id } = instance;
+
+  instance.instances.set(id, instance);
+  instance.isInit = true;
+  instance.emit(EVENT_INIT);
+
   const shown =
     callOrReturn(
       (opts.hashNavigation && checkHash(id)) || opts.shown,
@@ -2235,8 +2238,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   };
   static Default = {
     ...DEFAULT_OPTIONS,
-    transition: null,
-    teleport: null,
     eventPrefix: getEventsPrefix(COLLAPSE),
     autofocus: DEFAULT_AUTOFOCUS,
     hashNavigation: true,
@@ -2260,6 +2261,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       base,
       opts.teleport,
     )?.move(this);
+
     this.transition = Transition.createOrUpdate(
       transition,
       base,
@@ -2302,6 +2304,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
       a11y[ROLE] && ROLE,
     ]);
+
     baseDestroy(this, destroyOpts);
     return this;
   }
@@ -2312,12 +2315,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     this.emit(EVENT_BEFORE_INIT);
 
     this._update();
-
-    this.instances.set(this.id, this);
-
-    this.isInit = true;
-
-    this.emit(EVENT_INIT);
 
     return callInitShow(this);
   }
@@ -2414,7 +2411,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    topLayer: true,
+    focusTrap: true,
     itemClickHide: true,
     mode: false,
     autofocus: true,
@@ -2431,9 +2428,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     if (this.isInit) return;
     this._update();
 
-    const { opts, toggler, id, instances, dropdown, emit, show, on } = this;
-
-    instances.set(id, this);
+    const { opts, toggler, dropdown, show, on } = this;
 
     toggleOnInterection({ anchor: toggler, target: dropdown, instance: this });
     addDismiss(this, dropdown);
@@ -2460,10 +2455,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
         this.focusableElems[0]?.focus();
       }
     });
-
-    this.isInit = true;
-
-    emit(EVENT_INIT);
 
     callInitShow(this, dropdown);
 
@@ -2693,8 +2684,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
   };
   static Default = {
     ...DEFAULT_OPTIONS,
-    teleport: null,
-    transitions: null,
     eventPrefix: getEventsPrefix(MODAL),
     escapeHide: true,
     backdropHide: true,
@@ -2710,7 +2699,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     description: getDataSelector(MODAL, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
     group: "",
     autofocus: true,
-    topLayer: true,
+    focusTrap: true,
     awaitAnimation: false,
     [CONTENT]: getDataSelector(MODAL, CONTENT),
     [BACKDROP]: getDataSelector(MODAL, BACKDROP),
@@ -2843,12 +2832,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     // isDialog && SUPPORTS_DIALOG && on(modal, EVENT_CLOSE, (event) => hide({ event }));
 
-    this.instances.set(id, this);
-
-    this.isInit = true;
-
-    emit(EVENT_INIT);
-
     callInitShow(this);
 
     return this;
@@ -2975,7 +2958,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       transitions[MODAL].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
       if (isDialog && SUPPORTS_DIALOG) {
-        if (opts.topLayer) {
+        if (opts.focusTrap) {
           modal.showModal();
         } else {
           modal.show();
@@ -3135,9 +3118,6 @@ class Tablist extends Base {
     [TAB + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [ITEM + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [TABPANEL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    teleport: null,
-    transition: null,
-    // teleport: null,
   };
   static _data = {};
   static instances = new Map();
@@ -3228,7 +3208,7 @@ class Tablist extends Base {
 
     instances.set(id, this);
 
-    // this._updateTabIndex();
+    this._updateTabIndex();
 
     this._update();
 
@@ -3778,7 +3758,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
     root: null,
     container: null,
     appear: true,
-    transition: null,
     template: null,
     dismiss: true,
     limit: false,
@@ -3831,13 +3810,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     this._update();
 
-    this.instances.set(this.id, this);
-
     addDismiss(this);
-
-    this.isInit = true;
-
-    this.emit(EVENT_INIT);
 
     callInitShow(this);
 
@@ -4057,15 +4030,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     this._update();
 
-    instances.set(id, this);
-
     toggleOnInterection({ anchor, target, instance: this });
 
     addDismiss(this, target);
-
-    this.isInit = true;
-
-    emit(EVENT_INIT);
 
     callInitShow(this, target);
 
@@ -4149,7 +4116,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    topLayer: true,
+    focusTrap: true,
     returnFocus: true,
     mode: false,
     dismiss: true,
@@ -4166,16 +4133,10 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     if (this.isInit) return;
     this._update();
 
-    const { toggler, id, instances, popover, emit } = this;
-
-    instances.set(id, this);
+    const { toggler, popover } = this;
 
     toggleOnInterection({ anchor: toggler, target: popover, instance: this });
     addDismiss(this, popover);
-
-    this.isInit = true;
-
-    emit(EVENT_INIT);
 
     callInitShow(this);
 

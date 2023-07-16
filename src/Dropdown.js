@@ -75,7 +75,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    topLayer: true,
+    focusTrap: true,
     itemClickHide: true,
     mode: false,
     autofocus: true,
@@ -92,9 +92,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     if (this.isInit) return;
     this._update();
 
-    const { opts, toggler, id, instances, dropdown, emit, show, on } = this;
-
-    instances.set(id, this);
+    const { opts, toggler, dropdown, show, on } = this;
 
     toggleOnInterection({ anchor: toggler, target: dropdown, instance: this });
     addDismiss(this, dropdown);
@@ -121,10 +119,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
         this.focusableElems[0]?.focus();
       }
     });
-
-    this.isInit = true;
-
-    emit(EVENT_INIT);
 
     callInitShow(this, dropdown);
 

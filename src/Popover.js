@@ -59,7 +59,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    topLayer: true,
+    focusTrap: true,
     returnFocus: true,
     mode: false,
     dismiss: true,
@@ -76,16 +76,10 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     if (this.isInit) return;
     this._update();
 
-    const { toggler, id, instances, popover, emit } = this;
-
-    instances.set(id, this);
+    const { toggler, popover } = this;
 
     toggleOnInterection({ anchor: toggler, target: popover, instance: this });
     addDismiss(this, popover);
-
-    this.isInit = true;
-
-    emit(EVENT_INIT);
 
     callInitShow(this);
 

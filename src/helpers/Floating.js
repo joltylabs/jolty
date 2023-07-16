@@ -295,7 +295,7 @@ export default class Floating {
       name,
       on,
       off,
-      opts: { absolute, interactive, mode, topLayer, escapeHide },
+      opts: { absolute, interactive, mode, focusTrap, escapeHide },
     } = this;
     const attributes = {
       style: {
@@ -331,7 +331,7 @@ export default class Floating {
     ));
     root.append(wrapper);
     if (mode === DIALOG && SUPPORTS_DIALOG) {
-      if (topLayer) {
+      if (focusTrap) {
         wrapper.showModal();
       } else {
         wrapper.show();
