@@ -206,7 +206,7 @@ export default class Transition {
       });
     }
   }
-  getPromises(s) {
+  collectPromises(s) {
     const { elem, promises, opts } = this;
     const state = s ? ENTER : LEAVE;
     const duration = opts.duration?.[state] ?? opts.duration;
@@ -330,7 +330,7 @@ export default class Transition {
 
     if (animated) {
       opts.css && this.toggleVariables(true).toggleAnimationClasses(s);
-      this.getPromises(s);
+      this.collectPromises(s);
       if (this.promises.length) {
         await this.getAwaitPromises();
       }

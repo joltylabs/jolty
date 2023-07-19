@@ -80,7 +80,7 @@ import {
   parents,
   setAttribute,
 } from "./helpers/dom";
-import { addDismiss } from "./helpers/modules";
+import { addDismiss, awaitPromise } from "./helpers/modules";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 
@@ -346,13 +346,13 @@ class Tablist extends Base {
       }
 
       off(elems);
-      this.tabs = without(this.tabs, tabIntstance);
+      this.tabs = without(this.tabs, tabInstance);
       if (clean) {
         ELEMS.forEach((name) =>
-          removeClass(tabIntstance[name], opts[name + CLASS_ACTIVE_SUFFIX]),
+          removeClass(tabInstance[name], opts[name + CLASS_ACTIVE_SUFFIX]),
         );
-        tabIntstance.transition?.destroy();
-        tabIntstance.teleport?.destroy();
+        tabInstance.transition?.destroy();
+        tabInstance.teleport?.destroy();
       }
       tabpanel.id.includes(uuid) && tabpanel.removeAttribute(ID);
       tab.id.includes(uuid) && tab.removeAttribute(ID);
@@ -365,7 +365,7 @@ class Tablist extends Base {
     const toggleDisabled = (s = null) => {
       const disabled = tab.toggleAttribute(DISABLED, s);
 
-      disabled && tabIntstance.hide(false);
+      disabled && tabInstance.hide(false);
 
       if (this.opts.alwaysExpanded) {
         const selected = this.selected;
@@ -383,7 +383,7 @@ class Tablist extends Base {
     const transition = new Transition(tabpanel, opts.transition);
 
     const elems = [tab, item, tabpanel];
-    const tabIntstance = {
+    const tabInstance = {
       id,
       uuid,
       tab,
@@ -400,23 +400,22 @@ class Tablist extends Base {
       },
       get shownPlaceNode() {
         return (
-          tabIntstance.teleport?.placeholder ??
-          tabIntstance.transition?.placeholder ??
+          tabInstance.teleport?.placeholder ??
+          tabInstance.transition?.placeholder ??
           tabpanel
         );
       },
     };
 
     [ACTION_HIDE, ACTION_SHOW, ACTION_TOGGLE].forEach(
-      (action) =>
-        (tabIntstance[action] = this[action].bind(this, tabIntstance)),
+      (action) => (tabInstance[action] = this[action].bind(this, tabInstance)),
     );
-    tabIntstance.is = this.isTab.bind(this, tabIntstance);
+    tabInstance.is = this.isTab.bind(this, tabInstance);
 
-    addDismiss(this, tabpanel, tabIntstance.hide);
+    addDismiss(this, tabpanel, tabInstance.hide);
 
-    tabs.push(tabIntstance);
-    return tabIntstance;
+    tabs.push(tabInstance);
+    return tabInstance;
   }
   isTab(tab, value) {
     let result = false;
@@ -435,24 +434,24 @@ class Tablist extends Base {
     return this.tabs.find((tab) => tab.is(value));
   }
   _onTabFocus({ currentTarget }) {
-    const tabIntstance = this.getTab(currentTarget);
-    if (!tabIntstance || !this.focusFilter(tabIntstance)) return;
+    const tabInstance = this.getTab(currentTarget);
+    if (!tabInstance || !this.focusFilter(tabInstance)) return;
 
-    this.opts.arrowActivation && !tabIntstance.isShown && tabIntstance.show();
+    this.opts.arrowActivation && !tabInstance.isShown && tabInstance.show();
 
-    this.currentTabIndex = tabIntstance.index;
+    this.currentTabIndex = tabInstance.index;
   }
   _onTabKeydown(event) {
-    const tabIntstance = this.getTab(event.currentTarget);
-    const currentIndex = this.tabs.indexOf(tabIntstance);
+    const tabInstance = this.getTab(event.currentTarget);
+    const currentIndex = this.tabs.indexOf(tabInstance);
     const { keyboard, rtl, horizontal } = this.opts;
     const { keyCode } = event;
 
     if (
       [KEY_ENTER, KEY_SPACE].includes(keyCode) &&
-      !/BUTTON|A/.test(tabIntstance.tab.nodeName)
+      !/BUTTON|A/.test(tabInstance.tab.nodeName)
     )
-      return tabIntstance.toggle(null, { event, trigger: event.target });
+      return tabInstance.toggle(null, { event, trigger: event.target });
     if (KEY_END > keyCode || KEY_ARROW_DOWN < keyCode || !keyboard) return;
 
     event.preventDefault();
@@ -529,12 +528,12 @@ class Tablist extends Base {
   async toggle(elem, s, params) {
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
-    const tabIntstance = this.getTab(elem);
+    const tabInstance = this.getTab(elem);
 
-    if (!tabIntstance) return;
+    if (!tabInstance) return;
 
     const { opts, selected, emit } = this;
-    const { tab, tabpanel, isShown, transition, index } = tabIntstance;
+    const { tab, tabpanel, isShown, transition, index } = tabInstance;
 
     s = !!(s ?? !isShown);
 
@@ -546,7 +545,7 @@ class Tablist extends Base {
         transition.isAnimating &&
         ((selected.length <= 1 && !opts.multiExpand) || opts.multiExpand)) ||
       (isShown && opts.alwaysExpanded && !s && selected.length < 2) ||
-      (s && !this.focusFilter(tabIntstance))
+      (s && !this.focusFilter(tabInstance))
     )
       return;
 
@@ -557,17 +556,13 @@ class Tablist extends Base {
     const eventParams = { event, trigger };
 
     !silent &&
-      emit(
-        s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE,
-        tabIntstance,
-        eventParams,
-      );
+      emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, tabInstance, eventParams);
 
-    tabIntstance.isShown = s;
+    tabInstance.isShown = s;
 
     if (!opts.multiExpand && s) {
       for (const selectedTab of selected) {
-        if (tabIntstance !== selectedTab && selectedTab.isShown) {
+        if (tabInstance !== selectedTab && selectedTab.isShown) {
           selectedTab.hide(animated);
           if (opts.awaitePrevious)
             await selectedTab.transition.getAwaitPromises();
@@ -575,11 +570,11 @@ class Tablist extends Base {
       }
     }
 
-    if (s && !tabIntstance.isShown) return;
+    if (s && !tabInstance.isShown) return;
 
     ELEMS.forEach((elemName) =>
       toggleClass(
-        tabIntstance[elemName],
+        tabInstance[elemName],
         opts[elemName + CLASS_ACTIVE_SUFFIX],
         s,
       ),
@@ -593,25 +588,23 @@ class Tablist extends Base {
 
     const promise = transition.run(s, animated, {
       [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabIntstance, eventParams),
+        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams),
       [EVENT_DESTROY]: () =>
-        tabIntstance.destroy({ remove: true, destroyTransition: false }),
+        tabInstance.destroy({ remove: true, destroyTransition: false }),
     });
 
     if (s) {
-      this.lastShownTab = tabIntstance;
+      this.lastShownTab = tabInstance;
       this.currentTabIndex ??= index;
     }
 
-    (async () => {
-      await promise;
-      !silent &&
-        emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabIntstance, eventParams);
-    })();
+    awaitPromise(promise, () =>
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams),
+    );
 
     animated && opts.awaiteAnimation && (await promise);
 
-    return tabIntstance;
+    return tabInstance;
   }
 
   static show(elem, params) {

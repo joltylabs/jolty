@@ -45,7 +45,7 @@ import {
   baseDestroy,
   callAutofocus,
   callInitShow,
-  callToggleAsyncMethods,
+  awaitPromise,
 } from "./helpers/modules";
 
 const COLLAPSE = "collapse";
@@ -211,7 +211,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     s && !ignoreAutofocus && callAutofocus(this);
 
-    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+    awaitPromise(promise, () =>
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
+    );
 
     animated && awaitAnimation && (await promise);
 

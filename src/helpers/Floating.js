@@ -19,7 +19,6 @@ import {
   DATA_UI_PREFIX,
   INERT,
   DIALOG,
-  SUPPORTS_DIALOG,
   ABSOLUTE,
   FIXED,
   CANCEL,
@@ -325,12 +324,12 @@ export default class Floating {
       attributes.style.pointerEvents = NONE;
     }
     const wrapper = (this.wrapper = createElement(
-      mode === DIALOG && SUPPORTS_DIALOG ? DIALOG : DIV,
+      mode === DIALOG ? DIALOG : DIV,
       attributes,
       target,
     ));
     root.append(wrapper);
-    if (mode === DIALOG && SUPPORTS_DIALOG) {
+    if (mode === DIALOG) {
       if (focusTrap) {
         wrapper.showModal();
       } else {

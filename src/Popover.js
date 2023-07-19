@@ -40,7 +40,7 @@ import {
   toggleOnInterection,
   floatingTransition,
   callInitShow,
-  callToggleAsyncMethods,
+  awaitPromise,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -156,6 +156,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     a11y[OPTION_ARIA_EXPANDED] && toggler.setAttribute(ARIA_EXPANDED, !!s);
+
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
 
     const promise = floatingTransition(this, {
@@ -169,7 +170,9 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
-    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+    awaitPromise(promise, () =>
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
+    );
 
     animated && awaitAnimation && (await promise);
 

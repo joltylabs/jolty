@@ -1,6 +1,5 @@
 import kebabToCamel from "../utils/kebabToCamel";
 import upperFirst from "../utils/upperFirst";
-import isFunction from "../is/isFunction";
 
 export const UI = "ui";
 export const UI_PREFIX = UI + "-";
@@ -269,8 +268,6 @@ export const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
 export const DEFAULT_AUTOFOCUS = `${SELECTOR_AUTOFOCUS},${SELECTOR_DATA_AUTOFOCUS},[${TABINDEX}="-1"]`;
 export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(button,select,textarea,input):not(disabled,inert,[aria-hidden],[type="hidden"]),[href]:is(a,area),[contenteditable],iframe,object,embed,[tabindex]:not([tabindex^="-"])`;
 export const SELECTOR_ROOT = ":" + ROOT;
-
-export const SUPPORTS_DIALOG = isFunction(window.HTMLDialogElement);
 
 export const MIRROR = {
   [TOP]: BOTTOM,

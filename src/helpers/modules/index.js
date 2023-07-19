@@ -6,4 +6,4 @@ export { default as baseDestroy } from "./baseDestroy";
 export { default as toggleOnInterection } from "./toggleOnInterection";
 export { default as floatingTransition } from "./floatingTransition";
 export { default as callInitShow } from "./callInitShow";
-export { default as callToggleAsyncMethods } from "./callToggleAsyncMethods";
+export { default as awaitPromise } from "./awaitPromise";

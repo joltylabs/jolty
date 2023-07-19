@@ -30,9 +30,9 @@ import {
 } from "./helpers/utils";
 import {
   addDismiss,
+  awaitPromise,
   baseDestroy,
   callInitShow,
-  callToggleAsyncMethods,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -189,7 +189,9 @@ class Toast extends ToggleMixin(Base, TOAST) {
         destroy({ remove: true, destroyTransition: false }),
     });
 
-    callToggleAsyncMethods(promise, this, s, eventParams, silent);
+    awaitPromise(promise, () =>
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
+    );
 
     animated && (await promise);
 

@@ -37,7 +37,6 @@ import {
   OPTION_ARIA_MODAL,
   FOCUSABLE_ELEMENTS_SELECTOR,
   ACTION_DESTROY,
-  SUPPORTS_DIALOG,
   TITLE,
   OPTION_PREVENT_SCROLL,
   NAME,
@@ -79,7 +78,7 @@ import {
   callAutofocus,
   addEscapeHide,
   callInitShow,
-  callToggleAsyncMethods,
+  awaitPromise,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -186,7 +185,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       off,
     } = this;
 
-    if (teleportOpts === null && (!isDialog || _fromHTML)) {
+    if (teleportOpts == null && (!isDialog || _fromHTML)) {
       teleportOpts = body;
     }
     this.teleport = Teleport.createOrUpdate(teleport, modal, teleportOpts, {
@@ -206,10 +205,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     this.togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
 
-    if (
-      a11y &&
-      (!isDialog || (isDialog && SUPPORTS_DIALOG && !a11y.disableIfDialog))
-    ) {
+    if (a11y && (!isDialog || (isDialog && !a11y.disableIfDialog))) {
       a11y[ROLE] && setAttribute(modal, ROLE, a11y[ROLE]);
       a11y[OPTION_ARIA_MODAL] &&
         setAttribute(modal, ARIA_MODAL, a11y[OPTION_ARIA_MODAL]);
@@ -274,8 +270,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
         toggle(null, { trigger, event });
       }
     });
-
-    // isDialog && SUPPORTS_DIALOG && on(modal, EVENT_CLOSE, (event) => hide({ event }));
 
     return callInitShow(this);
   }
@@ -400,7 +394,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     if (s) {
       transitions[MODAL].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
-      if (isDialog && SUPPORTS_DIALOG) {
+      if (isDialog) {
         if (opts.focusTrap) {
           modal.showModal();
         } else {
@@ -440,7 +434,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       Object.values(transitions).flatMap(({ promises }) => promises),
     );
 
-    if (!s && (!isDialog || !SUPPORTS_DIALOG)) {
+    if (!s && !isDialog) {
       opts.returnFocus &&
         modal.contains(doc.activeElement) &&
         focus(this.returnFocusElem);
@@ -459,12 +453,13 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
       off(content, EVENT_MOUSEDOWN);
 
-      if (isDialog && SUPPORTS_DIALOG) {
+      if (isDialog) {
         modal.close();
       }
     }
 
-    callToggleAsyncMethods(promise, this, s, eventParams, silent, () => {
+    awaitPromise(promise, () => {
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
       if (!s) {
         transitions[MODAL].toggleRemove(false);
         if (transitions[MODAL].opts[HIDDEN_MODE] === ACTION_DESTROY) {
