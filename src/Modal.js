@@ -20,7 +20,6 @@ import {
   ARIA_DESCRIBEDBY,
   TABINDEX,
   HIDDEN_MODE,
-  EVENT_INIT,
   EVENT_SHOW,
   EVENT_HIDE,
   EVENT_CLICK,
@@ -135,6 +134,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     rightClickHide: true,
     hashNavigation: false,
     returnFocus: true,
+    returnFocusAwait: null,
     hideable: true,
     dismiss: true,
     preventScroll: true,
@@ -333,6 +333,9 @@ class Modal extends ToggleMixin(Base, MODAL) {
       content,
       backdrop,
     } = this;
+
+    let optReturnFocusAwait = opts.returnFocusAwait ?? opts.group.awaitPrevious;
+
     const {
       animated,
       silent,
@@ -373,16 +376,21 @@ class Modal extends ToggleMixin(Base, MODAL) {
       (modal) => modal !== this && modal[BACKDROP] === backdrop,
     );
 
-    if (s && opts.group?.hidePrevious) {
-      const shownGroupModals = this.shownGroupModals;
+    const shownGroupModals = this.shownGroupModals;
+    if (s) {
       if (shownGroupModals.length > 1) {
         const promises = Promise.allSettled(
-          shownGroupModals.map((modal) => modal !== this && modal.hide()),
+          shownGroupModals
+            .filter((m) => m !== this)
+            .map((modal) => modal.hide() && modal.transitionPromise),
         );
         if (opts.group.awaitPrevious) {
           await promises;
         }
       }
+    } else if (!s && !shownGroupModals.length) {
+      console.log(optReturnFocusAwait);
+      optReturnFocusAwait = false;
     }
 
     toggleClass(
@@ -430,14 +438,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     this._preventScroll(s);
 
-    const promise = Promise.allSettled(
-      Object.values(transitions).flatMap(({ promises }) => promises),
-    );
-
-    if (!s && !isDialog) {
-      opts.returnFocus &&
-        modal.contains(doc.activeElement) &&
-        focus(this.returnFocusElem);
+    if (!s && !optReturnFocusAwait) {
+      this.returnFocus();
     }
 
     opts.escapeHide && addEscapeHide(this, s);
@@ -453,13 +455,22 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
       off(content, EVENT_MOUSEDOWN);
 
-      if (isDialog) {
+      if (isDialog && !optReturnFocusAwait) {
         modal.close();
       }
     }
 
+    const promise = this.transitionPromise;
+
     awaitPromise(promise, () => {
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+
+      if (!s && optReturnFocusAwait) {
+        if (isDialog) {
+          modal.close();
+        }
+        this.returnFocus();
+      }
       if (!s) {
         transitions[MODAL].toggleRemove(false);
         if (transitions[MODAL].opts[HIDDEN_MODE] === ACTION_DESTROY) {
@@ -473,6 +484,16 @@ class Modal extends ToggleMixin(Base, MODAL) {
     return this;
   }
 
+  returnFocus() {
+    if (
+      !this.isDialog &&
+      this.opts.returnFocus &&
+      this.modal.contains(doc.activeElement)
+    ) {
+      focus(this.returnFocusElem);
+    }
+  }
+
   get isDialog() {
     return this[MODAL].tagName === "DIALOG";
   }
@@ -484,6 +505,11 @@ class Modal extends ToggleMixin(Base, MODAL) {
   get isEntering() {
     return DOM_ELEMENTS.some(
       (elemName) => this.transitions[elemName]?.isEntering,
+    );
+  }
+  get transitionPromise() {
+    return Promise.allSettled(
+      Object.values(this.transitions).flatMap(({ promises }) => promises),
     );
   }
   get shownPreventScrollModals() {

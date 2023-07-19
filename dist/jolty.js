@@ -13,8 +13,6 @@
   var upperFirst = (str = "") =>
     cache$1[str] || (cache$1[str] = str[0].toUpperCase() + str.slice(1));
 
-  var isFunction = (value) => typeof value === "function";
-
   const UI = "ui";
   const UI_PREFIX = UI + "-";
   const VAR_UI_PREFIX = "--" + UI_PREFIX;
@@ -271,8 +269,6 @@
   const FOCUSABLE_ELEMENTS_SELECTOR = `:is(button,select,textarea,input):not(disabled,inert,[aria-hidden],[type="hidden"]),[href]:is(a,area),[contenteditable],iframe,object,embed,[tabindex]:not([tabindex^="-"])`;
   const SELECTOR_ROOT = ":" + ROOT;
 
-  const SUPPORTS_DIALOG = isFunction(window.HTMLDialogElement);
-
   const MIRROR = {
     [TOP]: BOTTOM,
     [BOTTOM]: TOP,
@@ -289,6 +285,8 @@
   var isArray = Array.isArray;
 
   var isElement = (value) => value && !!value.getElementsByClassName;
+
+  var isFunction = (value) => typeof value === "function";
 
   var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
 
@@ -1732,10 +1730,7 @@
     if (elem.contains(doc.activeElement)) return;
     let focusElem = getOptionElem(autofocus.elem, elem);
     const isDialog = elem.tagName === "DIALOG";
-    if (
-      (!focusElem && autofocus.required && !isDialog) ||
-      (isDialog && !SUPPORTS_DIALOG)
-    ) {
+    if ((!focusElem && autofocus.required && !isDialog) || isDialog) {
       focusElem = getOptionElem(autofocus.focusableElements, elem);
     }
     focusElem?.focus({
@@ -2133,12 +2128,12 @@
         attributes.style.pointerEvents = NONE;
       }
       const wrapper = (this.wrapper = createElement(
-        mode === DIALOG && SUPPORTS_DIALOG ? DIALOG : DIV,
+        mode === DIALOG ? DIALOG : DIV,
         attributes,
         target,
       ));
       root.append(wrapper);
-      if (mode === DIALOG && SUPPORTS_DIALOG) {
+      if (mode === DIALOG) {
         if (focusTrap) {
           wrapper.showModal();
         } else {
@@ -2703,6 +2698,7 @@
       rightClickHide: true,
       hashNavigation: false,
       returnFocus: true,
+      returnFocusAwait: null,
       hideable: true,
       dismiss: true,
       preventScroll: true,
@@ -2773,10 +2769,7 @@
 
       this.togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
 
-      if (
-        a11y &&
-        (!isDialog || (isDialog && SUPPORTS_DIALOG && !a11y.disableIfDialog))
-      ) {
+      if (a11y && (!isDialog || (isDialog && !a11y.disableIfDialog))) {
         a11y[ROLE] && setAttribute(modal, ROLE, a11y[ROLE]);
         a11y[OPTION_ARIA_MODAL] &&
           setAttribute(modal, ARIA_MODAL, a11y[OPTION_ARIA_MODAL]);
@@ -2842,8 +2835,6 @@
         }
       });
 
-      // isDialog && SUPPORTS_DIALOG && on(modal, EVENT_CLOSE, (event) => hide({ event }));
-
       return callInitShow(this);
     }
     destroy(destroyOpts) {
@@ -2906,6 +2897,9 @@
         content,
         backdrop,
       } = this;
+
+      let optReturnFocusAwait = opts.returnFocusAwait ?? opts.group.awaitPrevious;
+
       const {
         animated,
         silent,
@@ -2946,16 +2940,21 @@
         (modal) => modal !== this && modal[BACKDROP] === backdrop,
       );
 
-      if (s && opts.group?.hidePrevious) {
-        const shownGroupModals = this.shownGroupModals;
+      const shownGroupModals = this.shownGroupModals;
+      if (s) {
         if (shownGroupModals.length > 1) {
           const promises = Promise.allSettled(
-            shownGroupModals.map((modal) => modal !== this && modal.hide()),
+            shownGroupModals
+              .filter((m) => m !== this)
+              .map((modal) => modal.hide() && modal.transitionPromise),
           );
           if (opts.group.awaitPrevious) {
             await promises;
           }
         }
+      } else if (!s && !shownGroupModals.length) {
+        console.log(optReturnFocusAwait);
+        optReturnFocusAwait = false;
       }
 
       toggleClass(
@@ -2967,7 +2966,7 @@
       if (s) {
         transitions[MODAL].toggleRemove(true);
         transitions[CONTENT].toggleRemove(true);
-        if (isDialog && SUPPORTS_DIALOG) {
+        if (isDialog) {
           if (opts.focusTrap) {
             modal.showModal();
           } else {
@@ -3003,14 +3002,8 @@
 
       this._preventScroll(s);
 
-      const promise = Promise.allSettled(
-        Object.values(transitions).flatMap(({ promises }) => promises),
-      );
-
-      if (!s && (!isDialog || !SUPPORTS_DIALOG)) {
-        opts.returnFocus &&
-          modal.contains(doc.activeElement) &&
-          focus(this.returnFocusElem);
+      if (!s && !optReturnFocusAwait) {
+        this.returnFocus();
       }
 
       opts.escapeHide && addEscapeHide(this, s);
@@ -3026,13 +3019,22 @@
 
         off(content, EVENT_MOUSEDOWN);
 
-        if (isDialog && SUPPORTS_DIALOG) {
+        if (isDialog && !optReturnFocusAwait) {
           modal.close();
         }
       }
 
+      const promise = this.transitionPromise;
+
       awaitPromise(promise, () => {
         emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+
+        if (!s && optReturnFocusAwait) {
+          if (isDialog) {
+            modal.close();
+          }
+          this.returnFocus();
+        }
         if (!s) {
           transitions[MODAL].toggleRemove(false);
           if (transitions[MODAL].opts[HIDDEN_MODE] === ACTION_DESTROY) {
@@ -3046,6 +3048,16 @@
       return this;
     }
 
+    returnFocus() {
+      if (
+        !this.isDialog &&
+        this.opts.returnFocus &&
+        this.modal.contains(doc.activeElement)
+      ) {
+        focus(this.returnFocusElem);
+      }
+    }
+
     get isDialog() {
       return this[MODAL].tagName === "DIALOG";
     }
@@ -3057,6 +3069,11 @@
     get isEntering() {
       return DOM_ELEMENTS.some(
         (elemName) => this.transitions[elemName]?.isEntering,
+      );
+    }
+    get transitionPromise() {
+      return Promise.allSettled(
+        Object.values(this.transitions).flatMap(({ promises }) => promises),
       );
     }
     get shownPreventScrollModals() {
