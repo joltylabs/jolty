@@ -314,7 +314,9 @@ class Modal extends ToggleMixin(Base, MODAL) {
     return this;
   }
   _preventScroll(s) {
-    const hasPreventScrollModals = this.shownPreventScrollModals.length;
+    const hasPreventScrollModals = Modal.shownModals.filter(
+      ({ opts }) => opts.preventScroll,
+    ).length;
     if ((s && hasPreventScrollModals) || (!s && !hasPreventScrollModals)) {
       toggleClass(body, this.opts.preventScroll.class, s);
     }
@@ -512,9 +514,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       Object.values(this.transitions).flatMap(({ promises }) => promises),
     );
   }
-  get shownPreventScrollModals() {
-    return Modal.shownModals.filter(({ opts }) => opts.preventScroll);
-  }
+
   get groupModals() {
     return arrayFrom(this.instances.values()).filter(
       ({ opts }) => opts.group?.name === this.opts.group?.name,
