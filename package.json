@@ -1,8 +1,9 @@
 {
   "name": "jolty",
   "version": "0.8.0",
-  "main": "dist/jolty.js",
-  "module": "dist/jolty.esm.js",
+  "type": "module",
+  "main": "src/index.esm.js",
+
   "scripts": {
     "build": "rollup -c"
   },

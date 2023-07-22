@@ -33,7 +33,7 @@ class Base {
       opts = opts(elem);
     }
     opts ??= {};
-    const { NAME, BASE_NODE_NAME, Default, _data, allInstances } =
+    const { NAME, BASE_NODE_NAME, Default, _data, _templates, allInstances } =
       this.constructor;
     const baseElemName = BASE_NODE_NAME ?? NAME;
 
@@ -43,7 +43,9 @@ class Base {
 
     if (elem == null) {
       opts = mergeDeep(Default, callOrReturn(dataValue, elem), opts);
-      elem = opts.template(opts);
+      elem = isString(opts.template)
+        ? callOrReturn(_templates[opts.template], opts)
+        : opts.template(opts);
       this._fromTemplate = true;
     } else if (elem) {
       if (isHTML(elem)) {
@@ -199,9 +201,6 @@ class Base {
       name = "";
     }
     if (!opts) return this._data[name];
-    if (isArray(name)) {
-      name.forEach((data) => this.data(...data));
-    }
     this._data[name] = opts;
     return this;
   }

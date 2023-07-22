@@ -1085,7 +1085,7 @@
         opts = opts(elem);
       }
       opts ??= {};
-      const { NAME, BASE_NODE_NAME, Default, _data, allInstances } =
+      const { NAME, BASE_NODE_NAME, Default, _data, _templates, allInstances } =
         this.constructor;
       const baseElemName = BASE_NODE_NAME ?? NAME;
 
@@ -1095,7 +1095,9 @@
 
       if (elem == null) {
         opts = mergeDeep(Default, callOrReturn(dataValue, elem), opts);
-        elem = opts.template(opts);
+        elem = isString(opts.template)
+          ? callOrReturn(_templates[opts.template], opts)
+          : opts.template(opts);
         this._fromTemplate = true;
       } else if (elem) {
         if (isHTML(elem)) {
@@ -1251,9 +1253,6 @@
         name = "";
       }
       if (!opts) return this._data[name];
-      if (isArray(name)) {
-        name.forEach((data) => this.data(...data));
-      }
       this._data[name] = opts;
       return this;
     }
@@ -3789,6 +3788,8 @@
   const positions = {};
   const wrappers = new Map();
   class Toast extends ToggleMixin(Base, TOAST) {
+    static _templates = {};
+    static _containers = {};
     static DefaultContainerA11y = {
       containerRole: "region",
       containerTabindex: -1,
@@ -3803,15 +3804,14 @@
       ...DEFAULT_OPTIONS,
       eventPrefix: getEventsPrefix(TOAST),
       root: null,
-      container: null,
+      container: "",
+      template: "",
       appear: true,
-      template: null,
       dismiss: true,
       limit: false,
       limitAnimateEnter: true,
       limitAnimateLeave: true,
       autohide: false,
-      namespace: DEFAULT,
     };
     static containerName = TOAST + "s";
     constructor(elem, opts) {
@@ -3869,7 +3869,7 @@
           limitAnimateLeave,
           limitAnimateEnter,
           position,
-          namespace,
+          container,
         },
         autohide,
         base,
@@ -3911,7 +3911,7 @@
             const wrapper = (to = constructor.getWrapper({
               position,
               root,
-              namespace,
+              container,
             }));
             if (wrapper && wrapper.parentElement !== root) {
               root.append(wrapper);
@@ -3944,7 +3944,7 @@
       const wrapper =
         rootWrappers &&
         [...rootWrappers].find(
-          (w) => w.position === position && w.namespace === namespace,
+          (w) => w.position === position && w.container === container,
         )?.wrapper;
 
       if (!s && wrapper && !wrapper.children.length) {
@@ -3958,14 +3958,14 @@
       return this;
     }
 
-    static getWrapper({ position, root = body, namespace = DEFAULT }) {
+    static getWrapper({ position, root = body, container = "" }) {
       let rootWrappers = wrappers.get(root);
       if (!rootWrappers) {
         rootWrappers = new Set();
         wrappers.set(root, rootWrappers);
       } else {
         const wrapper = [...rootWrappers].find(
-          (w) => w.position === position && w.namespace === namespace,
+          (w) => w.position === position && w.container === container,
         );
         if (wrapper) return wrapper.wrapper;
       }
@@ -3974,20 +3974,44 @@
         role: a11y.containerRole,
         tabindex: a11y.containerTabindex,
       });
+
       const wrapper = fragment(
-        this.Default.container({ position, namespace, attributes }),
+        isString(container)
+          ? callOrReturn(Toast._containers[container], {
+              position,
+              attributes,
+            })
+          : container({ position, attributes }),
       );
 
-      rootWrappers.add({ wrapper, namespace, position, root });
+      rootWrappers.add({ wrapper, container, position, root });
       return wrapper;
     }
-    static addPosition(position, namespace = DEFAULT) {
-      positions[namespace] ||= {};
+    static addPosition(position, container = "") {
+      positions[container] ||= {};
       if (isArray(position)) {
-        position.forEach((p) => this.addPosition(p, namespace));
+        position.forEach((p) => this.addPosition(p, container));
       } else if (isObject(position)) {
-        positions[namespace][position.name] = position;
+        positions[container][position.name] = position;
       }
+    }
+    static template(name, opts) {
+      if (arguments.length === 1) {
+        opts = name;
+        name = "";
+      }
+      if (!opts) return this._templates[name];
+      this._templates[name] = opts;
+      return this;
+    }
+    static container(name, opts) {
+      if (arguments.length === 1) {
+        opts = name;
+        name = "";
+      }
+      if (!opts) return this._containers[name];
+      this._containers[name] = opts;
+      return this;
     }
   }
 
