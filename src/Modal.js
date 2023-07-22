@@ -219,14 +219,26 @@ class Modal extends ToggleMixin(Base, MODAL) {
   }
   init() {
     const { opts, getOptionElem, isInit, modal, on, emit, hide, toggle } = this;
+    const optsBackdrop = opts[BACKDROP];
 
     if (isInit) return;
 
     emit(EVENT_BEFORE_INIT);
 
-    this[BACKDROP] = opts.backdropOutside
-      ? getOptionElem(opts.backdropOutside)
-      : getOptionElem(opts[BACKDROP], modal);
+    let backdrop;
+    if (optsBackdrop) {
+      if (isFunction(optsBackdrop)) {
+        backdrop = optsBackdrop(this);
+      }
+      if (isString(optsBackdrop)) {
+        if (optsBackdrop[0] === "#") {
+          backdrop = document.querySelector(optsBackdrop);
+        } else {
+          backdrop = modal.querySelector(optsBackdrop);
+        }
+      }
+    }
+    this[BACKDROP] = backdrop;
 
     this[CONTENT] = getOptionElem(opts[CONTENT], modal);
 

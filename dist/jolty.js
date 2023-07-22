@@ -2785,14 +2785,27 @@
     }
     init() {
       const { opts, getOptionElem, isInit, modal, on, emit, hide, toggle } = this;
+      const optsBackdrop = opts[BACKDROP];
 
       if (isInit) return;
 
       emit(EVENT_BEFORE_INIT);
 
-      this[BACKDROP] = opts.backdropOutside
-        ? getOptionElem(opts.backdropOutside)
-        : getOptionElem(opts[BACKDROP], modal);
+      let backdrop;
+      if (optsBackdrop) {
+        if (isFunction(optsBackdrop)) {
+          backdrop = optsBackdrop(this);
+        }
+        if (isString(optsBackdrop)) {
+          if (optsBackdrop[0] === "#") {
+            backdrop = document.querySelector(optsBackdrop);
+          } else {
+            backdrop = modal.querySelector(optsBackdrop);
+          }
+        }
+      }
+      this[BACKDROP] = backdrop;
+      console.log(this[BACKDROP]);
 
       this[CONTENT] = getOptionElem(opts[CONTENT], modal);
 
@@ -3143,7 +3156,7 @@
       rtl: false,
       focusFilter: null,
       horizontal: false,
-      dismiss: true,
+      dismiss: false,
       [TAB]: getDataSelector(TABLIST, TAB),
       [TABPANEL]: getDataSelector(TABLIST, TABPANEL),
       [ITEM]: getDataSelector(TABLIST, ITEM),
@@ -3306,17 +3319,18 @@
       const { tabs, tablist, opts, selected, on, off } = this;
       const index = tabs.length;
 
-      const tabpanelId = tab.getAttribute(DATA_UI_PREFIX + TABLIST + "-" + TAB);
-      let tabpanel = tabpanelId && doc.getElementById(tabpanelId);
       const item = isString(opts[ITEM])
         ? tab.closest(opts[ITEM])
         : callOrReturn(opts[ITEM], { tablist, tab, index });
-      if (!tabpanel) {
-        if (isFunction(opts[TABPANEL])) {
-          tabpanel = opts[TABPANEL]({ tablist, tab, index });
-        } else {
-          tabpanel = opts.siblings && next(tab, opts[TABPANEL]);
-        }
+
+      const tabpanelId = tab.getAttribute(DATA_UI_PREFIX + TABLIST + "-" + TAB);
+      let tabpanel = tabpanelId && doc.getElementById(tabpanelId);
+
+      if (!tabpanel && isFunction(opts[TABPANEL])) {
+        tabpanel = opts[TABPANEL]({ tablist, tab, index });
+      }
+      if (!tabpanel && opts.siblings) {
+        tabpanel = next(tab, opts[TABPANEL]);
       }
 
       if (!tabpanel) return;
