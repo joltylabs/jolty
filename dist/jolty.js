@@ -265,7 +265,6 @@
   const SELECTOR_DATA_CONFIRM = `[${DATA_UI_PREFIX + CONFIRM}]`;
   const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
   const DEFAULT_AUTOFOCUS = `${SELECTOR_AUTOFOCUS},${SELECTOR_DATA_AUTOFOCUS},[${TABINDEX}="-1"]`;
-  const FOCUSABLE_ELEMENTS_SELECTOR = `:is(button,select,textarea,input):not(disabled,inert,[aria-hidden],[type="hidden"]),[href]:is(a,area),[contenteditable],iframe,object,embed,[tabindex]:not([tabindex^="-"])`;
   const SELECTOR_ROOT = ":" + ROOT;
 
   const MIRROR = {
@@ -1727,12 +1726,13 @@
     }
   }
 
+  const FOCUSABLE_ELEMENTS_SELECTOR = `:is(button,select,textarea,input):not(disabled,inert,[aria-hidden],[type="hidden"]),[href]:is(a,area),[contenteditable],iframe,object,embed,[tabindex]:not([tabindex^="-"])`;
   var callAutofocus = ({ opts: { autofocus }, getOptionElem, base }, elem = base) => {
     if (elem.contains(doc.activeElement)) return;
     let focusElem = getOptionElem(autofocus.elem, elem);
     const isDialog = elem.tagName === "DIALOG";
     if ((!focusElem && autofocus.required && !isDialog) || isDialog) {
-      focusElem = getOptionElem(autofocus.focusableElements, elem);
+      focusElem = getOptionElem(FOCUSABLE_ELEMENTS_SELECTOR, elem);
     }
     focusElem?.focus({
       [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,
@@ -2417,7 +2417,6 @@
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
       required: true,
-      focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
     };
     static Default = {
       ...DEFAULT_OPTIONS,
@@ -2683,7 +2682,6 @@
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
       required: true,
-      focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
     };
     static DefaultA11y = {
       [OPTION_ARIA_MODAL]: false,
@@ -2805,7 +2803,6 @@
         }
       }
       this[BACKDROP] = backdrop;
-      console.log(this[BACKDROP]);
 
       this[CONTENT] = getOptionElem(opts[CONTENT], modal);
 
@@ -4157,7 +4154,6 @@
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
       required: true,
-      focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
     };
     static Default = {
       ...DEFAULT_OPTIONS,

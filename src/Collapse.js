@@ -6,7 +6,6 @@ import {
   ARIA_EXPANDED,
   DEFAULT_OPTIONS,
   EVENT_BEFORE_INIT,
-  EVENT_INIT,
   EVENT_BEFORE_DESTROY,
   EVENT_DESTROY,
   EVENT_BEFORE_SHOW,
@@ -22,6 +21,7 @@ import {
   CLASS_ACTIVE,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
+  AUTOFOCUS,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -54,10 +54,14 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     [OPTION_ARIA_EXPANDED]: true,
     [OPTION_TOGGLER_ROLE]: BUTTON,
   };
+  static DefaultAutofocus = {
+    elem: DEFAULT_AUTOFOCUS,
+    required: false,
+  };
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(COLLAPSE),
-    autofocus: DEFAULT_AUTOFOCUS,
+    autofocus: true,
     hashNavigation: true,
     dismiss: true,
     [TOGGLER]: true,
@@ -72,6 +76,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     const { base, opts, transition, teleport } = this;
 
     addDismiss(this);
+    updateModule(this, AUTOFOCUS);
     updateModule(this, A11Y);
 
     this.teleport = Teleport.createOrUpdate(

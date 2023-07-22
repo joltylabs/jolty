@@ -259,7 +259,6 @@ const SELECTOR_DATA_AUTOFOCUS = `[${DATA_UI_PREFIX + AUTOFOCUS}]`;
 const SELECTOR_DATA_CONFIRM = `[${DATA_UI_PREFIX + CONFIRM}]`;
 const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
 const DEFAULT_AUTOFOCUS = `${SELECTOR_AUTOFOCUS},${SELECTOR_DATA_AUTOFOCUS},[${TABINDEX}="-1"]`;
-const FOCUSABLE_ELEMENTS_SELECTOR = `:is(button,select,textarea,input):not(disabled,inert,[aria-hidden],[type="hidden"]),[href]:is(a,area),[contenteditable],iframe,object,embed,[tabindex]:not([tabindex^="-"])`;
 const SELECTOR_ROOT = ":" + ROOT;
 
 const MIRROR = {
@@ -1721,12 +1720,13 @@ function addEscapeHide (instance, s, elem = instance.base) {
   }
 }
 
+const FOCUSABLE_ELEMENTS_SELECTOR = `:is(button,select,textarea,input):not(disabled,inert,[aria-hidden],[type="hidden"]),[href]:is(a,area),[contenteditable],iframe,object,embed,[tabindex]:not([tabindex^="-"])`;
 var callAutofocus = ({ opts: { autofocus }, getOptionElem, base }, elem = base) => {
   if (elem.contains(doc.activeElement)) return;
   let focusElem = getOptionElem(autofocus.elem, elem);
   const isDialog = elem.tagName === "DIALOG";
   if ((!focusElem && autofocus.required && !isDialog) || isDialog) {
-    focusElem = getOptionElem(autofocus.focusableElements, elem);
+    focusElem = getOptionElem(FOCUSABLE_ELEMENTS_SELECTOR, elem);
   }
   focusElem?.focus({
     [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,
@@ -2411,7 +2411,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
-    focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
   };
   static Default = {
     ...DEFAULT_OPTIONS,
@@ -2677,7 +2676,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
-    focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
   };
   static DefaultA11y = {
     [OPTION_ARIA_MODAL]: false,
@@ -2799,7 +2797,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
       }
     }
     this[BACKDROP] = backdrop;
-    console.log(this[BACKDROP]);
 
     this[CONTENT] = getOptionElem(opts[CONTENT], modal);
 
@@ -4151,7 +4148,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
-    focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
   };
   static Default = {
     ...DEFAULT_OPTIONS,

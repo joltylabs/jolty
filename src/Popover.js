@@ -14,7 +14,6 @@ import {
   DEFAULT_AUTOFOCUS,
   DEFAULT_FLOATING_OPTIONS,
   DEFAULT_OPTIONS,
-  FOCUSABLE_ELEMENTS_SELECTOR,
   AUTOFOCUS,
   A11Y,
   DATA_UI_PREFIX,
@@ -56,7 +55,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
-    focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
   };
   static Default = {
     ...DEFAULT_OPTIONS,

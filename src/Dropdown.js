@@ -29,7 +29,6 @@ import {
   ARIA_EXPANDED,
   KEY_TAB,
   MODE,
-  FOCUSABLE_ELEMENTS_SELECTOR,
   body,
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
@@ -72,7 +71,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
-    focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
   };
   static Default = {
     ...DEFAULT_OPTIONS,

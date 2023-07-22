@@ -33,7 +33,6 @@ import {
   OPTION_GROUP,
   AUTOFOCUS,
   OPTION_ARIA_MODAL,
-  FOCUSABLE_ELEMENTS_SELECTOR,
   ACTION_DESTROY,
   TITLE,
   OPTION_PREVENT_SCROLL,
@@ -117,7 +116,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
-    focusableElements: FOCUSABLE_ELEMENTS_SELECTOR,
   };
   static DefaultA11y = {
     [OPTION_ARIA_MODAL]: false,
