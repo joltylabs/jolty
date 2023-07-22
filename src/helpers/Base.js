@@ -196,7 +196,7 @@ class Base {
     return mergeDeep(this.Default, opts);
   }
   static data(name, opts) {
-    if (arguments.length === 1) {
+    if (!opts) {
       opts = name;
       name = "";
     }

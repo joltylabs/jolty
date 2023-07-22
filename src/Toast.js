@@ -67,7 +67,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limit: false,
     limitAnimateEnter: true,
     limitAnimateLeave: true,
-    autohide: false,
+    autohide: 5000,
   };
   static containerName = TOAST + "s";
   constructor(elem, opts) {
@@ -252,7 +252,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     }
   }
   static template(name, opts) {
-    if (arguments.length === 1) {
+    if (!opts) {
       opts = name;
       name = "";
     }
@@ -261,7 +261,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     return this;
   }
   static container(name, opts) {
-    if (arguments.length === 1) {
+    if (!opts) {
       opts = name;
       name = "";
     }

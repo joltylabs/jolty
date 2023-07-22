@@ -1248,7 +1248,7 @@
       return mergeDeep(this.Default, opts);
     }
     static data(name, opts) {
-      if (arguments.length === 1) {
+      if (!opts) {
         opts = name;
         name = "";
       }
@@ -3811,7 +3811,7 @@
       limit: false,
       limitAnimateEnter: true,
       limitAnimateLeave: true,
-      autohide: false,
+      autohide: 5000,
     };
     static containerName = TOAST + "s";
     constructor(elem, opts) {
@@ -3996,7 +3996,7 @@
       }
     }
     static template(name, opts) {
-      if (arguments.length === 1) {
+      if (!opts) {
         opts = name;
         name = "";
       }
@@ -4005,7 +4005,7 @@
       return this;
     }
     static container(name, opts) {
-      if (arguments.length === 1) {
+      if (!opts) {
         opts = name;
         name = "";
       }
