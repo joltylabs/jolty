@@ -25,6 +25,7 @@ import {
   doc,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
+  HIDE_MODE,
 } from "./helpers/constants";
 
 import { toggleClass, removeClass, setAttribute, focus } from "./helpers/dom";
@@ -99,7 +100,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       transition,
       base,
       opts.transition,
-      { hiddenMode: ACTION_REMOVE, keepPlace: false },
+      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
 
     this.updateToggler();

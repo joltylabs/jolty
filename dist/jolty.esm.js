@@ -119,7 +119,7 @@ const LEAVE_ACTIVE = LEAVE + upperFirst(ACTIVE);
 const LEAVE_FROM = LEAVE + "From";
 const LEAVE_TO = LEAVE + "To";
 const AFTER_LEAVE = AFTER + upperFirst(LEAVE);
-const HIDDEN_MODE = HIDDEN + upperFirst(MODE);
+const HIDE_MODE = HIDE + upperFirst(MODE);
 const DURATION = "duration";
 DURATION + upperFirst(ENTER);
 DURATION + upperFirst(LEAVE);
@@ -204,7 +204,6 @@ const KEY_ARROW_DOWN = 40;
 
 const A11Y = "a11y";
 const OPTION_GROUP = "group";
-const OPTION_BACKDROP_OUTSIDE = "backdropOutside";
 const OPTION_APPEAR = APPEAR;
 const OPTION_KEEP_PLACE = "keepPlace";
 const OPTION_PREVENT_SCROLL = "preventScroll";
@@ -1306,7 +1305,7 @@ class Transition {
     name: UI,
     css: true,
     variablePrefix: VAR_UI_PREFIX + TRANSITION + "-",
-    [HIDDEN_MODE]: HIDDEN,
+    [HIDE_MODE]: HIDDEN,
     [OPTION_HIDDEN_CLASS]: "",
     [OPTION_SHOWN_CLASS]: "",
     [ENTER]: null,
@@ -1325,7 +1324,7 @@ class Transition {
     this.elem = elem;
     this.updateConfig(opts, defaultOpts);
     this.promises = [];
-    if (this.opts[HIDDEN_MODE] === ACTION_REMOVE && elem[HIDDEN]) {
+    if (this.opts[HIDE_MODE] === ACTION_REMOVE && elem[HIDDEN]) {
       this.toggleRemove(false);
       elem[HIDDEN] = false;
     } else {
@@ -1357,7 +1356,7 @@ class Transition {
     opts = { ...defaultConfig, ...defaultOpts, ...opts, ...datasetData };
 
     this.opts = updateOptsByData(opts, elem.dataset, [
-      HIDDEN_MODE,
+      HIDE_MODE,
       OPTION_HIDDEN_CLASS,
       OPTION_SHOWN_CLASS,
       ENTER_ACTIVE,
@@ -1371,7 +1370,7 @@ class Transition {
 
     this.teleport = opts.teleport;
 
-    if (opts[HIDDEN_MODE] !== CLASS) {
+    if (opts[HIDE_MODE] !== CLASS) {
       removeClass(elem, HIDDEN_CLASS);
     }
 
@@ -1408,13 +1407,15 @@ class Transition {
   }
 
   get isShown() {
-    const { elem, opts } = this;
-    const mode = opts[HIDDEN_MODE];
-    return opts[HIDDEN_MODE] === ACTION_REMOVE
+    const {
+      elem,
+      opts: { hideMode },
+    } = this;
+    return hideMode === ACTION_REMOVE
       ? inDOM(elem)
-      : mode === CLASS
+      : hideMode === CLASS
       ? !elem.classList.contains(HIDDEN_CLASS)
-      : !elem.hasAttribute(mode);
+      : !elem.hasAttribute(hideMode);
   }
   setClasses(animations) {
     const { elem, opts } = this;
@@ -1516,7 +1517,7 @@ class Transition {
   }
   toggleRemove(s = this.isEntering) {
     const { elem, opts } = this;
-    const mode = opts[HIDDEN_MODE];
+    const mode = opts[HIDE_MODE];
     if (mode === ACTION_REMOVE) {
       if (s) {
         if (opts[OPTION_KEEP_PLACE]) {
@@ -1549,7 +1550,7 @@ class Transition {
   setFinishClass(s = this.isShown) {
     const { elem, opts } = this;
 
-    if (opts[HIDDEN_MODE] === CLASS) {
+    if (opts[HIDE_MODE] === CLASS) {
       toggleClass(elem, HIDDEN_CLASS, !s);
     }
     opts[OPTION_HIDDEN_CLASS] &&
@@ -1572,7 +1573,7 @@ class Transition {
     const toggle = (s) => {
       allowRemove && this.toggleRemove(s);
       this.setFinishClass(s);
-      if (!s && opts[HIDDEN_MODE] === ACTION_DESTROY) {
+      if (!s && opts[HIDE_MODE] === ACTION_DESTROY) {
         this.destroy();
         destroy?.(elem);
       }
@@ -2477,7 +2478,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       transition,
       base,
       opts.transition,
-      { hiddenMode: ACTION_REMOVE, keepPlace: false },
+      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
 
     if (opts.itemClickHide) {
@@ -2689,10 +2690,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
     eventPrefix: getEventsPrefix(MODAL),
     escapeHide: true,
     backdropHide: true,
-    rightClickHide: true,
     hashNavigation: false,
     returnFocus: true,
-    returnFocusAwait: null,
     hideable: true,
     dismiss: true,
     preventScroll: true,
@@ -2706,7 +2705,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     awaitAnimation: false,
     [CONTENT]: getDataSelector(MODAL, CONTENT),
     [BACKDROP]: getDataSelector(MODAL, BACKDROP),
-    [OPTION_BACKDROP_OUTSIDE]: null,
+    backdropOutside: null,
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
@@ -2785,9 +2784,10 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     emit(EVENT_BEFORE_INIT);
 
-    this[BACKDROP] = opts[OPTION_BACKDROP_OUTSIDE]
-      ? getOptionElem(opts[OPTION_BACKDROP_OUTSIDE])
+    this[BACKDROP] = opts.backdropOutside
+      ? getOptionElem(opts.backdropOutside)
       : getOptionElem(opts[BACKDROP], modal);
+
     this[CONTENT] = getOptionElem(opts[CONTENT], modal);
 
     this._update();
@@ -2796,7 +2796,12 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     on(
       modal,
-      [EVENT_CLICK, opts.rightClickHide && EVENT_RIGHT_CLICK],
+      [
+        EVENT_CLICK,
+        opts.backdropHide &&
+          (opts.backdropHide?.rightClick ?? true) &&
+          EVENT_RIGHT_CLICK,
+      ],
       (event) => {
         if (event.type === EVENT_CLICK) {
           [CANCEL, CONFIRM].forEach((name) => {
@@ -2894,7 +2899,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
       backdrop,
     } = this;
 
-    let optReturnFocusAwait = opts.returnFocusAwait ?? opts.group.awaitPrevious;
+    let optReturnFocusAwait =
+      opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
     const {
       animated,
@@ -2949,7 +2955,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
         }
       }
     } else if (!s && !shownGroupModals.length) {
-      console.log(optReturnFocusAwait);
       optReturnFocusAwait = false;
     }
 
@@ -3033,7 +3038,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       }
       if (!s) {
         transitions[MODAL].toggleRemove(false);
-        if (transitions[MODAL].opts[HIDDEN_MODE] === ACTION_DESTROY) {
+        if (transitions[MODAL].opts[HIDE_MODE] === ACTION_DESTROY) {
           this.destroy({ remove: true });
         }
       }
@@ -3124,8 +3129,8 @@ class Tablist extends Base {
     siblings: true,
     alwaysExpanded: false,
     multiExpand: false,
-    awaiteAnimation: false,
-    awaitePrevious: false,
+    awaitAnimation: false,
+    awaitPrevious: false,
     keyboard: true,
     arrowActivation: false,
     hashNavigation: true,
@@ -3524,12 +3529,7 @@ class Tablist extends Base {
   get lastActiveTabIndex() {
     return this.tabs.findLast((tab) => this.focusFilter(tab))?.index;
   }
-  show(elem, opts) {
-    return this.toggle(elem, true, opts);
-  }
-  hide(elem, opts) {
-    return this.toggle(elem, false, opts);
-  }
+
   async toggle(elem, s, params) {
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
@@ -3546,7 +3546,7 @@ class Tablist extends Base {
 
     if (
       s === isShown ||
-      (opts.awaiteAnimation &&
+      (opts.awaitAnimation &&
         transition.isAnimating &&
         ((selected.length <= 1 && !opts.multiExpand) || opts.multiExpand)) ||
       (isShown && opts.alwaysExpanded && !s && selected.length < 2) ||
@@ -3569,7 +3569,7 @@ class Tablist extends Base {
       for (const selectedTab of selected) {
         if (tabInstance !== selectedTab && selectedTab.isShown) {
           selectedTab.hide(animated);
-          if (opts.awaitePrevious)
+          if (opts.awaitPrevious)
             await selectedTab.transition.getAwaitPromises();
         }
       }
@@ -3607,16 +3607,21 @@ class Tablist extends Base {
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams),
     );
 
-    animated && opts.awaiteAnimation && (await promise);
+    animated && opts.awaitAnimation && (await promise);
 
     return tabInstance;
   }
-
-  static show(elem, params) {
-    return this.toggle(elem, true, params);
+  show(elem, opts) {
+    return this.toggle(elem, true, opts);
   }
-  static hide(elem, params) {
-    return this.toggle(elem, false, params);
+  hide(elem, opts) {
+    return this.toggle(elem, false, opts);
+  }
+  static show(elem, opts) {
+    return this.toggle(elem, true, opts);
+  }
+  static hide(elem, opts) {
+    return this.toggle(elem, false, opts);
   }
   static toggle(elem, s, params) {
     for (const tablist of this.instances.values()) {
@@ -3802,7 +3807,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
       this.root = this.getOptionElem(opts.root || body, base);
     }
     this.transition = new Transition(base, opts.transition, {
-      hiddenMode: ACTION_DESTROY,
+      [HIDE_MODE]: ACTION_DESTROY,
     });
     this.autohide = Autoaction.createOrUpdate(
       autohide,
@@ -4006,7 +4011,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       transition,
       tooltip,
       opts.transition,
-      { hiddenMode: ACTION_REMOVE, keepPlace: false },
+      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
     updateModule(this, A11Y);
     setAttribute(tooltip, opts.a11y[ROLE]);
@@ -4024,7 +4029,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     return baseDestroy(this, destroyOpts);
   }
   init() {
-    const { opts, anchor, id, isInit, instances, emit } = this;
+    const { opts, anchor, id, isInit, emit } = this;
 
     if (isInit) return;
 
@@ -4176,7 +4181,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       transition,
       base,
       opts.transition,
-      { hiddenMode: ACTION_REMOVE, keepPlace: false },
+      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
 
     this.updateToggler();

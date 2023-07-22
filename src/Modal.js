@@ -19,7 +19,7 @@ import {
   ARIA_LABELLEDBY,
   ARIA_DESCRIBEDBY,
   TABINDEX,
-  HIDDEN_MODE,
+  HIDE_MODE,
   EVENT_SHOW,
   EVENT_HIDE,
   EVENT_CLICK,
@@ -31,7 +31,6 @@ import {
   EVENT_SHOWN,
   A11Y,
   OPTION_GROUP,
-  OPTION_BACKDROP_OUTSIDE,
   AUTOFOCUS,
   OPTION_ARIA_MODAL,
   FOCUSABLE_ELEMENTS_SELECTOR,
@@ -131,10 +130,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
     eventPrefix: getEventsPrefix(MODAL),
     escapeHide: true,
     backdropHide: true,
-    rightClickHide: true,
     hashNavigation: false,
     returnFocus: true,
-    returnFocusAwait: null,
     hideable: true,
     dismiss: true,
     preventScroll: true,
@@ -148,7 +145,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     awaitAnimation: false,
     [CONTENT]: getDataSelector(MODAL, CONTENT),
     [BACKDROP]: getDataSelector(MODAL, BACKDROP),
-    [OPTION_BACKDROP_OUTSIDE]: null,
+    backdropOutside: null,
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
@@ -227,9 +224,10 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     emit(EVENT_BEFORE_INIT);
 
-    this[BACKDROP] = opts[OPTION_BACKDROP_OUTSIDE]
-      ? getOptionElem(opts[OPTION_BACKDROP_OUTSIDE])
+    this[BACKDROP] = opts.backdropOutside
+      ? getOptionElem(opts.backdropOutside)
       : getOptionElem(opts[BACKDROP], modal);
+
     this[CONTENT] = getOptionElem(opts[CONTENT], modal);
 
     this._update();
@@ -238,7 +236,12 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     on(
       modal,
-      [EVENT_CLICK, opts.rightClickHide && EVENT_RIGHT_CLICK],
+      [
+        EVENT_CLICK,
+        opts.backdropHide &&
+          (opts.backdropHide?.rightClick ?? true) &&
+          EVENT_RIGHT_CLICK,
+      ],
       (event) => {
         if (event.type === EVENT_CLICK) {
           [CANCEL, CONFIRM].forEach((name) => {
@@ -336,7 +339,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
       backdrop,
     } = this;
 
-    let optReturnFocusAwait = opts.returnFocusAwait ?? opts.group.awaitPrevious;
+    let optReturnFocusAwait =
+      opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
     const {
       animated,
@@ -391,7 +395,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
         }
       }
     } else if (!s && !shownGroupModals.length) {
-      console.log(optReturnFocusAwait);
       optReturnFocusAwait = false;
     }
 
@@ -475,7 +478,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       }
       if (!s) {
         transitions[MODAL].toggleRemove(false);
-        if (transitions[MODAL].opts[HIDDEN_MODE] === ACTION_DESTROY) {
+        if (transitions[MODAL].opts[HIDE_MODE] === ACTION_DESTROY) {
           this.destroy({ remove: true });
         }
       }

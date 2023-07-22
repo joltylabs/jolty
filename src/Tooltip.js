@@ -26,6 +26,7 @@ import {
   TOOLTIP,
   body,
   CLASS_ACTIVE_SUFFIX,
+  HIDE_MODE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -91,7 +92,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       transition,
       tooltip,
       opts.transition,
-      { hiddenMode: ACTION_REMOVE, keepPlace: false },
+      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
     updateModule(this, A11Y);
     setAttribute(tooltip, opts.a11y[ROLE]);
@@ -109,7 +110,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     return baseDestroy(this, destroyOpts);
   }
   init() {
-    const { opts, anchor, id, isInit, instances, emit } = this;
+    const { opts, anchor, id, isInit, emit } = this;
 
     if (isInit) return;
 

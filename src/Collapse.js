@@ -22,9 +22,6 @@ import {
   CLASS_ACTIVE,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
-  MODAL,
-  HIDDEN_MODE,
-  ACTION_DESTROY,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";

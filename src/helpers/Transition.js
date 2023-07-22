@@ -26,7 +26,7 @@ import {
   LEAVE_FROM,
   LEAVE_TO,
   AFTER_LEAVE,
-  HIDDEN_MODE,
+  HIDE_MODE,
   DURATION,
   TRANSITION,
   NAME,
@@ -49,7 +49,7 @@ export default class Transition {
     name: UI,
     css: true,
     variablePrefix: VAR_UI_PREFIX + TRANSITION + "-",
-    [HIDDEN_MODE]: HIDDEN,
+    [HIDE_MODE]: HIDDEN,
     [OPTION_HIDDEN_CLASS]: "",
     [OPTION_SHOWN_CLASS]: "",
     [ENTER]: null,
@@ -68,7 +68,7 @@ export default class Transition {
     this.elem = elem;
     this.updateConfig(opts, defaultOpts);
     this.promises = [];
-    if (this.opts[HIDDEN_MODE] === ACTION_REMOVE && elem[HIDDEN]) {
+    if (this.opts[HIDE_MODE] === ACTION_REMOVE && elem[HIDDEN]) {
       this.toggleRemove(false);
       elem[HIDDEN] = false;
     } else {
@@ -100,7 +100,7 @@ export default class Transition {
     opts = { ...defaultConfig, ...defaultOpts, ...opts, ...datasetData };
 
     this.opts = updateOptsByData(opts, elem.dataset, [
-      HIDDEN_MODE,
+      HIDE_MODE,
       OPTION_HIDDEN_CLASS,
       OPTION_SHOWN_CLASS,
       ENTER_ACTIVE,
@@ -114,7 +114,7 @@ export default class Transition {
 
     this.teleport = opts.teleport;
 
-    if (opts[HIDDEN_MODE] !== CLASS) {
+    if (opts[HIDE_MODE] !== CLASS) {
       removeClass(elem, HIDDEN_CLASS);
     }
 
@@ -151,13 +151,15 @@ export default class Transition {
   }
 
   get isShown() {
-    const { elem, opts } = this;
-    const mode = opts[HIDDEN_MODE];
-    return opts[HIDDEN_MODE] === ACTION_REMOVE
+    const {
+      elem,
+      opts: { hideMode },
+    } = this;
+    return hideMode === ACTION_REMOVE
       ? inDOM(elem)
-      : mode === CLASS
+      : hideMode === CLASS
       ? !elem.classList.contains(HIDDEN_CLASS)
-      : !elem.hasAttribute(mode);
+      : !elem.hasAttribute(hideMode);
   }
   setClasses(animations) {
     const { elem, opts } = this;
@@ -259,7 +261,7 @@ export default class Transition {
   }
   toggleRemove(s = this.isEntering) {
     const { elem, opts } = this;
-    const mode = opts[HIDDEN_MODE];
+    const mode = opts[HIDE_MODE];
     if (mode === ACTION_REMOVE) {
       if (s) {
         if (opts[OPTION_KEEP_PLACE]) {
@@ -292,7 +294,7 @@ export default class Transition {
   setFinishClass(s = this.isShown) {
     const { elem, opts } = this;
 
-    if (opts[HIDDEN_MODE] === CLASS) {
+    if (opts[HIDE_MODE] === CLASS) {
       toggleClass(elem, HIDDEN_CLASS, !s);
     }
     opts[OPTION_HIDDEN_CLASS] &&
@@ -315,7 +317,7 @@ export default class Transition {
     const toggle = (s) => {
       allowRemove && this.toggleRemove(s);
       this.setFinishClass(s);
-      if (!s && opts[HIDDEN_MODE] === ACTION_DESTROY) {
+      if (!s && opts[HIDE_MODE] === ACTION_DESTROY) {
         this.destroy();
         destroy?.(elem);
       }

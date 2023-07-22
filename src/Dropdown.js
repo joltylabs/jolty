@@ -34,6 +34,7 @@ import {
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   doc,
+  HIDE_MODE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -138,7 +139,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       transition,
       base,
       opts.transition,
-      { hiddenMode: ACTION_REMOVE, keepPlace: false },
+      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
 
     if (opts.itemClickHide) {

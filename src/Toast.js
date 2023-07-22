@@ -18,6 +18,7 @@ import {
   A11Y,
   OPTION_ARIA_LIVE,
   OPTION_ARIA_ATOMIC,
+  HIDE_MODE,
 } from "./helpers/constants";
 import { isArray, isObject } from "./helpers/is";
 import { fragment, inDOM, setAttribute } from "./helpers/dom";
@@ -84,7 +85,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
       this.root = this.getOptionElem(opts.root || body, base);
     }
     this.transition = new Transition(base, opts.transition, {
-      hiddenMode: ACTION_DESTROY,
+      [HIDE_MODE]: ACTION_DESTROY,
     });
     this.autohide = Autoaction.createOrUpdate(
       autohide,

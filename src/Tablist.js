@@ -119,15 +119,15 @@ class Tablist extends Base {
     siblings: true,
     alwaysExpanded: false,
     multiExpand: false,
-    awaiteAnimation: false,
-    awaitePrevious: false,
+    awaitAnimation: false,
+    awaitPrevious: false,
     keyboard: true,
     arrowActivation: false,
     hashNavigation: true,
     rtl: false,
     focusFilter: null,
     horizontal: false,
-    dismiss: true,
+    dismiss: false,
     [TAB]: getDataSelector(TABLIST, TAB),
     [TABPANEL]: getDataSelector(TABLIST, TABPANEL),
     [ITEM]: getDataSelector(TABLIST, ITEM),
@@ -290,17 +290,18 @@ class Tablist extends Base {
     const { tabs, tablist, opts, selected, on, off } = this;
     const index = tabs.length;
 
-    const tabpanelId = tab.getAttribute(DATA_UI_PREFIX + TABLIST + "-" + TAB);
-    let tabpanel = tabpanelId && doc.getElementById(tabpanelId);
     const item = isString(opts[ITEM])
       ? tab.closest(opts[ITEM])
       : callOrReturn(opts[ITEM], { tablist, tab, index });
-    if (!tabpanel) {
-      if (isFunction(opts[TABPANEL])) {
-        tabpanel = opts[TABPANEL]({ tablist, tab, index });
-      } else {
-        tabpanel = opts.siblings && next(tab, opts[TABPANEL]);
-      }
+
+    const tabpanelId = tab.getAttribute(DATA_UI_PREFIX + TABLIST + "-" + TAB);
+    let tabpanel = tabpanelId && doc.getElementById(tabpanelId);
+
+    if (!tabpanel && isFunction(opts[TABPANEL])) {
+      tabpanel = opts[TABPANEL]({ tablist, tab, index });
+    }
+    if (!tabpanel && opts.siblings) {
+      tabpanel = next(tab, opts[TABPANEL]);
     }
 
     if (!tabpanel) return;
@@ -519,12 +520,7 @@ class Tablist extends Base {
   get lastActiveTabIndex() {
     return this.tabs.findLast((tab) => this.focusFilter(tab))?.index;
   }
-  show(elem, opts) {
-    return this.toggle(elem, true, opts);
-  }
-  hide(elem, opts) {
-    return this.toggle(elem, false, opts);
-  }
+
   async toggle(elem, s, params) {
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
@@ -541,7 +537,7 @@ class Tablist extends Base {
 
     if (
       s === isShown ||
-      (opts.awaiteAnimation &&
+      (opts.awaitAnimation &&
         transition.isAnimating &&
         ((selected.length <= 1 && !opts.multiExpand) || opts.multiExpand)) ||
       (isShown && opts.alwaysExpanded && !s && selected.length < 2) ||
@@ -564,7 +560,7 @@ class Tablist extends Base {
       for (const selectedTab of selected) {
         if (tabInstance !== selectedTab && selectedTab.isShown) {
           selectedTab.hide(animated);
-          if (opts.awaitePrevious)
+          if (opts.awaitPrevious)
             await selectedTab.transition.getAwaitPromises();
         }
       }
@@ -602,16 +598,21 @@ class Tablist extends Base {
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams),
     );
 
-    animated && opts.awaiteAnimation && (await promise);
+    animated && opts.awaitAnimation && (await promise);
 
     return tabInstance;
   }
-
-  static show(elem, params) {
-    return this.toggle(elem, true, params);
+  show(elem, opts) {
+    return this.toggle(elem, true, opts);
   }
-  static hide(elem, params) {
-    return this.toggle(elem, false, params);
+  hide(elem, opts) {
+    return this.toggle(elem, false, opts);
+  }
+  static show(elem, opts) {
+    return this.toggle(elem, true, opts);
+  }
+  static hide(elem, opts) {
+    return this.toggle(elem, false, opts);
   }
   static toggle(elem, s, params) {
     for (const tablist of this.instances.values()) {

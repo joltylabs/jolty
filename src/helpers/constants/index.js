@@ -116,7 +116,7 @@ export const LEAVE_ACTIVE = LEAVE + upperFirst(ACTIVE);
 export const LEAVE_FROM = LEAVE + "From";
 export const LEAVE_TO = LEAVE + "To";
 export const AFTER_LEAVE = AFTER + upperFirst(LEAVE);
-export const HIDDEN_MODE = HIDDEN + upperFirst(MODE);
+export const HIDE_MODE = HIDE + upperFirst(MODE);
 export const DURATION = "duration";
 export const DURATION_ENTER = DURATION + upperFirst(ENTER);
 export const DURATION_LEAVE = DURATION + upperFirst(LEAVE);
@@ -208,7 +208,6 @@ export const KEY_ARROW_DOWN = 40;
 
 export const A11Y = "a11y";
 export const OPTION_GROUP = "group";
-export const OPTION_BACKDROP_OUTSIDE = "backdropOutside";
 export const OPTION_APPEAR = APPEAR;
 export const OPTION_KEEP_PLACE = "keepPlace";
 export const OPTION_PREVENT_SCROLL = "preventScroll";
@@ -226,7 +225,7 @@ export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 
 export const OPTIONS_BOOLEAN = [OPTION_APPEAR, OPTION_KEEP_PLACE];
 
-export const TRANSITION_REMOVE_MODE = { hiddenMode: ACTION_REMOVE };
+export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
 export const DEFAULT_OPTIONS = {
   [ACTION_INIT]: true,
   [ACTION_DESTROY]: false,
