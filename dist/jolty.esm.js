@@ -258,7 +258,7 @@ const SELECTOR_INERT = `[${INERT}]`;
 const SELECTOR_DATA_AUTOFOCUS = `[${DATA_UI_PREFIX + AUTOFOCUS}]`;
 const SELECTOR_DATA_CONFIRM = `[${DATA_UI_PREFIX + CONFIRM}]`;
 const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
-const DEFAULT_AUTOFOCUS = `${SELECTOR_AUTOFOCUS},${SELECTOR_DATA_AUTOFOCUS},[${TABINDEX}="-1"]`;
+const DEFAULT_AUTOFOCUS = `${SELECTOR_AUTOFOCUS},${SELECTOR_DATA_AUTOFOCUS}`;
 const SELECTOR_ROOT = ":" + ROOT;
 
 const MIRROR = {
@@ -1720,7 +1720,7 @@ function addEscapeHide (instance, s, elem = instance.base) {
   }
 }
 
-const FOCUSABLE_ELEMENTS_SELECTOR = `:is(button,select,textarea,input):not(disabled,inert,[aria-hidden],[type="hidden"]),[href]:is(a,area),[contenteditable],iframe,object,embed,[tabindex]:not([tabindex^="-"])`;
+const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"])`;
 var callAutofocus = ({ opts: { autofocus }, getOptionElem, base }, elem = base) => {
   if (elem.contains(doc.activeElement)) return;
   let focusElem = getOptionElem(autofocus.elem, elem);
@@ -2239,10 +2239,14 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     [OPTION_ARIA_EXPANDED]: true,
     [OPTION_TOGGLER_ROLE]: BUTTON,
   };
+  static DefaultAutofocus = {
+    elem: DEFAULT_AUTOFOCUS,
+    required: false,
+  };
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(COLLAPSE),
-    autofocus: DEFAULT_AUTOFOCUS,
+    autofocus: true,
     hashNavigation: true,
     dismiss: true,
     [TOGGLER]: true,
@@ -2257,6 +2261,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     const { base, opts, transition, teleport } = this;
 
     addDismiss(this);
+    updateModule(this, AUTOFOCUS);
     updateModule(this, A11Y);
 
     this.teleport = Teleport.createOrUpdate(
