@@ -20,7 +20,6 @@ import {
   uuidGenerator,
   callOrReturn,
   getDataSelector,
-  getOption,
   arrayFrom,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
@@ -87,9 +86,6 @@ class Base {
         return this;
       };
     });
-
-    this.getOptionElem = getOption.bind(this, false);
-    this.getOptionElems = getOption.bind(this, true);
 
     [
       ACTION_TOGGLE,
@@ -164,8 +160,8 @@ class Base {
       } else {
         this._update?.();
       }
-      return;
     }
+    return this;
   }
   get base() {
     return this[this.constructor.BASE_NODE_NAME ?? this.constructor.NAME];

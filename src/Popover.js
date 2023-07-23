@@ -32,6 +32,7 @@ import {
   normalizeToggleParameters,
   getDefaultToggleSelector,
   updateModule,
+  getOptionElem,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -106,8 +107,9 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
   }
   updateToggler() {
-    const { opts, id, getOptionElem } = this;
+    const { opts, id } = this;
     const toggler = (this.toggler = getOptionElem(
+      this,
       opts.toggler ?? getDefaultToggleSelector(id),
     ));
     if (!toggler) return;

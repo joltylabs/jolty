@@ -68,6 +68,7 @@ import {
   getEventsPrefix,
   getDefaultToggleSelector,
   updateModule,
+  getOptionElem,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -199,7 +200,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       }
     }
 
-    this.togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
+    this._togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
 
     if (a11y && (!isDialog || (isDialog && !a11y.disableIfDialog))) {
       a11y[ROLE] && setAttribute(modal, ROLE, a11y[ROLE]);
@@ -217,7 +218,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     return this;
   }
   init() {
-    const { opts, getOptionElem, isInit, modal, on, emit, hide, toggle } = this;
+    const { opts, isInit, modal, on, emit, hide, toggle } = this;
     const optsBackdrop = opts[BACKDROP];
 
     if (isInit) return;
@@ -239,7 +240,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     }
     this[BACKDROP] = backdrop;
 
-    this[CONTENT] = getOptionElem(opts[CONTENT], modal);
+    this[CONTENT] = getOptionElem(this, opts[CONTENT], modal);
 
     this._update();
     this.updateAriaTargets();
@@ -275,7 +276,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     );
 
     on(body, EVENT_CLICK, (event) => {
-      const togglers = this.togglers;
+      const togglers = this._togglers;
       const trigger = isString(togglers)
         ? event.target.closest(togglers)
         : closest(event.target, togglers);
@@ -313,7 +314,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       const suffix = ARIA_SUFFIX[name];
       let elem = opts[suffix];
       if (isString(elem)) {
-        elem = this.getOptionElem(elem, base);
+        elem = getOptionElem(this, elem, base);
       }
       if (!isElement(elem)) {
         elem = null;

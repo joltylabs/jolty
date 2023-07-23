@@ -372,23 +372,23 @@
 
   var getDataSelector = (...values) => `[${DATA_UI_PREFIX + values.join("-")}]`;
 
-  function getOption (multiply, option, root = doc, ...params) {
+  function getOption (multiply, instance, option, root = doc, ...params) {
     if (!option) return;
-    option = callOrReturn(option, this, ...params);
+    option = callOrReturn(option, instance, ...params);
     if (isString(option)) {
       if (isHTML(option)) {
         option = fragment(option);
       } else {
-        if (option[0] === "#") {
-          root = doc;
-        }
-        option =
-          doc.getElementById(option) ||
-          root[multiply ? "querySelectorAll" : "querySelector"](option);
+        option = root[multiply ? "querySelectorAll" : "querySelector"](option);
       }
     }
-    return multiply ? returnArray(option) : option;
+
+    return multiply ? returnArray(option).filter(Boolean) : option;
   }
+
+  var getOptionElem = (...params) => getOption(false, ...params);
+
+  var getOptionElems = (...params) => getOption(true, ...params);
 
   const { min, max } = Math;
 
@@ -1140,9 +1140,6 @@
         };
       });
 
-      this.getOptionElem = getOption.bind(this, false);
-      this.getOptionElems = getOption.bind(this, true);
-
       [
         ACTION_TOGGLE,
         ACTION_SHOW,
@@ -1216,8 +1213,8 @@
         } else {
           this._update?.();
         }
-        return;
       }
+      return this;
     }
     get base() {
       return this[this.constructor.BASE_NODE_NAME ?? this.constructor.NAME];
@@ -1726,12 +1723,14 @@
   }
 
   const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"])`;
-  var callAutofocus = ({ opts: { autofocus }, getOptionElem, base }, elem = base) => {
+  var callAutofocus = (instance, elem = instance.base) => {
+    // { opts: { autofocus }, base }
+    const autofocus = instance.opts.autofocus;
     if (elem.contains(doc.activeElement)) return;
-    let focusElem = getOptionElem(autofocus.elem, elem);
+    let focusElem = getOptionElem(instance, autofocus.elem, elem);
     const isDialog = elem.tagName === "DIALOG";
     if ((!focusElem && autofocus.required && !isDialog) || isDialog) {
-      focusElem = getOptionElem(FOCUSABLE_ELEMENTS_SELECTOR, elem);
+      focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
     }
     focusElem?.focus({
       [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,
@@ -2334,32 +2333,27 @@
     updateTriggers() {
       const { opts, id } = this;
 
-      return (this.togglers = this.getOptionElems(
+      return (this.togglers = getOptionElems(
+        this,
         opts[TOGGLER] === true
           ? ({ id }) => getDefaultToggleSelector(id, true)
           : opts[TOGGLER],
-      )
-        .filter(Boolean)
-        .map((toggler) => {
-          if (!this.togglers?.includes(toggler)) {
-            opts.a11y[OPTION_ARIA_CONTROLS] &&
-              setAttribute(toggler, ARIA_CONTROLS, (v) =>
-                v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
-              );
-            opts.a11y[OPTION_TOGGLER_ROLE] &&
-              setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
-            toggleClass(
-              toggler,
-              opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-              this.isShown,
+      ).map((toggler) => {
+        if (!this.togglers?.includes(toggler)) {
+          opts.a11y[OPTION_ARIA_CONTROLS] &&
+            setAttribute(toggler, ARIA_CONTROLS, (v) =>
+              v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
             );
-            this.on(toggler, EVENT_CLICK, (event) => {
-              event.preventDefault();
-              this.toggle(null, { trigger: toggler, event });
-            });
-          }
-          return toggler;
-        }));
+          opts.a11y[OPTION_TOGGLER_ROLE] &&
+            setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
+          toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], this.isShown);
+          this.on(toggler, EVENT_CLICK, (event) => {
+            event.preventDefault();
+            this.toggle(null, { trigger: toggler, event });
+          });
+        }
+        return toggler;
+      }));
     }
     async toggle(s, params) {
       const { base, transition, togglers, opts, emit, isEntering, isAnimating } =
@@ -2500,16 +2494,18 @@
       }
     }
     updateToggler() {
-      const { opts, id, getOptionElem } = this;
+      const { opts, id } = this;
       const toggler = (this.toggler = getOptionElem(
+        this,
         opts.toggler ?? getDefaultToggleSelector(id),
       ));
+
       if (!toggler) return;
       opts.a11y[OPTION_ARIA_CONTROLS] && setAttribute(toggler, ARIA_CONTROLS, id);
       return this;
     }
     get focusableElems() {
-      return this.getOptionElems(this.opts.items, this.dropdown).filter(
+      return getOptionElems(this, this.opts.items, this.dropdown).filter(
         (elem) => !isUnfocusable(elem),
       );
     }
@@ -2769,7 +2765,7 @@
         }
       }
 
-      this.togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
+      this._togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
 
       if (a11y && (!isDialog || (isDialog && !a11y.disableIfDialog))) {
         a11y[ROLE] && setAttribute(modal, ROLE, a11y[ROLE]);
@@ -2787,7 +2783,7 @@
       return this;
     }
     init() {
-      const { opts, getOptionElem, isInit, modal, on, emit, hide, toggle } = this;
+      const { opts, isInit, modal, on, emit, hide, toggle } = this;
       const optsBackdrop = opts[BACKDROP];
 
       if (isInit) return;
@@ -2809,7 +2805,7 @@
       }
       this[BACKDROP] = backdrop;
 
-      this[CONTENT] = getOptionElem(opts[CONTENT], modal);
+      this[CONTENT] = getOptionElem(this, opts[CONTENT], modal);
 
       this._update();
       this.updateAriaTargets();
@@ -2845,7 +2841,7 @@
       );
 
       on(body, EVENT_CLICK, (event) => {
-        const togglers = this.togglers;
+        const togglers = this._togglers;
         const trigger = isString(togglers)
           ? event.target.closest(togglers)
           : closest(event.target, togglers);
@@ -2883,7 +2879,7 @@
         const suffix = ARIA_SUFFIX[name];
         let elem = opts[suffix];
         if (isString(elem)) {
-          elem = this.getOptionElem(elem, base);
+          elem = getOptionElem(this, elem, base);
         }
         if (!isElement(elem)) {
           elem = null;
@@ -3312,7 +3308,7 @@
     }
 
     initTabs() {
-      return this.getOptionElems(this.opts[TAB], this.tablist)
+      return getOptionElems(this, this.opts[TAB], this.tablist)
         .map((tab) => {
           for (const parent of parents(tab, null, this.tablist)) {
             if (this.getTab(parent)) return;
@@ -3818,7 +3814,7 @@
       limit: false,
       limitAnimateEnter: true,
       limitAnimateLeave: true,
-      autohide: 5000,
+      autohide: false,
     };
     static containerName = TOAST + "s";
     constructor(elem, opts) {
@@ -3833,7 +3829,7 @@
       if (!opts.root && inDOM(base)) {
         this.root = base.parentElement;
       } else {
-        this.root = this.getOptionElem(opts.root || body, base);
+        this.root = opts.root ? getOptionElem(this, opts.root) : body;
       }
       this.transition = new Transition(base, opts.transition, {
         [HIDE_MODE]: ACTION_DESTROY,
@@ -4241,8 +4237,9 @@
       opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
     }
     updateToggler() {
-      const { opts, id, getOptionElem } = this;
+      const { opts, id } = this;
       const toggler = (this.toggler = getOptionElem(
+        this,
         opts.toggler ?? getDefaultToggleSelector(id),
       ));
       if (!toggler) return;

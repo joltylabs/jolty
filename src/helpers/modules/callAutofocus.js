@@ -1,11 +1,14 @@
 import { doc, OPTION_PREVENT_SCROLL } from "../constants";
+import { getOptionElem } from "../utils/index.js";
 const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"])`;
-export default ({ opts: { autofocus }, getOptionElem, base }, elem = base) => {
+export default (instance, elem = instance.base) => {
+  // { opts: { autofocus }, base }
+  const autofocus = instance.opts.autofocus;
   if (elem.contains(doc.activeElement)) return;
-  let focusElem = getOptionElem(autofocus.elem, elem);
+  let focusElem = getOptionElem(instance, autofocus.elem, elem);
   const isDialog = elem.tagName === "DIALOG";
   if ((!focusElem && autofocus.required && !isDialog) || isDialog) {
-    focusElem = getOptionElem(FOCUSABLE_ELEMENTS_SELECTOR, elem);
+    focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
   }
   focusElem?.focus({
     [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,

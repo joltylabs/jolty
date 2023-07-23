@@ -70,6 +70,7 @@ import {
   kebabToCamel,
   updateModule,
   upperFirst,
+  getOptionElems,
 } from "./helpers/utils";
 import {
   toggleClass,
@@ -275,7 +276,7 @@ class Tablist extends Base {
   }
 
   initTabs() {
-    return this.getOptionElems(this.opts[TAB], this.tablist)
+    return getOptionElems(this, this.opts[TAB], this.tablist)
       .map((tab) => {
         for (const parent of parents(tab, null, this.tablist)) {
           if (this.getTab(parent)) return;

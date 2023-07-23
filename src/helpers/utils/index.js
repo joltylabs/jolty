@@ -7,6 +7,8 @@ export { default as createElement } from "./createElement";
 export { default as createInset } from "./createInset";
 export { default as getDataSelector } from "./getDataSelector";
 export { default as getOption } from "./getOption";
+export { default as getOptionElem } from "./getOptionElem";
+export { default as getOptionElems } from "./getOptionElems";
 export { default as getPosition } from "./getPosition";
 export { default as isOverflowElement } from "./isOverflowElement";
 export { default as isUnfocusable } from "./isUnfocusable";

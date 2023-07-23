@@ -1,5 +1,4 @@
 import {
-  EVENT_INIT,
   EVENT_BEFORE_DESTROY,
   EVENT_BEFORE_SHOW,
   EVENT_SHOWN,
@@ -52,6 +51,8 @@ import {
   isUnfocusable,
   getDataSelector,
   getDefaultToggleSelector,
+  getOptionElems,
+  getOptionElem,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -150,16 +151,18 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     }
   }
   updateToggler() {
-    const { opts, id, getOptionElem } = this;
+    const { opts, id } = this;
     const toggler = (this.toggler = getOptionElem(
+      this,
       opts.toggler ?? getDefaultToggleSelector(id),
     ));
+
     if (!toggler) return;
     opts.a11y[OPTION_ARIA_CONTROLS] && setAttribute(toggler, ARIA_CONTROLS, id);
     return this;
   }
   get focusableElems() {
-    return this.getOptionElems(this.opts.items, this.dropdown).filter(
+    return getOptionElems(this, this.opts.items, this.dropdown).filter(
       (elem) => !isUnfocusable(elem),
     );
   }

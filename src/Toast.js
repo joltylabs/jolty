@@ -27,6 +27,7 @@ import {
   getEventsPrefix,
   updateModule,
   callOrReturn,
+  getOptionElem,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -67,7 +68,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limit: false,
     limitAnimateEnter: true,
     limitAnimateLeave: true,
-    autohide: 5000,
+    autohide: false,
   };
   static containerName = TOAST + "s";
   constructor(elem, opts) {
@@ -82,7 +83,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     if (!opts.root && inDOM(base)) {
       this.root = base.parentElement;
     } else {
-      this.root = this.getOptionElem(opts.root || body, base);
+      this.root = opts.root ? getOptionElem(this, opts.root) : body;
     }
     this.transition = new Transition(base, opts.transition, {
       [HIDE_MODE]: ACTION_DESTROY,

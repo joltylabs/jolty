@@ -36,6 +36,7 @@ import {
   getEventsPrefix,
   getDefaultToggleSelector,
   updateModule,
+  getOptionElems,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -144,32 +145,27 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   updateTriggers() {
     const { opts, id } = this;
 
-    return (this.togglers = this.getOptionElems(
+    return (this.togglers = getOptionElems(
+      this,
       opts[TOGGLER] === true
         ? ({ id }) => getDefaultToggleSelector(id, true)
         : opts[TOGGLER],
-    )
-      .filter(Boolean)
-      .map((toggler) => {
-        if (!this.togglers?.includes(toggler)) {
-          opts.a11y[OPTION_ARIA_CONTROLS] &&
-            setAttribute(toggler, ARIA_CONTROLS, (v) =>
-              v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
-            );
-          opts.a11y[OPTION_TOGGLER_ROLE] &&
-            setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
-          toggleClass(
-            toggler,
-            opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-            this.isShown,
+    ).map((toggler) => {
+      if (!this.togglers?.includes(toggler)) {
+        opts.a11y[OPTION_ARIA_CONTROLS] &&
+          setAttribute(toggler, ARIA_CONTROLS, (v) =>
+            v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
           );
-          this.on(toggler, EVENT_CLICK, (event) => {
-            event.preventDefault();
-            this.toggle(null, { trigger: toggler, event });
-          });
-        }
-        return toggler;
-      }));
+        opts.a11y[OPTION_TOGGLER_ROLE] &&
+          setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
+        toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], this.isShown);
+        this.on(toggler, EVENT_CLICK, (event) => {
+          event.preventDefault();
+          this.toggle(null, { trigger: toggler, event });
+        });
+      }
+      return toggler;
+    }));
   }
   async toggle(s, params) {
     const { base, transition, togglers, opts, emit, isEntering, isAnimating } =
