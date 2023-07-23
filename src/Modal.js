@@ -146,6 +146,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     backdropOutside: null,
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
 
   constructor(elem, opts = {}) {
@@ -409,10 +410,16 @@ class Modal extends ToggleMixin(Base, MODAL) {
     }
 
     toggleClass(
-      getElements(callOrReturn(opts[TOGGLER], this)),
-      opts[TOGGLER + CLASS_ACTIVE],
+      getElements(
+        opts[TOGGLER] === true
+          ? getDefaultToggleSelector(this.id)
+          : opts[TOGGLER],
+      ),
+      opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
       s,
     );
+
+    toggleClass(modal, opts[MODAL + CLASS_ACTIVE_SUFFIX], s);
 
     if (s) {
       transitions[MODAL].toggleRemove(true);
