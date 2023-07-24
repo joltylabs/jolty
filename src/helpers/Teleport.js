@@ -44,8 +44,8 @@ class Teleport {
   }
   move(...toParameters) {
     const { opts, elem } = this;
-    let { to, position, keepPlace } = opts;
-    to = callOrReturn(to, ...toParameters);
+    const { position, keepPlace } = opts;
+    let to = callOrReturn(opts.to, ...toParameters);
     to = isString(to) ? doc.querySelector(to) : to;
     if (!to) return;
     this.placeholder ||= keepPlace

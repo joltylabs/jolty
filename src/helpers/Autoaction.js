@@ -22,9 +22,9 @@ import { isNumber } from "./is";
 class Autoaction {
   static Default = {
     progressElem: getDataSelector(PROGRESS),
-    duration: 4000,
-    demicial: 4,
-    durationUpdate: false,
+    duration: 5000,
+    decimal: 4,
+    durationUpdate: null,
     pauseOnMouse: true,
     resetOnMouse: true,
     pauseOnFocus: true,
@@ -62,25 +62,25 @@ class Autoaction {
 
     if (s) {
       reset();
-      let interectedMouse, interectedFocus;
+      let interactedMouse, interactedFocus;
       if (pauseOnFocus || resetOnFocus) {
         on(elem, [EVENT_FOCUSIN, EVENT_FOCUSOUT], ({ type }) => {
-          interectedFocus = type === EVENT_FOCUSIN;
-          if (interectedFocus) {
+          interactedFocus = type === EVENT_FOCUSIN;
+          if (interactedFocus) {
             resetOnFocus && reset();
             pauseOnFocus && pause();
-          } else if (!interectedMouse) {
+          } else if (!interactedMouse) {
             pauseOnFocus && resume();
           }
         });
       }
       if (pauseOnMouse || resetOnMouse) {
         on(elem, [EVENT_MOUSEENTER, EVENT_MOUSELEAVE], ({ type }) => {
-          interectedMouse = type === EVENT_MOUSEENTER;
-          if (interectedMouse) {
+          interactedMouse = type === EVENT_MOUSEENTER;
+          if (interactedMouse) {
             resetOnMouse && reset();
             pauseOnMouse && pause();
-          } else if (!interectedFocus) {
+          } else if (!interactedFocus) {
             pauseOnMouse && resume();
           }
         });
@@ -96,7 +96,7 @@ class Autoaction {
     const current = performance.now();
     this.timeCurrent = Math.round(current - this.timeBegin);
     const time = opts.duration - this.timeCurrent;
-    const progress = Math.max(time / opts.duration, 0).toFixed(opts.demicial);
+    const progress = +Math.max(time / opts.duration, 0).toFixed(opts.decimal);
     this._prevProgress = progress;
     if (progress && progress === _prevProgress) {
       return requestAnimationFrame(this.checkTime);
@@ -106,7 +106,8 @@ class Autoaction {
       progressElem?.style.setProperty("--" + opts.cssVariable, progress);
     }
 
-    callOrReturn(opts.durationUpdate, elem, { time, progress });
+    callOrReturn(opts.durationUpdate, { elem, time, progress });
+
     if (progress <= 0) {
       this.action();
     } else {
@@ -140,11 +141,11 @@ class Autoaction {
     this.off();
   }
   static createOrUpdate(autoaction, elem, action, opts) {
-    return autoaction
-      ? autoaction.update(elem, action, opts)
-      : opts !== false
-      ? new Autoaction(elem, action, opts)
-      : null;
+    if (autoaction) {
+      return autoaction.destroy();
+    } else if (opts !== false) {
+      return new Autoaction(elem, action, opts);
+    }
   }
 }
 

@@ -23,7 +23,6 @@ import { fragment, inDOM, setAttribute } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   arrayFrom,
-  objectToAttributes,
   getEventsPrefix,
   updateModule,
   callOrReturn,
@@ -44,13 +43,10 @@ const TOAST = "toast";
 
 const positions = {};
 const wrappers = new Map();
+const _containers = {};
 class Toast extends ToggleMixin(Base, TOAST) {
   static _templates = {};
-  static _containers = {};
-  static DefaultContainerA11y = {
-    containerRole: "region",
-    containerTabindex: -1,
-  };
+
   static DefaultA11y = {
     [OPTION_ARIA_LIVE]: "off",
     [OPTION_ARIA_ATOMIC]: true,
@@ -70,7 +66,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limitAnimateLeave: true,
     autohide: false,
   };
-  static containerName = TOAST + "s";
   constructor(elem, opts) {
     if (isObject(elem)) {
       opts = elem;
@@ -226,19 +221,12 @@ class Toast extends ToggleMixin(Base, TOAST) {
       );
       if (wrapper) return wrapper.wrapper;
     }
-    const a11y = this.DefaultContainerA11y;
-    const attributes = objectToAttributes({
-      role: a11y.containerRole,
-      tabindex: a11y.containerTabindex,
-    });
 
+    const containerParams = { name: container, position };
     const wrapper = fragment(
       isString(container)
-        ? callOrReturn(Toast._containers[container], {
-            position,
-            attributes,
-          })
-        : container({ position, attributes }),
+        ? callOrReturn(_containers[container], containerParams)
+        : container(containerParams),
     );
 
     rootWrappers.add({ wrapper, container, position, root });
@@ -266,8 +254,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
       opts = name;
       name = "";
     }
-    if (!opts) return this._containers[name];
-    this._containers[name] = opts;
+    if (!opts) return _containers[name];
+    _containers[name] = opts;
     return this;
   }
 }

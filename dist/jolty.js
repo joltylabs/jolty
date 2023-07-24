@@ -376,13 +376,8 @@
     if (!option) return;
     option = callOrReturn(option, instance, ...params);
     if (isString(option)) {
-      if (isHTML(option)) {
-        option = fragment(option);
-      } else {
-        option = root[multiply ? "querySelectorAll" : "querySelector"](option);
-      }
+      option = root[multiply ? "querySelectorAll" : "querySelector"](option);
     }
-
     return multiply ? returnArray(option).filter(Boolean) : option;
   }
 
@@ -635,11 +630,6 @@
 
   var normalizeToggleParameters = (animated = true) =>
     isObject(animated) ? { animated: true, ...animated } : { animated };
-
-  var objectToAttributes = (obj) =>
-    Object.entries(obj)
-      .map(([name, value]) => `${name}="${value}"`)
-      .join(" ");
 
   const resizeObserver = new ResizeObserver((entries) => {
     for (const { borderBoxSize, target } of entries) {
@@ -1648,8 +1638,8 @@
     }
     move(...toParameters) {
       const { opts, elem } = this;
-      let { to, position, keepPlace } = opts;
-      to = callOrReturn(to, ...toParameters);
+      const { position, keepPlace } = opts;
+      let to = callOrReturn(opts.to, ...toParameters);
       to = isString(to) ? doc.querySelector(to) : to;
       if (!to) return;
       this.placeholder ||= keepPlace
@@ -3660,9 +3650,9 @@
   class Autoaction {
     static Default = {
       progressElem: getDataSelector(PROGRESS),
-      duration: 4000,
-      demicial: 4,
-      durationUpdate: false,
+      duration: 5000,
+      decimal: 4,
+      durationUpdate: null,
       pauseOnMouse: true,
       resetOnMouse: true,
       pauseOnFocus: true,
@@ -3700,25 +3690,25 @@
 
       if (s) {
         reset();
-        let interectedMouse, interectedFocus;
+        let interactedMouse, interactedFocus;
         if (pauseOnFocus || resetOnFocus) {
           on(elem, [EVENT_FOCUSIN, EVENT_FOCUSOUT], ({ type }) => {
-            interectedFocus = type === EVENT_FOCUSIN;
-            if (interectedFocus) {
+            interactedFocus = type === EVENT_FOCUSIN;
+            if (interactedFocus) {
               resetOnFocus && reset();
               pauseOnFocus && pause();
-            } else if (!interectedMouse) {
+            } else if (!interactedMouse) {
               pauseOnFocus && resume();
             }
           });
         }
         if (pauseOnMouse || resetOnMouse) {
           on(elem, [EVENT_MOUSEENTER, EVENT_MOUSELEAVE], ({ type }) => {
-            interectedMouse = type === EVENT_MOUSEENTER;
-            if (interectedMouse) {
+            interactedMouse = type === EVENT_MOUSEENTER;
+            if (interactedMouse) {
               resetOnMouse && reset();
               pauseOnMouse && pause();
-            } else if (!interectedFocus) {
+            } else if (!interactedFocus) {
               pauseOnMouse && resume();
             }
           });
@@ -3734,7 +3724,7 @@
       const current = performance.now();
       this.timeCurrent = Math.round(current - this.timeBegin);
       const time = opts.duration - this.timeCurrent;
-      const progress = Math.max(time / opts.duration, 0).toFixed(opts.demicial);
+      const progress = +Math.max(time / opts.duration, 0).toFixed(opts.decimal);
       this._prevProgress = progress;
       if (progress && progress === _prevProgress) {
         return requestAnimationFrame(this.checkTime);
@@ -3744,7 +3734,8 @@
         progressElem?.style.setProperty("--" + opts.cssVariable, progress);
       }
 
-      callOrReturn(opts.durationUpdate, elem, { time, progress });
+      callOrReturn(opts.durationUpdate, { elem, time, progress });
+
       if (progress <= 0) {
         this.action();
       } else {
@@ -3778,11 +3769,11 @@
       this.off();
     }
     static createOrUpdate(autoaction, elem, action, opts) {
-      return autoaction
-        ? autoaction.update(elem, action, opts)
-        : opts !== false
-        ? new Autoaction(elem, action, opts)
-        : null;
+      if (autoaction) {
+        return autoaction.destroy();
+      } else if (opts !== false) {
+        return new Autoaction(elem, action, opts);
+      }
     }
   }
 
@@ -3790,13 +3781,10 @@
 
   const positions = {};
   const wrappers = new Map();
+  const _containers = {};
   class Toast extends ToggleMixin(Base, TOAST) {
     static _templates = {};
-    static _containers = {};
-    static DefaultContainerA11y = {
-      containerRole: "region",
-      containerTabindex: -1,
-    };
+
     static DefaultA11y = {
       [OPTION_ARIA_LIVE]: "off",
       [OPTION_ARIA_ATOMIC]: true,
@@ -3816,7 +3804,6 @@
       limitAnimateLeave: true,
       autohide: false,
     };
-    static containerName = TOAST + "s";
     constructor(elem, opts) {
       if (isObject(elem)) {
         opts = elem;
@@ -3972,19 +3959,12 @@
         );
         if (wrapper) return wrapper.wrapper;
       }
-      const a11y = this.DefaultContainerA11y;
-      const attributes = objectToAttributes({
-        role: a11y.containerRole,
-        tabindex: a11y.containerTabindex,
-      });
 
+      const containerParams = { name: container, position };
       const wrapper = fragment(
         isString(container)
-          ? callOrReturn(Toast._containers[container], {
-              position,
-              attributes,
-            })
-          : container({ position, attributes }),
+          ? callOrReturn(_containers[container], containerParams)
+          : container(containerParams),
       );
 
       rootWrappers.add({ wrapper, container, position, root });
@@ -4012,8 +3992,8 @@
         opts = name;
         name = "";
       }
-      if (!opts) return this._containers[name];
-      this._containers[name] = opts;
+      if (!opts) return _containers[name];
+      _containers[name] = opts;
       return this;
     }
   }
