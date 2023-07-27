@@ -71,7 +71,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   };
 
   constructor(elem, opts) {
-    super({ elem, opts });
+    super(elem, opts);
   }
   _update() {
     const { base, opts, transition, teleport } = this;

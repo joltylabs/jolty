@@ -1064,7 +1064,7 @@ class Breakpoints {
 
 class Base {
   static allInstances = new Map();
-  constructor({ elem, opts }) {
+  constructor(elem, opts) {
     if (isFunction(opts)) {
       opts = opts(elem);
     }
@@ -1260,19 +1260,19 @@ var ToggleMixin = (Base, NAME) =>
         this.teleport?.placeholder ?? this.transition?.placeholder ?? this.base
       );
     }
-    async hide(opts) {
+    hide(opts) {
       return this.toggle(false, opts);
     }
-    async show(opts) {
+    show(opts) {
       return this.toggle(true, opts);
     }
-    static async toggle(id, s, opts) {
+    static toggle(id, s, opts) {
       return this.instances.get(id)?.toggle(s, opts);
     }
-    static async show(id, opts) {
+    static show(id, opts) {
       return this.instances.get(id)?.show(opts);
     }
-    static async hide(id, opts) {
+    static hide(id, opts) {
       return this.instances.get(id)?.hide(opts);
     }
   };
@@ -1908,10 +1908,7 @@ class Floating {
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
-    placement =
-      anchor.getAttribute(`${DATA_UI_PREFIX + name}-${PLACEMENT}`)?.trim() ||
-      placement ||
-      opts[PLACEMENT];
+    placement ||= opts[PLACEMENT];
 
     const absolute = opts[ABSOLUTE];
     const valuesNames = [
@@ -2243,7 +2240,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   };
 
   constructor(elem, opts) {
-    super({ elem, opts });
+    super(elem, opts);
   }
   _update() {
     const { base, opts, transition, teleport } = this;
@@ -2413,8 +2410,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
 
-  constructor(elem, opts = {}) {
-    super({ opts, elem });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   init() {
     if (this.isInit) return;
@@ -2453,9 +2450,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   _update() {
     const { base, opts, transition, teleport, on, off, hide, dropdown } = this;
 
-    opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
-
-    this.updateToggler();
     this.teleport = Teleport.createOrUpdate(
       teleport,
       base,
@@ -2467,6 +2461,10 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       opts.transition,
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
+
+    opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
+
+    this.updateToggler();
 
     if (opts.itemClickHide) {
       on(dropdown, EVENT_CLICK, (event) => {
@@ -2699,8 +2697,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
     [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
 
-  constructor(elem, opts = {}) {
-    super({ elem, opts });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   get transition() {
     return this.transitions[MODAL];
@@ -3157,8 +3155,8 @@ class Tablist extends Base {
   static get NAME() {
     return TABLIST;
   }
-  constructor(elem, opts = {}) {
-    super({ opts, elem });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   _update() {
     const { a11y } = updateModule(this, A11Y);
@@ -3803,7 +3801,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
       opts = elem;
       elem = null;
     }
-    super({ elem, opts });
+    super(elem, opts);
   }
   _update() {
     const { opts, base, autohide, hide } = this;
@@ -3957,7 +3955,10 @@ class Toast extends ToggleMixin(Base, TOAST) {
     const containerParams = { name: container, position };
     const wrapper = fragment(
       isString(container)
-        ? callOrReturn(_containers[container], containerParams)
+        ? callOrReturn(
+            _containers[container] ?? _containers[""],
+            containerParams,
+          )
         : container(containerParams),
     );
 
@@ -4016,12 +4017,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   static get BASE_NODE_NAME() {
     return ANCHOR;
   }
-  constructor(elem, opts = {}) {
-    if (isObject(elem)) {
-      opts = elem;
-      elem = null;
-    }
-    super({ opts, elem });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   _update() {
     const { tooltip, opts, transition, teleport, base } = this;
@@ -4174,8 +4171,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
 
-  constructor(elem, opts = {}) {
-    super({ opts, elem });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   init() {
     if (this.isInit) return;

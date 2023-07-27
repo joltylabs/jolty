@@ -121,10 +121,7 @@ export default class Floating {
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
-    placement =
-      anchor.getAttribute(`${DATA_UI_PREFIX + name}-${PLACEMENT}`)?.trim() ||
-      placement ||
-      opts[PLACEMENT];
+    placement ||= opts[PLACEMENT];
 
     const absolute = opts[ABSOLUTE];
     const valuesNames = [

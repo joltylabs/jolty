@@ -19,19 +19,19 @@ export default (Base, NAME) =>
         this.teleport?.placeholder ?? this.transition?.placeholder ?? this.base
       );
     }
-    async hide(opts) {
+    hide(opts) {
       return this.toggle(false, opts);
     }
-    async show(opts) {
+    show(opts) {
       return this.toggle(true, opts);
     }
-    static async toggle(id, s, opts) {
+    static toggle(id, s, opts) {
       return this.instances.get(id)?.toggle(s, opts);
     }
-    static async show(id, opts) {
+    static show(id, opts) {
       return this.instances.get(id)?.show(opts);
     }
-    static async hide(id, opts) {
+    static hide(id, opts) {
       return this.instances.get(id)?.hide(opts);
     }
   };

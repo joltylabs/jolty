@@ -71,7 +71,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
       opts = elem;
       elem = null;
     }
-    super({ elem, opts });
+    super(elem, opts);
   }
   _update() {
     const { opts, base, autohide, hide } = this;
@@ -225,7 +225,10 @@ class Toast extends ToggleMixin(Base, TOAST) {
     const containerParams = { name: container, position };
     const wrapper = fragment(
       isString(container)
-        ? callOrReturn(_containers[container], containerParams)
+        ? callOrReturn(
+            _containers[container] ?? _containers[""],
+            containerParams,
+          )
         : container(containerParams),
     );
 

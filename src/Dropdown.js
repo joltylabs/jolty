@@ -86,8 +86,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
 
-  constructor(elem, opts = {}) {
-    super({ opts, elem });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   init() {
     if (this.isInit) return;
@@ -126,9 +126,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   _update() {
     const { base, opts, transition, teleport, on, off, hide, dropdown } = this;
 
-    opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
-
-    this.updateToggler();
     this.teleport = Teleport.createOrUpdate(
       teleport,
       base,
@@ -140,6 +137,10 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       opts.transition,
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
+
+    opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
+
+    this.updateToggler();
 
     if (opts.itemClickHide) {
       on(dropdown, EVENT_CLICK, (event) => {

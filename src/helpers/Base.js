@@ -27,7 +27,7 @@ import Breakpoints from "./Breakpoints";
 
 class Base {
   static allInstances = new Map();
-  constructor({ elem, opts }) {
+  constructor(elem, opts) {
     if (isFunction(opts)) {
       opts = opts(elem);
     }

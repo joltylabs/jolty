@@ -70,8 +70,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
 
-  constructor(elem, opts = {}) {
-    super({ opts, elem });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   init() {
     if (this.isInit) return;

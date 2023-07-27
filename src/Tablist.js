@@ -141,8 +141,8 @@ class Tablist extends Base {
   static get NAME() {
     return TABLIST;
   }
-  constructor(elem, opts = {}) {
-    super({ opts, elem });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   _update() {
     const { a11y } = updateModule(this, A11Y);

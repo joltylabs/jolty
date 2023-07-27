@@ -1,6 +1,5 @@
 import {
   EVENT_BEFORE_INIT,
-  EVENT_INIT,
   EVENT_BEFORE_DESTROY,
   EVENT_BEFORE_SHOW,
   EVENT_SHOWN,
@@ -34,7 +33,7 @@ import ToggleMixin from "./helpers/ToggleMixin.js";
 import { getElement, setAttribute, toggleClass } from "./helpers/dom";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
-import { isObject } from "./helpers/is";
+
 import {
   normalizeToggleParameters,
   updateModule,
@@ -74,12 +73,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   static get BASE_NODE_NAME() {
     return ANCHOR;
   }
-  constructor(elem, opts = {}) {
-    if (isObject(elem)) {
-      opts = elem;
-      elem = null;
-    }
-    super({ opts, elem });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   _update() {
     const { tooltip, opts, transition, teleport, base } = this;

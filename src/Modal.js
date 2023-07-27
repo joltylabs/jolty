@@ -150,8 +150,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
     [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
 
-  constructor(elem, opts = {}) {
-    super({ elem, opts });
+  constructor(elem, opts) {
+    super(elem, opts);
   }
   get transition() {
     return this.transitions[MODAL];
