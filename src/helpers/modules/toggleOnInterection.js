@@ -21,6 +21,9 @@ export default ({
   const { opts, on } = instance;
   trigger ??= opts.trigger;
   delay ??= opts.delay;
+
+  if (!trigger) return;
+
   const triggerClick = trigger.includes(CLICK);
   const triggerHover = trigger.includes(HOVER);
   const triggerFocus = trigger.includes(FOCUS);

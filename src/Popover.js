@@ -62,7 +62,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     ...DEFAULT_FLOATING_OPTIONS,
     focusTrap: true,
     returnFocus: true,
-    mode: false,
+    mode: null,
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
@@ -85,16 +85,11 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     return callInitShow(this);
   }
   _update() {
-    const { base, opts, transition, teleport } = this;
+    const { base, opts, transition } = this;
 
     updateModule(this, AUTOFOCUS);
     updateModule(this, A11Y);
 
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
-      base,
-      opts.teleport ?? (opts.absolute ? base.parentNode : body),
-    );
     this.transition = Transition.createOrUpdate(
       transition,
       base,
@@ -126,7 +121,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   async toggle(s, params) {
     const {
       transition,
-      isEntering,
+      isShown,
       isAnimating,
       toggler,
       popover,
@@ -138,16 +133,19 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isEntering;
+    s ??= !isShown;
 
-    if (
-      !ignoreConditions &&
-      ((awaitAnimation && isAnimating) || s === isEntering)
-    )
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
       return;
 
+    this.isShown = s;
+
     if (isAnimating && !awaitAnimation) {
-      await Promise.allSettled([transition.cancel()]);
+      await transition.cancel();
+    }
+
+    if (s) {
+      opts.absolute ? toggler.after(popover) : body.appendChild(popover);
     }
 
     s && teleport?.move(this);

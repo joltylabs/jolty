@@ -525,11 +525,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       (elemName) => this.transitions[elemName]?.isAnimating,
     );
   }
-  get isEntering() {
-    return DOM_ELEMENTS.some(
-      (elemName) => this.transitions[elemName]?.isEntering,
-    );
-  }
+
   get transitionPromise() {
     return Promise.allSettled(
       Object.values(this.transitions).flatMap(({ promises }) => promises),

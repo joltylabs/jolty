@@ -30,9 +30,8 @@ import {
 
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
-import { getElement, setAttribute, toggleClass } from "./helpers/dom";
+import { getElement, setAttribute, toggleClass, inDOM } from "./helpers/dom";
 import Transition from "./helpers/Transition.js";
-import Teleport from "./helpers/Teleport.js";
 
 import {
   normalizeToggleParameters,
@@ -65,6 +64,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-arrow" data-${UI_TOOLTIP}-arrow></div><div class="${UI_TOOLTIP}-content">${content}</div></div>`,
     interactive: false,
     removeTitle: true,
+    tooltipClass: "",
     [ANCHOR + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
     trigger: HOVER + " " + FOCUS,
     content: null,
@@ -77,12 +77,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     super(elem, opts);
   }
   _update() {
-    const { tooltip, opts, transition, teleport, base } = this;
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
-      tooltip,
-      opts.teleport ?? (opts.absolute ? base.parentNode : body),
-    );
+    const { tooltip, opts, transition } = this;
+
     this.transition = Transition.createOrUpdate(
       transition,
       tooltip,
@@ -126,7 +122,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     anchor.removeAttribute(TITLE);
     toggleClass(
       target,
-      anchor.getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + CLASS),
+      anchor.getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + CLASS) ??
+        opts.tooltipClass,
       true,
     );
 
@@ -143,25 +140,28 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     const {
       transition,
       anchor,
+      tooltip,
       id,
       opts,
       emit,
-      teleport,
       _cache,
-      isEntering,
+      isShown,
       isAnimating,
     } = this;
     const awaitAnimation = opts.awaitAnimation;
     const { animated, trigger, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isEntering;
+    s ??= !isShown;
 
     if (
-      !ignoreConditions &&
-      ((awaitAnimation && isAnimating) || s === isEntering)
+      (!ignoreConditions &&
+        ((awaitAnimation && isAnimating) || s === isShown)) ||
+      (!s && !inDOM(tooltip))
     )
       return;
+
+    this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();
@@ -186,7 +186,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
-    s && teleport?.move(this);
+    if (s) {
+      opts.absolute ? anchor.after(tooltip) : body.appendChild(tooltip);
+    }
 
     const promise = floatingTransition(this, {
       s,

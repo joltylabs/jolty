@@ -2,7 +2,7 @@ import { DATA_APPEAR, EVENT_INIT } from "../constants";
 import { callOrReturn, checkHash } from "../utils";
 
 export default (instance, elem = instance.base) => {
-  const { opts, isShown, show, id } = instance;
+  const { opts, transition, show, id } = instance;
 
   instance.instances.set(id, instance);
   instance.isInit = true;
@@ -12,7 +12,8 @@ export default (instance, elem = instance.base) => {
     callOrReturn(
       (opts.hashNavigation && checkHash(id)) || opts.shown,
       instance,
-    ) ?? isShown;
+    ) ?? transition.isShown;
+
   shown &&
     show({
       animated: opts.appear ?? elem.hasAttribute(DATA_APPEAR),

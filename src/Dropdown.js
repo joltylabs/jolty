@@ -124,13 +124,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callInitShow(this, dropdown);
   }
   _update() {
-    const { base, opts, transition, teleport, on, off, hide, dropdown } = this;
+    const { base, opts, transition, on, off, hide, dropdown } = this;
 
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
-      base,
-      opts.teleport ?? (opts.absolute ? base.parentNode : body),
-    );
     this.transition = Transition.createOrUpdate(
       transition,
       base,
@@ -252,7 +247,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       emit,
       teleport,
       transition,
-      isEntering,
+      isShown,
       isAnimating,
     } = this;
     const { awaitAnimation, autofocus, a11y } = opts;
@@ -265,16 +260,19 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       ignoreAutofocus,
     } = normalizeToggleParameters(params);
 
-    s ??= !isEntering;
+    s ??= !isShown;
 
-    if (
-      !ignoreConditions &&
-      ((awaitAnimation && isAnimating) || s === isEntering)
-    )
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
       return;
 
+    this.isShown = s;
+
     if (isAnimating && !awaitAnimation) {
-      await Promise.allSettled([transition.cancel()]);
+      await transition.cancel();
+    }
+
+    if (s) {
+      opts.absolute ? toggler.after(dropdown) : body.appendChild(dropdown);
     }
 
     s && teleport?.move(this);

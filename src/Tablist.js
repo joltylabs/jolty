@@ -562,7 +562,7 @@ class Tablist extends Base {
         if (tabInstance !== selectedTab && selectedTab.isShown) {
           selectedTab.hide(animated);
           if (opts.awaitPrevious)
-            await selectedTab.transition.getAwaitPromises();
+            await selectedTab.transition.getAwaitPromise();
         }
       }
     }

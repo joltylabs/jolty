@@ -4,8 +4,7 @@ import { addOutsideHide, addEscapeHide } from "../modules";
 import Floating from "../Floating.js";
 
 export default (instance, { s, animated, silent, eventParams }) => {
-  const { transition, base, opts, toggler, emit, floating, constructor } =
-    instance;
+  const { transition, base, opts, toggler, emit, constructor } = instance;
   const name = constructor.NAME;
   const target = instance[name];
   const transitionParams = { allowRemove: false };
@@ -28,6 +27,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
         root,
         name,
       }).recalculate();
+
       if (!silent) {
         emit(EVENT_SHOW, eventParams);
       }
@@ -43,16 +43,17 @@ export default (instance, { s, animated, silent, eventParams }) => {
     opts.escapeHide && addEscapeHide(instance, s, doc);
   }
 
-  (async () => {
-    await promise;
-    if (!s) {
-      if (transition.placeholder) {
-        floating.wrapper.replaceWith(transition.placeholder);
+  !s &&
+    (async () => {
+      if (animated) {
+        await promise;
       }
-      floating?.destroy();
+      if (transition.placeholder) {
+        instance.floating.wrapper.replaceWith(transition.placeholder);
+      }
+      instance.floating?.destroy();
       instance.floating = null;
-    }
-  })();
+    })();
 
   return promise;
 };

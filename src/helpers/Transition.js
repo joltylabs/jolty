@@ -155,6 +155,7 @@ export default class Transition {
       elem,
       opts: { hideMode },
     } = this;
+
     return hideMode === ACTION_REMOVE
       ? inDOM(elem)
       : hideMode === CLASS
@@ -244,22 +245,13 @@ export default class Transition {
     return !!this.promises.length;
   }
   cancel() {
-    // this.cancelAnimations = this.animations?.map((animation) => {
-    //    const { effect, currentTime, transitionProperty, animationName } = animation;
-    //    return {
-    //       animationName,
-    //       transitionProperty,
-    //       currentTime,
-    //       ...effect.getTiming(),
-    //    };
-    // });
     this.animations?.forEach((animation) => animation.cancel());
-    return this.getAwaitPromises();
+    return Promise.allSettled([this.getAwaitPromise()]);
   }
-  getAwaitPromises() {
+  getAwaitPromise() {
     return Promise.allSettled(this.promises);
   }
-  toggleRemove(s = this.isEntering) {
+  toggleRemove(s) {
     const { elem, opts } = this;
     const mode = opts[HIDE_MODE];
     if (mode === ACTION_REMOVE) {
@@ -309,9 +301,6 @@ export default class Transition {
     const { elem, opts } = this;
     if (!elem) return;
 
-    this.isEntering = s;
-    // this.cancelAnimations = null;
-
     opts[s ? BEFORE_ENTER : BEFORE_LEAVE]?.(elem);
 
     const toggle = (s) => {
@@ -334,7 +323,7 @@ export default class Transition {
       opts.css && this.toggleVariables(true).toggleAnimationClasses(s);
       this.collectPromises(s);
       if (this.promises.length) {
-        await this.getAwaitPromises();
+        await this.getAwaitPromise();
       }
       opts.css && this.toggleVariables(false).setFinishClasses(s);
     }

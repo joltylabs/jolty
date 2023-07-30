@@ -1249,12 +1249,7 @@ var ToggleMixin = (Base, NAME) =>
     get isAnimating() {
       return this.transition.isAnimating;
     }
-    get isEntering() {
-      return this.transition.isEntering;
-    }
-    get isShown() {
-      return this.transition.isShown;
-    }
+
     get initialPlaceNode() {
       return (
         this.teleport?.placeholder ?? this.transition?.placeholder ?? this.base
@@ -1396,6 +1391,7 @@ class Transition {
       elem,
       opts: { hideMode },
     } = this;
+
     return hideMode === ACTION_REMOVE
       ? inDOM(elem)
       : hideMode === CLASS
@@ -1485,22 +1481,13 @@ class Transition {
     return !!this.promises.length;
   }
   cancel() {
-    // this.cancelAnimations = this.animations?.map((animation) => {
-    //    const { effect, currentTime, transitionProperty, animationName } = animation;
-    //    return {
-    //       animationName,
-    //       transitionProperty,
-    //       currentTime,
-    //       ...effect.getTiming(),
-    //    };
-    // });
     this.animations?.forEach((animation) => animation.cancel());
-    return this.getAwaitPromises();
+    return Promise.allSettled([this.getAwaitPromise()]);
   }
-  getAwaitPromises() {
+  getAwaitPromise() {
     return Promise.allSettled(this.promises);
   }
-  toggleRemove(s = this.isEntering) {
+  toggleRemove(s) {
     const { elem, opts } = this;
     const mode = opts[HIDE_MODE];
     if (mode === ACTION_REMOVE) {
@@ -1550,9 +1537,6 @@ class Transition {
     const { elem, opts } = this;
     if (!elem) return;
 
-    this.isEntering = s;
-    // this.cancelAnimations = null;
-
     opts[s ? BEFORE_ENTER : BEFORE_LEAVE]?.(elem);
 
     const toggle = (s) => {
@@ -1575,7 +1559,7 @@ class Transition {
       opts.css && this.toggleVariables(true).toggleAnimationClasses(s);
       this.collectPromises(s);
       if (this.promises.length) {
-        await this.getAwaitPromises();
+        await this.getAwaitPromise();
       }
       opts.css && this.toggleVariables(false).setFinishClasses(s);
     }
@@ -1802,6 +1786,9 @@ var toggleOnInterection = ({
   const { opts, on } = instance;
   trigger ??= opts.trigger;
   delay ??= opts.delay;
+
+  if (!trigger) return;
+
   const triggerClick = trigger.includes(CLICK);
   const triggerHover = trigger.includes(HOVER);
   const triggerFocus = trigger.includes(FOCUS);
@@ -2136,8 +2123,7 @@ class Floating {
 }
 
 var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
-  const { transition, base, opts, toggler, emit, floating, constructor } =
-    instance;
+  const { transition, base, opts, toggler, emit, constructor } = instance;
   const name = constructor.NAME;
   const target = instance[name];
   const transitionParams = { allowRemove: false };
@@ -2160,6 +2146,7 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
         root,
         name,
       }).recalculate();
+
       if (!silent) {
         emit(EVENT_SHOW, eventParams);
       }
@@ -2175,22 +2162,23 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
     opts.escapeHide && addEscapeHide(instance, s, doc);
   }
 
-  (async () => {
-    await promise;
-    if (!s) {
-      if (transition.placeholder) {
-        floating.wrapper.replaceWith(transition.placeholder);
+  !s &&
+    (async () => {
+      if (animated) {
+        await promise;
       }
-      floating?.destroy();
+      if (transition.placeholder) {
+        instance.floating.wrapper.replaceWith(transition.placeholder);
+      }
+      instance.floating?.destroy();
       instance.floating = null;
-    }
-  })();
+    })();
 
   return promise;
 };
 
 var callInitShow = (instance, elem = instance.base) => {
-  const { opts, isShown, show, id } = instance;
+  const { opts, transition, show, id } = instance;
 
   instance.instances.set(id, instance);
   instance.isInit = true;
@@ -2200,7 +2188,8 @@ var callInitShow = (instance, elem = instance.base) => {
     callOrReturn(
       (opts.hashNavigation && checkHash(id)) || opts.shown,
       instance,
-    ) ?? isShown;
+    ) ?? transition.isShown;
+
   shown &&
     show({
       animated: opts.appear ?? elem.hasAttribute(DATA_APPEAR),
@@ -2327,7 +2316,11 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
           );
         opts.a11y[OPTION_TOGGLER_ROLE] &&
           setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
-        toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], this.isShown);
+        toggleClass(
+          toggler,
+          opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
+          !!this.isShown,
+        );
         this.on(toggler, EVENT_CLICK, (event) => {
           event.preventDefault();
           this.toggle(null, { trigger: toggler, event });
@@ -2337,7 +2330,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     }));
   }
   async toggle(s, params) {
-    const { base, transition, togglers, opts, emit, isEntering, isAnimating } =
+    const { base, transition, togglers, opts, emit, isShown, isAnimating } =
       this;
     const { awaitAnimation, a11y } = opts;
     const {
@@ -2349,13 +2342,12 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       ignoreAutofocus,
     } = normalizeToggleParameters(params);
 
-    s ??= !isEntering;
+    s ??= !isShown;
 
-    if (
-      !ignoreConditions &&
-      ((awaitAnimation && isAnimating) || s === isEntering)
-    )
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
       return;
+
+    this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();
@@ -2448,13 +2440,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callInitShow(this, dropdown);
   }
   _update() {
-    const { base, opts, transition, teleport, on, off, hide, dropdown } = this;
+    const { base, opts, transition, on, off, hide, dropdown } = this;
 
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
-      base,
-      opts.teleport ?? (opts.absolute ? base.parentNode : body),
-    );
     this.transition = Transition.createOrUpdate(
       transition,
       base,
@@ -2574,7 +2561,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       emit,
       teleport,
       transition,
-      isEntering,
+      isShown,
       isAnimating,
     } = this;
     const { awaitAnimation, autofocus, a11y } = opts;
@@ -2587,16 +2574,19 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       ignoreAutofocus,
     } = normalizeToggleParameters(params);
 
-    s ??= !isEntering;
+    s ??= !isShown;
 
-    if (
-      !ignoreConditions &&
-      ((awaitAnimation && isAnimating) || s === isEntering)
-    )
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
       return;
 
+    this.isShown = s;
+
     if (isAnimating && !awaitAnimation) {
-      await Promise.allSettled([transition.cancel()]);
+      await transition.cancel();
+    }
+
+    if (s) {
+      opts.absolute ? toggler.after(dropdown) : body.appendChild(dropdown);
     }
 
     s && teleport?.move(this);
@@ -3072,11 +3062,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       (elemName) => this.transitions[elemName]?.isAnimating,
     );
   }
-  get isEntering() {
-    return DOM_ELEMENTS.some(
-      (elemName) => this.transitions[elemName]?.isEntering,
-    );
-  }
+
   get transitionPromise() {
     return Promise.allSettled(
       Object.values(this.transitions).flatMap(({ promises }) => promises),
@@ -3576,7 +3562,7 @@ class Tablist extends Base {
         if (tabInstance !== selectedTab && selectedTab.isShown) {
           selectedTab.hide(animated);
           if (opts.awaitPrevious)
-            await selectedTab.transition.getAwaitPromises();
+            await selectedTab.transition.getAwaitPromise();
         }
       }
     }
@@ -4009,6 +3995,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-arrow" data-${UI_TOOLTIP}-arrow></div><div class="${UI_TOOLTIP}-content">${content}</div></div>`,
     interactive: false,
     removeTitle: true,
+    tooltipClass: "",
     [ANCHOR + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
     trigger: HOVER + " " + FOCUS,
     content: null,
@@ -4021,12 +4008,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     super(elem, opts);
   }
   _update() {
-    const { tooltip, opts, transition, teleport, base } = this;
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
-      tooltip,
-      opts.teleport ?? (opts.absolute ? base.parentNode : body),
-    );
+    const { tooltip, opts, transition } = this;
+
     this.transition = Transition.createOrUpdate(
       transition,
       tooltip,
@@ -4070,7 +4053,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     anchor.removeAttribute(TITLE);
     toggleClass(
       target,
-      anchor.getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + CLASS),
+      anchor.getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + CLASS) ??
+        opts.tooltipClass,
       true,
     );
 
@@ -4087,25 +4071,28 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     const {
       transition,
       anchor,
+      tooltip,
       id,
       opts,
       emit,
-      teleport,
       _cache,
-      isEntering,
+      isShown,
       isAnimating,
     } = this;
     const awaitAnimation = opts.awaitAnimation;
     const { animated, trigger, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isEntering;
+    s ??= !isShown;
 
     if (
-      !ignoreConditions &&
-      ((awaitAnimation && isAnimating) || s === isEntering)
+      (!ignoreConditions &&
+        ((awaitAnimation && isAnimating) || s === isShown)) ||
+      (!s && !inDOM(tooltip))
     )
       return;
+
+    this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();
@@ -4130,7 +4117,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
-    s && teleport?.move(this);
+    if (s) {
+      opts.absolute ? anchor.after(tooltip) : body.appendChild(tooltip);
+    }
 
     const promise = floatingTransition(this, {
       s,
@@ -4163,7 +4152,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     ...DEFAULT_FLOATING_OPTIONS,
     focusTrap: true,
     returnFocus: true,
-    mode: false,
+    mode: null,
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
@@ -4186,16 +4175,11 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     return callInitShow(this);
   }
   _update() {
-    const { base, opts, transition, teleport } = this;
+    const { base, opts, transition } = this;
 
     updateModule(this, AUTOFOCUS);
     updateModule(this, A11Y);
 
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
-      base,
-      opts.teleport ?? (opts.absolute ? base.parentNode : body),
-    );
     this.transition = Transition.createOrUpdate(
       transition,
       base,
@@ -4227,7 +4211,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   async toggle(s, params) {
     const {
       transition,
-      isEntering,
+      isShown,
       isAnimating,
       toggler,
       popover,
@@ -4239,16 +4223,19 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isEntering;
+    s ??= !isShown;
 
-    if (
-      !ignoreConditions &&
-      ((awaitAnimation && isAnimating) || s === isEntering)
-    )
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
       return;
 
+    this.isShown = s;
+
     if (isAnimating && !awaitAnimation) {
-      await Promise.allSettled([transition.cancel()]);
+      await transition.cancel();
+    }
+
+    if (s) {
+      opts.absolute ? toggler.after(popover) : body.appendChild(popover);
     }
 
     s && teleport?.move(this);

@@ -158,7 +158,11 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
           );
         opts.a11y[OPTION_TOGGLER_ROLE] &&
           setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
-        toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], this.isShown);
+        toggleClass(
+          toggler,
+          opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
+          !!this.isShown,
+        );
         this.on(toggler, EVENT_CLICK, (event) => {
           event.preventDefault();
           this.toggle(null, { trigger: toggler, event });
@@ -168,7 +172,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     }));
   }
   async toggle(s, params) {
-    const { base, transition, togglers, opts, emit, isEntering, isAnimating } =
+    const { base, transition, togglers, opts, emit, isShown, isAnimating } =
       this;
     const { awaitAnimation, a11y } = opts;
     const {
@@ -180,13 +184,12 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       ignoreAutofocus,
     } = normalizeToggleParameters(params);
 
-    s ??= !isEntering;
+    s ??= !isShown;
 
-    if (
-      !ignoreConditions &&
-      ((awaitAnimation && isAnimating) || s === isEntering)
-    )
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
       return;
+
+    this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();
