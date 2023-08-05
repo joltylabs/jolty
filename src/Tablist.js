@@ -284,7 +284,7 @@ class Tablist extends Base {
   initTab(tab) {
     if (this.getTab(tab)) return;
 
-    const { tabs, tablist, opts, selected, on, off } = this;
+    const { tabs, tablist, opts, shownTabs, on, off } = this;
     const index = tabs.length;
 
     const item = isString(opts[ITEM])
@@ -308,7 +308,7 @@ class Tablist extends Base {
     tab.id ||= TAB + "-" + uuid;
 
     let isShown;
-    if (selected.length && !opts.multiExpand) {
+    if (shownTabs.length && !opts.multiExpand) {
       isShown = false;
     }
     if (opts.hashNavigation && checkHash(id)) {
@@ -365,10 +365,10 @@ class Tablist extends Base {
       disabled && tabInstance.hide(false);
 
       if (this.opts.alwaysExpanded) {
-        const selected = this.selected;
+        const shownTabs = this.shownTabs;
         if (
-          !selected.length ||
-          (selected.length === 1 && selected[0].isDisabled)
+          !shownTabs.length ||
+          (shownTabs.length === 1 && shownTabs[0].isDisabled)
         ) {
           this.show(this.firstActiveTabIndex, false);
         }
@@ -491,7 +491,7 @@ class Tablist extends Base {
   _updateTabIndex(activeIndex) {
     const { keyboard, a11y } = this.opts;
     if (!keyboard) return;
-    activeIndex ??= this.selected[0]?.index ?? this.firstActiveTabIndex;
+    activeIndex ??= this.shownTabs[0]?.index ?? this.firstActiveTabIndex;
     a11y &&
       this.tabs.forEach(({ tab, tabpanel }, i) =>
         setAttribute(
@@ -507,7 +507,7 @@ class Tablist extends Base {
       (isFunction(this.opts.focusFilter) ? this.opts.focusFilter(tab) : true)
     );
   }
-  get selected() {
+  get shownTabs() {
     return this.tabs.filter(({ isShown }) => isShown);
   }
   get firstActiveTabIndex() {
@@ -524,7 +524,7 @@ class Tablist extends Base {
 
     if (!tabInstance) return;
 
-    const { opts, selected, emit } = this;
+    const { opts, shownTabs, emit } = this;
     const { tab, tabpanel, isShown, transition, index } = tabInstance;
 
     s = !!(s ?? !isShown);
@@ -535,8 +535,8 @@ class Tablist extends Base {
       s === isShown ||
       (opts.awaitAnimation &&
         transition.isAnimating &&
-        ((selected.length <= 1 && !opts.multiExpand) || opts.multiExpand)) ||
-      (isShown && opts.alwaysExpanded && !s && selected.length < 2) ||
+        ((shownTabs.length <= 1 && !opts.multiExpand) || opts.multiExpand)) ||
+      (isShown && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
       (s && !this.focusFilter(tabInstance))
     )
       return;
@@ -553,11 +553,10 @@ class Tablist extends Base {
     tabInstance.isShown = s;
 
     if (!opts.multiExpand && s) {
-      for (const selectedTab of selected) {
-        if (tabInstance !== selectedTab && selectedTab.isShown) {
-          selectedTab.hide(animated);
-          if (opts.awaitPrevious)
-            await selectedTab.transition.getAwaitPromise();
+      for (const shownTab of shownTabs) {
+        if (tabInstance !== shownTab && shownTab.isShown) {
+          shownTab.hide(animated);
+          if (opts.awaitPrevious) await shownTab.transition.getAwaitPromise();
         }
       }
     }
