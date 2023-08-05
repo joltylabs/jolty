@@ -50,7 +50,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
   static DefaultA11y = {
     [OPTION_ARIA_LIVE]: "off",
     [OPTION_ARIA_ATOMIC]: true,
-    [TABINDEX]: 0,
+    [TABINDEX]: true,
     [ROLE]: "status",
   };
   static Default = {

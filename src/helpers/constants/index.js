@@ -3,6 +3,7 @@ import upperFirst from "../utils/upperFirst";
 
 export const UI = "ui";
 export const UI_PREFIX = UI + "-";
+export const UI_EVENT_PREFIX = "." + UI;
 export const VAR_UI_PREFIX = "--" + UI_PREFIX;
 export const DATA_PREFIX = "data-";
 export const DATA_UI_PREFIX = DATA_PREFIX + UI_PREFIX;
@@ -218,10 +219,10 @@ export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
 export const OPTION_ARIA_EXPANDED = kebabToCamel(ARIA_EXPANDED);
 export const OPTION_ARIA_CONTROLS = kebabToCamel(ARIA_CONTROLS);
 export const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
-export const OPTION_ARIA_MODAL = kebabToCamel(ARIA_MODAL);
 export const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
 export const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
+export const ROLE_SUFFIX = upperFirst(ROLE);
 
 export const OPTIONS_BOOLEAN = [OPTION_APPEAR, OPTION_KEEP_PLACE];
 

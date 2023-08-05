@@ -9,6 +9,7 @@ var upperFirst = (str = "") =>
 
 const UI = "ui";
 const UI_PREFIX = UI + "-";
+const UI_EVENT_PREFIX = "." + UI;
 const VAR_UI_PREFIX = "--" + UI_PREFIX;
 const DATA_PREFIX = "data-";
 const DATA_UI_PREFIX = DATA_PREFIX + UI_PREFIX;
@@ -187,7 +188,6 @@ const ARIA_MULTISELECTABLE = ARIA + "-multiselectable";
 const ARIA_LABELLEDBY = ARIA + "-labelledby";
 const ARIA_DESCRIBEDBY = ARIA + "-describedby";
 const ARIA_ORIENTATION = ARIA + "-orientation";
-const ARIA_MODAL = ARIA + "-" + MODAL;
 const ARIA_LIVE = ARIA + "-live";
 const ARIA_ATOMIC = ARIA + "-atomic";
 
@@ -214,10 +214,10 @@ const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
 const OPTION_ARIA_EXPANDED = kebabToCamel(ARIA_EXPANDED);
 const OPTION_ARIA_CONTROLS = kebabToCamel(ARIA_CONTROLS);
 const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
-const OPTION_ARIA_MODAL = kebabToCamel(ARIA_MODAL);
 const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
 const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
 const CLASS_ACTIVE_SUFFIX = "ClassActive";
+const ROLE_SUFFIX = upperFirst(ROLE);
 
 const OPTIONS_BOOLEAN = [OPTION_APPEAR, OPTION_KEEP_PLACE];
 const DEFAULT_OPTIONS = {
@@ -289,8 +289,6 @@ var isNumber = (value) => typeof value === "number";
 var isObject = (value) => value && value.constructor === Object;
 
 var isString = (value) => typeof value === "string";
-
-var isUndefined = (value) => value === undefined;
 
 var addClass = (elem, classes) => toggleClass(elem, classes, true);
 
@@ -1249,7 +1247,6 @@ var ToggleMixin = (Base, NAME) =>
     get isAnimating() {
       return this.transition.isAnimating;
     }
-
     get initialPlaceNode() {
       return (
         this.teleport?.placeholder ?? this.transition?.placeholder ?? this.base
@@ -2205,13 +2202,12 @@ var awaitPromise = async (promise, callback) => {
 };
 
 const COLLAPSE = "collapse";
-const OPTION_TOGGLER_ROLE = TOGGLER + "Role";
 
 class Collapse extends ToggleMixin(Base, COLLAPSE) {
   static DefaultA11y = {
     [OPTION_ARIA_CONTROLS]: true,
     [OPTION_ARIA_EXPANDED]: true,
-    [OPTION_TOGGLER_ROLE]: BUTTON,
+    role: true,
   };
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
@@ -2284,7 +2280,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     removeAttr(togglers, [
       a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
       a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
-      a11y[ROLE] && ROLE,
+      a11y.role && ROLE,
     ]);
 
     baseDestroy(this, destroyOpts);
@@ -2310,12 +2306,14 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
         : opts[TOGGLER],
     ).map((toggler) => {
       if (!this.togglers?.includes(toggler)) {
-        opts.a11y[OPTION_ARIA_CONTROLS] &&
+        if (opts.a11y[OPTION_ARIA_CONTROLS]) {
           setAttribute(toggler, ARIA_CONTROLS, (v) =>
             v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
           );
-        opts.a11y[OPTION_TOGGLER_ROLE] &&
-          setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
+        }
+        if (opts.a11y.role && toggler.tagName !== BUTTON.toLowerCase()) {
+          setAttribute(toggler, ROLE, BUTTON);
+        }
         toggleClass(
           toggler,
           opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
@@ -2656,8 +2654,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     required: true,
   };
   static DefaultA11y = {
-    [OPTION_ARIA_MODAL]: false,
-    [TABINDEX]: -1,
+    [TABINDEX]: true,
     [ROLE]: DIALOG,
     disableIfDialog: true,
   };
@@ -2741,15 +2738,13 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     if (a11y && (!isDialog || (isDialog && !a11y.disableIfDialog))) {
       a11y[ROLE] && setAttribute(modal, ROLE, a11y[ROLE]);
-      a11y[OPTION_ARIA_MODAL] &&
-        setAttribute(modal, ARIA_MODAL, a11y[OPTION_ARIA_MODAL]);
-      a11y[TABINDEX] && setAttribute(modal, TABINDEX, 0);
+      a11y[TABINDEX] && setAttribute(modal, TABINDEX, -1);
     }
 
     if (escapeHide) {
-      on(modal, CANCEL, (e) => e.preventDefault());
+      on(modal, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     } else {
-      off(modal, CANCEL);
+      off(modal, CANCEL + UI_EVENT_PREFIX);
     }
 
     return this;
@@ -2768,11 +2763,9 @@ class Modal extends ToggleMixin(Base, MODAL) {
         backdrop = optsBackdrop(this);
       }
       if (isString(optsBackdrop)) {
-        if (optsBackdrop[0] === "#") {
-          backdrop = document.querySelector(optsBackdrop);
-        } else {
-          backdrop = modal.querySelector(optsBackdrop);
-        }
+        backdrop = (optsBackdrop[0] === "#" ? doc : modal).querySelector(
+          optsBackdrop,
+        );
       }
     }
     this[BACKDROP] = backdrop;
@@ -2812,7 +2805,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       },
     );
 
-    on(body, EVENT_CLICK, (event) => {
+    on(body, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
       const togglers = this._togglers;
       const trigger = isString(togglers)
         ? event.target.closest(togglers)
@@ -2831,7 +2824,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
     const { a11y } = opts;
     removeClass(togglers, opts[TOGGLER + CLASS_ACTIVE]);
     removeAttr(base, [
-      a11y[(OPTION_ARIA_MODAL)] && ARIA_MODAL,
       a11y[TABINDEX] && TABINDEX,
       a11y[ROLE] && ROLE,
       title && ARIA_LABELLEDBY,
@@ -3007,13 +2999,13 @@ class Modal extends ToggleMixin(Base, MODAL) {
     if (s) {
       !ignoreAutofocus && opts.autofocus && callAutofocus(this);
 
-      on(content, EVENT_MOUSEDOWN, (e) => {
+      on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
         this._mousedownTarget = e.target;
       });
     } else {
       this._mousedownTarget = null;
 
-      off(content, EVENT_MOUSEDOWN);
+      off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
 
       if (isDialog && !optReturnFocusAwait) {
         modal.close();
@@ -3089,12 +3081,11 @@ const TABLIST = "tablist";
 const TAB = "tab";
 const TABPANEL = "tabpanel";
 const ITEM = "item";
+
 const ELEMS = [ITEM, TAB, TABPANEL];
-const ROLE_SUFFIX = upperFirst(ROLE);
 const OPTION_TAB_ROLE = TAB + ROLE_SUFFIX;
 const OPTION_TABPANEL_ROLE = TABPANEL + ROLE_SUFFIX;
 const OPTION_TABPANEL_TABINDEX = TABPANEL + upperFirst(TABINDEX);
-const OPTION_ITEM_ROLE = ITEM + ROLE_SUFFIX;
 const OPTION_ARIA_ORIENTRATION = kebabToCamel(ARIA_ORIENTATION);
 const OPTION_ARIA_MULTISELECTABLE = kebabToCamel(ARIA_MULTISELECTABLE);
 
@@ -3102,10 +3093,9 @@ const TABLIST_SECONDARY_METHODS = ["getTab", "isTab", "initTab", "initTabs"];
 
 class Tablist extends Base {
   static DefaultA11y = {
-    [ROLE]: TABLIST,
-    [OPTION_TAB_ROLE]: TAB,
-    [OPTION_TABPANEL_ROLE]: TABPANEL,
-    [OPTION_ITEM_ROLE]: "presentation",
+    [ROLE]: true,
+    [OPTION_TAB_ROLE]: true,
+    [OPTION_TABPANEL_ROLE]: true,
     [OPTION_ARIA_ORIENTRATION]: true,
     [OPTION_ARIA_MULTISELECTABLE]: true,
     [OPTION_ARIA_CONTROLS]: true,
@@ -3149,7 +3139,7 @@ class Tablist extends Base {
     const { tablist, tabs, lastShownTab, opts } = this;
 
     if (a11y) {
-      a11y[ROLE] && setAttribute(tablist, ROLE, a11y[ROLE]);
+      a11y[ROLE] && setAttribute(tablist, ROLE, TABLIST);
       a11y[OPTION_ARIA_MULTISELECTABLE] &&
         setAttribute(tablist, ARIA_MULTISELECTABLE, opts.multiExpand || null);
       a11y[OPTION_ARIA_ORIENTRATION] &&
@@ -3168,13 +3158,10 @@ class Tablist extends Base {
       if (a11y) {
         a11y[OPTION_ARIA_CONTROLS] &&
           setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
-        a11y[OPTION_TAB_ROLE] && setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
-        a11y[OPTION_TABPANEL_ROLE] &&
-          setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
+        a11y[OPTION_TAB_ROLE] && setAttribute(tab, ROLE, TAB);
+        a11y[OPTION_TABPANEL_ROLE] && setAttribute(tabpanel, ROLE, TABPANEL);
         a11y[OPTION_ARIA_LABELLEDBY] &&
           setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
-        a11y[OPTION_ITEM_ROLE] &&
-          setAttribute(item, ROLE, a11y[OPTION_ITEM_ROLE]);
       }
 
       tabObj.teleport = Teleport.createOrUpdate(
@@ -3332,7 +3319,7 @@ class Tablist extends Base {
       if (a11y) {
         removeAttr(tab, [
           a11y[OPTION_TAB_ROLE] && ROLE,
-          !isUndefined(a11y[TABINDEX]) && TABINDEX,
+          a11y[TABINDEX] && TABINDEX,
           a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
           a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
         ]);
@@ -3344,7 +3331,6 @@ class Tablist extends Base {
           HIDDEN,
           INERT,
         ]);
-        removeAttr(item, a11y[OPTION_ITEM_ROLE] && ROLE);
       }
 
       off(elems);
@@ -3766,7 +3752,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
   static DefaultA11y = {
     [OPTION_ARIA_LIVE]: "off",
     [OPTION_ARIA_ATOMIC]: true,
-    [TABINDEX]: 0,
+    [TABINDEX]: true,
     [ROLE]: "status",
   };
   static Default = {
@@ -4017,7 +4003,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
     updateModule(this, A11Y);
-    setAttribute(tooltip, opts.a11y[ROLE]);
+    opts.a11y[ROLE] && setAttribute(tooltip, opts.a11y[ROLE]);
   }
   destroy(destroyOpts) {
     const { isInit, anchor, id, _cache, emit } = this;

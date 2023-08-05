@@ -86,7 +86,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
     updateModule(this, A11Y);
-    setAttribute(tooltip, opts.a11y[ROLE]);
+    opts.a11y[ROLE] && setAttribute(tooltip, opts.a11y[ROLE]);
   }
   destroy(destroyOpts) {
     const { isInit, anchor, id, _cache, emit } = this;

@@ -8,7 +8,6 @@ export default (Base, NAME) =>
     get isAnimating() {
       return this.transition.isAnimating;
     }
-
     get initialPlaceNode() {
       return (
         this.teleport?.placeholder ?? this.transition?.placeholder ?? this.base

@@ -15,7 +15,6 @@ import {
   DEFAULT_AUTOFOCUS,
   SELECTOR_ROOT,
   ACTION_PREVENT,
-  ARIA_MODAL,
   ARIA_LABELLEDBY,
   ARIA_DESCRIBEDBY,
   TABINDEX,
@@ -32,7 +31,6 @@ import {
   A11Y,
   OPTION_GROUP,
   AUTOFOCUS,
-  OPTION_ARIA_MODAL,
   ACTION_DESTROY,
   TITLE,
   OPTION_PREVENT_SCROLL,
@@ -48,6 +46,7 @@ import {
   CLASS_ACTIVE_SUFFIX,
   DIALOG,
   doc,
+  UI_EVENT_PREFIX,
 } from "./helpers/constants";
 import { isString, isElement, isFunction } from "./helpers/is";
 import {
@@ -61,7 +60,6 @@ import {
 } from "./helpers/dom";
 import {
   arrayFrom,
-  callOrReturn,
   getDataSelector,
   uuidGenerator,
   normalizeToggleParameters,
@@ -119,8 +117,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     required: true,
   };
   static DefaultA11y = {
-    [OPTION_ARIA_MODAL]: false,
-    [TABINDEX]: -1,
+    [TABINDEX]: true,
     [ROLE]: DIALOG,
     disableIfDialog: true,
   };
@@ -204,15 +201,13 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     if (a11y && (!isDialog || (isDialog && !a11y.disableIfDialog))) {
       a11y[ROLE] && setAttribute(modal, ROLE, a11y[ROLE]);
-      a11y[OPTION_ARIA_MODAL] &&
-        setAttribute(modal, ARIA_MODAL, a11y[OPTION_ARIA_MODAL]);
-      a11y[TABINDEX] && setAttribute(modal, TABINDEX, 0);
+      a11y[TABINDEX] && setAttribute(modal, TABINDEX, -1);
     }
 
     if (escapeHide) {
-      on(modal, CANCEL, (e) => e.preventDefault());
+      on(modal, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     } else {
-      off(modal, CANCEL);
+      off(modal, CANCEL + UI_EVENT_PREFIX);
     }
 
     return this;
@@ -231,11 +226,9 @@ class Modal extends ToggleMixin(Base, MODAL) {
         backdrop = optsBackdrop(this);
       }
       if (isString(optsBackdrop)) {
-        if (optsBackdrop[0] === "#") {
-          backdrop = document.querySelector(optsBackdrop);
-        } else {
-          backdrop = modal.querySelector(optsBackdrop);
-        }
+        backdrop = (optsBackdrop[0] === "#" ? doc : modal).querySelector(
+          optsBackdrop,
+        );
       }
     }
     this[BACKDROP] = backdrop;
@@ -275,7 +268,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       },
     );
 
-    on(body, EVENT_CLICK, (event) => {
+    on(body, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
       const togglers = this._togglers;
       const trigger = isString(togglers)
         ? event.target.closest(togglers)
@@ -294,7 +287,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
     const { a11y } = opts;
     removeClass(togglers, opts[TOGGLER + CLASS_ACTIVE]);
     removeAttr(base, [
-      a11y[(base, OPTION_ARIA_MODAL)] && ARIA_MODAL,
       a11y[TABINDEX] && TABINDEX,
       a11y[ROLE] && ROLE,
       title && ARIA_LABELLEDBY,
@@ -470,13 +462,13 @@ class Modal extends ToggleMixin(Base, MODAL) {
     if (s) {
       !ignoreAutofocus && opts.autofocus && callAutofocus(this);
 
-      on(content, EVENT_MOUSEDOWN, (e) => {
+      on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
         this._mousedownTarget = e.target;
       });
     } else {
       this._mousedownTarget = null;
 
-      off(content, EVENT_MOUSEDOWN);
+      off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
 
       if (isDialog && !optReturnFocusAwait) {
         modal.close();

@@ -47,6 +47,7 @@ import {
   OPTION_ARIA_EXPANDED,
   OPTION_ARIA_HIDDEN,
   CLASS_ACTIVE_SUFFIX,
+  ROLE_SUFFIX,
   doc,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
@@ -89,12 +90,11 @@ const TABLIST = "tablist";
 const TAB = "tab";
 const TABPANEL = "tabpanel";
 const ITEM = "item";
+
 const ELEMS = [ITEM, TAB, TABPANEL];
-const ROLE_SUFFIX = upperFirst(ROLE);
 const OPTION_TAB_ROLE = TAB + ROLE_SUFFIX;
 const OPTION_TABPANEL_ROLE = TABPANEL + ROLE_SUFFIX;
 const OPTION_TABPANEL_TABINDEX = TABPANEL + upperFirst(TABINDEX);
-const OPTION_ITEM_ROLE = ITEM + ROLE_SUFFIX;
 const OPTION_ARIA_ORIENTRATION = kebabToCamel(ARIA_ORIENTATION);
 const OPTION_ARIA_MULTISELECTABLE = kebabToCamel(ARIA_MULTISELECTABLE);
 
@@ -102,10 +102,9 @@ const TABLIST_SECONDARY_METHODS = ["getTab", "isTab", "initTab", "initTabs"];
 
 class Tablist extends Base {
   static DefaultA11y = {
-    [ROLE]: TABLIST,
-    [OPTION_TAB_ROLE]: TAB,
-    [OPTION_TABPANEL_ROLE]: TABPANEL,
-    [OPTION_ITEM_ROLE]: "presentation",
+    [ROLE]: true,
+    [OPTION_TAB_ROLE]: true,
+    [OPTION_TABPANEL_ROLE]: true,
     [OPTION_ARIA_ORIENTRATION]: true,
     [OPTION_ARIA_MULTISELECTABLE]: true,
     [OPTION_ARIA_CONTROLS]: true,
@@ -149,7 +148,7 @@ class Tablist extends Base {
     const { tablist, tabs, lastShownTab, opts } = this;
 
     if (a11y) {
-      a11y[ROLE] && setAttribute(tablist, ROLE, a11y[ROLE]);
+      a11y[ROLE] && setAttribute(tablist, ROLE, TABLIST);
       a11y[OPTION_ARIA_MULTISELECTABLE] &&
         setAttribute(tablist, ARIA_MULTISELECTABLE, opts.multiExpand || null);
       a11y[OPTION_ARIA_ORIENTRATION] &&
@@ -168,13 +167,10 @@ class Tablist extends Base {
       if (a11y) {
         a11y[OPTION_ARIA_CONTROLS] &&
           setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
-        a11y[OPTION_TAB_ROLE] && setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
-        a11y[OPTION_TABPANEL_ROLE] &&
-          setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
+        a11y[OPTION_TAB_ROLE] && setAttribute(tab, ROLE, TAB);
+        a11y[OPTION_TABPANEL_ROLE] && setAttribute(tabpanel, ROLE, TABPANEL);
         a11y[OPTION_ARIA_LABELLEDBY] &&
           setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
-        a11y[OPTION_ITEM_ROLE] &&
-          setAttribute(item, ROLE, a11y[OPTION_ITEM_ROLE]);
       }
 
       tabObj.teleport = Teleport.createOrUpdate(
@@ -332,7 +328,7 @@ class Tablist extends Base {
       if (a11y) {
         removeAttr(tab, [
           a11y[OPTION_TAB_ROLE] && ROLE,
-          !isUndefined(a11y[TABINDEX]) && TABINDEX,
+          a11y[TABINDEX] && TABINDEX,
           a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
           a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
         ]);
@@ -344,7 +340,6 @@ class Tablist extends Base {
           HIDDEN,
           INERT,
         ]);
-        removeAttr(item, a11y[OPTION_ITEM_ROLE] && ROLE);
       }
 
       off(elems);

@@ -47,13 +47,12 @@ import {
 } from "./helpers/modules";
 
 const COLLAPSE = "collapse";
-const OPTION_TOGGLER_ROLE = TOGGLER + "Role";
 
 class Collapse extends ToggleMixin(Base, COLLAPSE) {
   static DefaultA11y = {
     [OPTION_ARIA_CONTROLS]: true,
     [OPTION_ARIA_EXPANDED]: true,
-    [OPTION_TOGGLER_ROLE]: BUTTON,
+    role: true,
   };
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
@@ -126,7 +125,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     removeAttr(togglers, [
       a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
       a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
-      a11y[ROLE] && ROLE,
+      a11y.role && ROLE,
     ]);
 
     baseDestroy(this, destroyOpts);
@@ -152,12 +151,14 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
         : opts[TOGGLER],
     ).map((toggler) => {
       if (!this.togglers?.includes(toggler)) {
-        opts.a11y[OPTION_ARIA_CONTROLS] &&
+        if (opts.a11y[OPTION_ARIA_CONTROLS]) {
           setAttribute(toggler, ARIA_CONTROLS, (v) =>
             v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
           );
-        opts.a11y[OPTION_TOGGLER_ROLE] &&
-          setAttribute(toggler, ROLE, opts.a11y[OPTION_TOGGLER_ROLE]);
+        }
+        if (opts.a11y.role && toggler.tagName !== BUTTON.toLowerCase()) {
+          setAttribute(toggler, ROLE, BUTTON);
+        }
         toggleClass(
           toggler,
           opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
