@@ -395,7 +395,7 @@ class Tablist extends Base {
       get isDisabled() {
         return tab.hasAttribute(DISABLED);
       },
-      get shownPlaceNode() {
+      get initialPlaceNode() {
         return (
           tabInstance.teleport?.placeholder ??
           tabInstance.transition?.placeholder ??
