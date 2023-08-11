@@ -57,7 +57,6 @@ import {
   isNumber,
   isFunction,
   isArray,
-  isUndefined,
 } from "./helpers/is";
 import {
   isUnfocusable,
@@ -162,7 +161,7 @@ class Tablist extends Base {
     const shown = lastShownTab?.index ?? opts.shown;
 
     const tabWithState = tabs.map((tabObj, i) => {
-      const { tab, tabpanel, item, teleport, transition } = tabObj;
+      const { tab, tabpanel, teleport, transition } = tabObj;
 
       if (a11y) {
         a11y[OPTION_ARIA_CONTROLS] &&

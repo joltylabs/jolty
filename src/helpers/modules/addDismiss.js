@@ -1,9 +1,4 @@
-import {
-  DATA_UI_PREFIX,
-  DISMISS,
-  EVENT_CLICK,
-  UI_EVENT_PREFIX,
-} from "../constants";
+import { DATA_UI_PREFIX, DISMISS, EVENT_CLICK } from "../constants";
 import { isString } from "../is";
 const eventName = EVENT_CLICK + "." + DISMISS;
 export default function (

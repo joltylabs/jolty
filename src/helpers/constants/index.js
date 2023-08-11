@@ -235,8 +235,8 @@ export const DEFAULT_OPTIONS = {
   [APPEAR]: null,
   eventDispatch: true,
   eventBubble: true,
-  [SHOWN]: null,
-  [A11Y]: true,
+  shown: null,
+  a11y: true,
 };
 export const DEFAULT_FLOATING_OPTIONS = {
   awaitAnimation: false,

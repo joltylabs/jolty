@@ -1,5 +1,4 @@
 import {
-  EVENT_INIT,
   EVENT_BEFORE_DESTROY,
   EVENT_BEFORE_SHOW,
   EVENT_SHOWN,
@@ -46,7 +45,6 @@ import {
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
-import Teleport from "./helpers/Teleport.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
   static DefaultA11y = {

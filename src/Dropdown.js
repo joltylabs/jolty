@@ -45,7 +45,6 @@ import {
   closest,
 } from "./helpers/dom";
 import Transition from "./helpers/Transition.js";
-import Teleport from "./helpers/Teleport.js";
 import {
   normalizeToggleParameters,
   isUnfocusable,

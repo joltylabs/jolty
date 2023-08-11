@@ -161,7 +161,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     this.transitions ||= {};
 
-    let {
+    const {
       modal,
       transitions,
       opts: {
@@ -179,12 +179,14 @@ class Modal extends ToggleMixin(Base, MODAL) {
       off,
     } = this;
 
-    if (teleportOpts == null && (!isDialog || _fromHTML)) {
-      teleportOpts = body;
-    }
-    this.teleport = Teleport.createOrUpdate(teleport, modal, teleportOpts, {
-      keepPlace: false,
-    })?.move(this);
+    this.teleport = Teleport.createOrUpdate(
+      teleport,
+      modal,
+      teleportOpts == null && (!isDialog || _fromHTML) ? body : teleportOpts,
+      {
+        keepPlace: false,
+      },
+    )?.move(this);
 
     for (const elemName of DOM_ELEMENTS) {
       if (this[elemName]) {

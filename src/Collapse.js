@@ -97,6 +97,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   }
   destroy(destroyOpts) {
     let {
+      // eslint-disable-next-line prefer-const
       opts: { a11y },
       togglers,
     } = this;
