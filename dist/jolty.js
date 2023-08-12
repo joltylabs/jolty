@@ -189,6 +189,7 @@
   const ARIA = "aria";
   const ARIA_CONTROLS = ARIA + "-controls";
   const ARIA_EXPANDED = ARIA + "-expanded";
+  const ARIA_SELECTED = ARIA + "-selected";
   const ARIA_HIDDEN = ARIA + "-" + HIDDEN;
   const ARIA_MULTISELECTABLE = ARIA + "-multiselectable";
   const ARIA_LABELLEDBY = ARIA + "-labelledby";
@@ -215,10 +216,11 @@
   const OPTION_PREVENT_SCROLL = "preventScroll";
   const OPTION_POSITION = "position";
   const OPTION_TO = "to";
-  const OPTION_ARIA_LABELLEDBY = kebabToCamel(ARIA_LABELLEDBY);
+  kebabToCamel(ARIA_LABELLEDBY);
   const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
   const OPTION_ARIA_EXPANDED = kebabToCamel(ARIA_EXPANDED);
-  const OPTION_ARIA_CONTROLS = kebabToCamel(ARIA_CONTROLS);
+  const OPTION_ARIA_SELECTED = kebabToCamel(ARIA_SELECTED);
+  kebabToCamel(ARIA_CONTROLS);
   const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
   const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
   const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
@@ -234,8 +236,8 @@
     [APPEAR]: null,
     eventDispatch: true,
     eventBubble: true,
-    [SHOWN]: null,
-    [A11Y]: true,
+    shown: null,
+    a11y: true,
   };
   const DEFAULT_FLOATING_OPTIONS = {
     awaitAnimation: false,
@@ -839,7 +841,7 @@
   var parents = (elem, selector, until) =>
     dir(elem, "parentElement", selector, until);
 
-  var removeAttr = (elem, names) => {
+  var removeAttribute = (elem, names) => {
     names = strToArray(names);
     if (isIterable(elem)) {
       elem.forEach((elem) =>
@@ -1066,6 +1068,14 @@
     }
   }
 
+  function getDataValue(_data, dataName, elem) {
+    const value = callOrReturn(_data[dataName], elem);
+    if (!isObject(value)) return {};
+    return _data[value.data]
+      ? { ...getDataValue(_data, value.data, elem), ...value }
+      : value;
+  }
+
   class Base {
     static allInstances = new Map();
     constructor(elem, opts) {
@@ -1078,11 +1088,10 @@
       const baseElemName = BASE_NODE_NAME ?? NAME;
 
       let dataName = opts.data;
-      let dataValue = dataName && _data[dataName];
       let datasetValue, isDataObject;
 
       if (elem == null) {
-        opts = mergeDeep(Default, callOrReturn(dataValue, elem), opts);
+        opts = mergeDeep(Default, getDataValue(_data, dataName, elem), opts);
         elem = isString(opts.template)
           ? callOrReturn(_templates[opts.template], opts)
           : opts.template(opts);
@@ -1102,11 +1111,9 @@
 
         if (dataName && !_data[dataName]) return;
 
-        dataValue = _data[dataName] || {};
-
         opts = mergeDeep(
           Default,
-          callOrReturn(dataValue, elem),
+          getDataValue(_data, dataName, elem),
           datasetValue,
           opts,
         );
@@ -1702,7 +1709,11 @@
     const isDialog = elem.tagName === "DIALOG";
     if ((!focusElem && autofocus.required && !isDialog) || isDialog) {
       focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
+      if (!focusElem && elem.hasAttribute(TABINDEX)) {
+        focusElem = elem;
+      }
     }
+
     focusElem?.focus({
       [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,
     });
@@ -2210,11 +2221,6 @@
   const COLLAPSE = "collapse";
 
   class Collapse extends ToggleMixin(Base, COLLAPSE) {
-    static DefaultA11y = {
-      [OPTION_ARIA_CONTROLS]: true,
-      [OPTION_ARIA_EXPANDED]: true,
-      role: true,
-    };
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
       required: false,
@@ -2238,7 +2244,6 @@
 
       addDismiss(this);
       updateModule(this, AUTOFOCUS);
-      updateModule(this, A11Y);
 
       this.teleport = Teleport.createOrUpdate(
         teleport,
@@ -2257,16 +2262,14 @@
       return this;
     }
     destroy(destroyOpts) {
-      let {
-        opts: { a11y },
-        togglers,
-      } = this;
+      // eslint-disable-next-line prefer-const
+      let { opts, togglers } = this;
 
       if (!this.isInit) return;
 
       this.emit(EVENT_BEFORE_DESTROY);
 
-      if (a11y[OPTION_ARIA_CONTROLS]) {
+      if (opts.a11y) {
         const otherTogglers = arrayFrom(this.instances.values())
           .filter((item) => item !== this)
           .flatMap((item) => item.togglers.filter((t) => togglers.includes(t)));
@@ -2283,11 +2286,8 @@
         }
       }
 
-      removeAttr(togglers, [
-        a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
-        a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
-        a11y.role && ROLE,
-      ]);
+      opts.a11y &&
+        removeAttribute(togglers, [ARIA_CONTROLS, ARIA_EXPANDED, ROLE]);
 
       baseDestroy(this, destroyOpts);
       return this;
@@ -2312,13 +2312,13 @@
           : opts[TOGGLER],
       ).map((toggler) => {
         if (!this.togglers?.includes(toggler)) {
-          if (opts.a11y[OPTION_ARIA_CONTROLS]) {
+          if (opts.a11y) {
             setAttribute(toggler, ARIA_CONTROLS, (v) =>
               v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
             );
-          }
-          if (opts.a11y.role && toggler.tagName !== BUTTON.toLowerCase()) {
-            setAttribute(toggler, ROLE, BUTTON);
+            if (toggler.tagName !== BUTTON.toLowerCase()) {
+              setAttribute(toggler, ROLE, BUTTON);
+            }
           }
           toggleClass(
             toggler,
@@ -2361,7 +2361,7 @@
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-      a11y[OPTION_ARIA_EXPANDED] && setAttribute(togglers, ARIA_EXPANDED, !!s);
+      a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
       toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
       toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
@@ -2385,10 +2385,6 @@
   }
 
   class Dropdown extends ToggleMixin(Base, DROPDOWN) {
-    static DefaultA11y = {
-      [OPTION_ARIA_CONTROLS]: true,
-      [OPTION_ARIA_EXPANDED]: true,
-    };
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
       required: true,
@@ -2413,7 +2409,7 @@
       if (this.isInit) return;
       this._update();
 
-      const { opts, toggler, dropdown, show, on } = this;
+      const { toggler, dropdown, show, on } = this;
 
       toggleOnInterection({ anchor: toggler, target: dropdown, instance: this });
       addDismiss(this, dropdown);
@@ -2421,10 +2417,9 @@
       on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
       on(toggler, EVENT_KEYDOWN, async (event) => {
         const { keyCode, shiftKey } = event;
-        const horizontal = opts.togglerHorizontal;
-        const prevCode = horizontal ? KEY_ARROW_LEFT : KEY_ARROW_UP;
-        const nextCode = horizontal ? KEY_ARROW_RIGHT : KEY_ARROW_DOWN;
-        const arrowActivated = prevCode === keyCode || nextCode === keyCode;
+
+        const arrowActivated =
+          KEY_ARROW_UP === keyCode || KEY_ARROW_DOWN === keyCode;
         if (
           arrowActivated ||
           (keyCode === KEY_TAB && !shiftKey && this.isShown)
@@ -2474,7 +2469,7 @@
       ));
 
       if (!toggler) return;
-      opts.a11y[OPTION_ARIA_CONTROLS] && setAttribute(toggler, ARIA_CONTROLS, id);
+      opts.a11y && setAttribute(toggler, ARIA_CONTROLS, id);
       return this;
     }
     get focusableElems() {
@@ -2546,14 +2541,11 @@
       }
     }
     destroy(destroyOpts) {
-      const { isInit, toggler, opts } = this;
-      if (!isInit) return;
+      if (!this.isInit) return;
+      const { opts, toggler } = this;
       this.emit(EVENT_BEFORE_DESTROY);
+      opts.a11y && removeAttribute(toggler, ARIA_CONTROLS);
       removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
-      removeAttr(toggler, [
-        opts.a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
-        opts.a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
-      ]);
       return baseDestroy(this, destroyOpts);
     }
 
@@ -2599,7 +2591,7 @@
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-      a11y[OPTION_ARIA_EXPANDED] && toggler.setAttribute(ARIA_EXPANDED, !!s);
+      a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
       toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
 
@@ -2659,11 +2651,6 @@
       elem: DEFAULT_AUTOFOCUS,
       required: true,
     };
-    static DefaultA11y = {
-      [TABINDEX]: true,
-      [ROLE]: DIALOG,
-      disableIfDialog: true,
-    };
     static Default = {
       ...DEFAULT_OPTIONS,
       eventPrefix: getEventsPrefix(MODAL),
@@ -2700,11 +2687,10 @@
       updateModule(this, OPTION_GROUP, NAME);
       updateModule(this, OPTION_PREVENT_SCROLL);
       updateModule(this, AUTOFOCUS);
-      updateModule(this, A11Y);
 
       this.transitions ||= {};
 
-      let {
+      const {
         modal,
         transitions,
         opts: {
@@ -2722,12 +2708,14 @@
         off,
       } = this;
 
-      if (teleportOpts == null && (!isDialog || _fromHTML)) {
-        teleportOpts = body;
-      }
-      this.teleport = Teleport.createOrUpdate(teleport, modal, teleportOpts, {
-        keepPlace: false,
-      })?.move(this);
+      this.teleport = Teleport.createOrUpdate(
+        teleport,
+        modal,
+        teleportOpts == null && (!isDialog || _fromHTML) ? body : teleportOpts,
+        {
+          keepPlace: false,
+        },
+      )?.move(this);
 
       for (const elemName of DOM_ELEMENTS) {
         if (this[elemName]) {
@@ -2742,9 +2730,9 @@
 
       this._togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
 
-      if (a11y && (!isDialog || (isDialog && !a11y.disableIfDialog))) {
-        a11y[ROLE] && setAttribute(modal, ROLE, a11y[ROLE]);
-        a11y[TABINDEX] && setAttribute(modal, TABINDEX, -1);
+      if (a11y && !isDialog) {
+        setAttribute(modal, TABINDEX, -1);
+        setAttribute(modal, ROLE, DIALOG);
       }
 
       if (escapeHide) {
@@ -2826,15 +2814,15 @@
     }
     destroy(destroyOpts) {
       if (!this.isInit) return;
-      const { base, opts, title, description, togglers } = this;
-      const { a11y } = opts;
-      removeClass(togglers, opts[TOGGLER + CLASS_ACTIVE]);
-      removeAttr(base, [
-        a11y[TABINDEX] && TABINDEX,
-        a11y[ROLE] && ROLE,
-        title && ARIA_LABELLEDBY,
-        description && ARIA_DESCRIBEDBY,
-      ]);
+
+      removeClass(this.togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
+      this.opts.a11y &&
+        removeAttribute(this.base, [
+          TABINDEX,
+          ROLE,
+          ARIA_LABELLEDBY,
+          ARIA_DESCRIBEDBY,
+        ]);
       baseDestroy(this, destroyOpts);
       return this;
     }
@@ -3104,9 +3092,8 @@
       [OPTION_TABPANEL_ROLE]: true,
       [OPTION_ARIA_ORIENTRATION]: true,
       [OPTION_ARIA_MULTISELECTABLE]: true,
-      [OPTION_ARIA_CONTROLS]: true,
-      [OPTION_ARIA_LABELLEDBY]: true,
       [OPTION_ARIA_EXPANDED]: true,
+      [OPTION_ARIA_SELECTED]: true,
       [TABINDEX]: true,
       [OPTION_TABPANEL_TABINDEX]: true,
     };
@@ -3140,12 +3127,15 @@
     constructor(elem, opts) {
       super(elem, opts);
     }
+    get isA11yTablist() {
+      return !this.opts.multiExpand && this.opts.alwaysExpanded;
+    }
     _update() {
       const { a11y } = updateModule(this, A11Y);
-      const { tablist, tabs, lastShownTab, opts } = this;
+      const { tablist, tabs, lastShownTab, opts, isA11yTablist } = this;
 
       if (a11y) {
-        a11y[ROLE] && setAttribute(tablist, ROLE, TABLIST);
+        a11y[ROLE] && setAttribute(tablist, ROLE, isA11yTablist ? TABLIST : null);
         a11y[OPTION_ARIA_MULTISELECTABLE] &&
           setAttribute(tablist, ARIA_MULTISELECTABLE, opts.multiExpand || null);
         a11y[OPTION_ARIA_ORIENTRATION] &&
@@ -3159,15 +3149,15 @@
       const shown = lastShownTab?.index ?? opts.shown;
 
       const tabWithState = tabs.map((tabObj, i) => {
-        const { tab, tabpanel, item, teleport, transition } = tabObj;
+        const { tab, tabpanel, teleport, transition } = tabObj;
 
         if (a11y) {
-          a11y[OPTION_ARIA_CONTROLS] &&
-            setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
-          a11y[OPTION_TAB_ROLE] && setAttribute(tab, ROLE, TAB);
-          a11y[OPTION_TABPANEL_ROLE] && setAttribute(tabpanel, ROLE, TABPANEL);
-          a11y[OPTION_ARIA_LABELLEDBY] &&
-            setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
+          setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
+          a11y[OPTION_TAB_ROLE] &&
+            setAttribute(tab, ROLE, isA11yTablist ? TAB : BUTTON);
+          a11y[OPTION_TABPANEL_ROLE] &&
+            setAttribute(tabpanel, ROLE, isA11yTablist ? TABPANEL : "region");
+          setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
         }
 
         tabObj.teleport = Teleport.createOrUpdate(
@@ -3247,7 +3237,7 @@
       off(tabs);
 
       if (a11y) {
-        removeAttr(tablist, [
+        removeAttribute(tablist, [
           a11y[ROLE] && ROLE,
           a11y[OPTION_ARIA_MULTISELECTABLE] && ARIA_MULTISELECTABLE,
           a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
@@ -3281,7 +3271,7 @@
     initTab(tab) {
       if (this.getTab(tab)) return;
 
-      const { tabs, tablist, opts, selected, on, off } = this;
+      const { tabs, tablist, opts, shownTabs, on, off } = this;
       const index = tabs.length;
 
       const item = isString(opts[ITEM])
@@ -3305,7 +3295,7 @@
       tab.id ||= TAB + "-" + uuid;
 
       let isShown;
-      if (selected.length && !opts.multiExpand) {
+      if (shownTabs.length && !opts.multiExpand) {
         isShown = false;
       }
       if (opts.hashNavigation && checkHash(id)) {
@@ -3323,16 +3313,17 @@
         const opts = this.opts;
         const a11y = opts.a11y;
         if (a11y) {
-          removeAttr(tab, [
+          removeAttribute(tab, [
             a11y[OPTION_TAB_ROLE] && ROLE,
             a11y[TABINDEX] && TABINDEX,
-            a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
+            ARIA_CONTROLS,
             a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
+            a11y[OPTION_ARIA_SELECTED] && ARIA_SELECTED,
           ]);
-          removeAttr(tabpanel, [
+          removeAttribute(tabpanel, [
             a11y[OPTION_TABPANEL_ROLE] && ROLE,
             a11y[OPTION_TABPANEL_TABINDEX] && TABINDEX,
-            a11y[OPTION_ARIA_LABELLEDBY] && ARIA_LABELLEDBY,
+            ARIA_LABELLEDBY,
             a11y[OPTION_ARIA_HIDDEN] && ARIA_HIDDEN,
             HIDDEN,
             INERT,
@@ -3362,10 +3353,10 @@
         disabled && tabInstance.hide(false);
 
         if (this.opts.alwaysExpanded) {
-          const selected = this.selected;
+          const shownTabs = this.shownTabs;
           if (
-            !selected.length ||
-            (selected.length === 1 && selected[0].isDisabled)
+            !shownTabs.length ||
+            (shownTabs.length === 1 && shownTabs[0].isDisabled)
           ) {
             this.show(this.firstActiveTabIndex, false);
           }
@@ -3392,7 +3383,7 @@
         get isDisabled() {
           return tab.hasAttribute(DISABLED);
         },
-        get shownPlaceNode() {
+        get initialPlaceNode() {
           return (
             tabInstance.teleport?.placeholder ??
             tabInstance.transition?.placeholder ??
@@ -3488,8 +3479,9 @@
     _updateTabIndex(activeIndex) {
       const { keyboard, a11y } = this.opts;
       if (!keyboard) return;
-      activeIndex ??= this.selected[0]?.index ?? this.firstActiveTabIndex;
+      activeIndex ??= this.shownTabs[0]?.index ?? this.firstActiveTabIndex;
       a11y &&
+        this.isA11yTablist &&
         this.tabs.forEach(({ tab, tabpanel }, i) =>
           setAttribute(
             [a11y[TABINDEX] && tab, a11y[OPTION_TABPANEL_TABINDEX] && tabpanel],
@@ -3504,7 +3496,7 @@
         (isFunction(this.opts.focusFilter) ? this.opts.focusFilter(tab) : true)
       );
     }
-    get selected() {
+    get shownTabs() {
       return this.tabs.filter(({ isShown }) => isShown);
     }
     get firstActiveTabIndex() {
@@ -3521,7 +3513,8 @@
 
       if (!tabInstance) return;
 
-      const { opts, selected, emit } = this;
+      const { opts, shownTabs, emit } = this;
+      const { a11y, multiExpand, awaitAnimation } = opts;
       const { tab, tabpanel, isShown, transition, index } = tabInstance;
 
       s = !!(s ?? !isShown);
@@ -3530,15 +3523,15 @@
 
       if (
         s === isShown ||
-        (opts.awaitAnimation &&
+        (awaitAnimation &&
           transition.isAnimating &&
-          ((selected.length <= 1 && !opts.multiExpand) || opts.multiExpand)) ||
-        (isShown && opts.alwaysExpanded && !s && selected.length < 2) ||
+          ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
+        (isShown && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
         (s && !this.focusFilter(tabInstance))
       )
         return;
 
-      if (transition.isAnimating && !opts.awaitAnimation) {
+      if (transition.isAnimating && !awaitAnimation) {
         await transition.cancel();
       }
 
@@ -3549,12 +3542,11 @@
 
       tabInstance.isShown = s;
 
-      if (!opts.multiExpand && s) {
-        for (const selectedTab of selected) {
-          if (tabInstance !== selectedTab && selectedTab.isShown) {
-            selectedTab.hide(animated);
-            if (opts.awaitPrevious)
-              await selectedTab.transition.getAwaitPromise();
+      if (!multiExpand && s) {
+        for (const shownTab of shownTabs) {
+          if (tabInstance !== shownTab && shownTab.isShown) {
+            shownTab.hide(animated);
+            if (opts.awaitPrevious) await shownTab.transition.getAwaitPromise();
           }
         }
       }
@@ -3569,9 +3561,12 @@
         ),
       );
 
-      const a11y = opts.a11y;
       if (a11y) {
-        a11y[OPTION_ARIA_EXPANDED] && setAttribute(tab, ARIA_EXPANDED, s);
+        if (this.isA11yTablist) {
+          a11y[OPTION_ARIA_SELECTED] && setAttribute(tab, ARIA_SELECTED, s);
+        } else {
+          a11y[OPTION_ARIA_EXPANDED] && setAttribute(tab, ARIA_EXPANDED, s);
+        }
         a11y[OPTION_ARIA_HIDDEN] && setAttribute(tabpanel, ARIA_HIDDEN, !s);
       }
 
@@ -3616,6 +3611,13 @@
       }
     }
   }
+
+  Tablist.data(UI_PREFIX + "tabs", {
+    alwaysExpanded: true,
+    horizontal: true,
+    siblings: false,
+    arrowActivation: true,
+  });
 
   class Autoaction {
     static Default = {
@@ -3974,10 +3976,6 @@
   const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
   class Tooltip extends ToggleMixin(Base, TOOLTIP) {
-    static DefaultA11y = {
-      [ROLE]: TOOLTIP,
-      [OPTION_ARIA_DESCRIBEDBY]: true,
-    };
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
@@ -4008,16 +4006,20 @@
         opts.transition,
         { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
       );
-      updateModule(this, A11Y);
-      opts.a11y[ROLE] && setAttribute(tooltip, opts.a11y[ROLE]);
+
+      opts.a11y && setAttribute(tooltip, TOOLTIP);
     }
     destroy(destroyOpts) {
-      const { isInit, anchor, id, _cache, emit } = this;
+      const { isInit, anchor, tooltip, id, _cache, emit, opts } = this;
       if (!isInit) return;
       emit(EVENT_BEFORE_DESTROY);
-      setAttribute(anchor, ARIA_DESCRIBEDBY, (val) =>
-        val === id + "-" + TARGET ? _cache[OPTION_ARIA_DESCRIBEDBY] : val,
-      );
+      if (opts.a11y) {
+        removeAttribute(tooltip, TOOLTIP);
+        setAttribute(anchor, ARIA_DESCRIBEDBY, (val) =>
+          val === id + "-" + TARGET ? _cache[OPTION_ARIA_DESCRIBEDBY] : val,
+        );
+      }
+
       if (_cache[TITLE]) {
         anchor[TITLE] = _cache[TITLE];
       }
@@ -4094,7 +4096,7 @@
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-      if (opts.a11y[OPTION_ARIA_DESCRIBEDBY]) {
+      if (opts.a11y) {
         setAttribute(
           anchor,
           ARIA_DESCRIBEDBY,
@@ -4131,10 +4133,6 @@
   }
 
   class Popover extends ToggleMixin(Base, POPOVER) {
-    static DefaultA11y = {
-      [OPTION_ARIA_CONTROLS]: true,
-      [OPTION_ARIA_EXPANDED]: true,
-    };
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
       required: true,
@@ -4170,7 +4168,6 @@
       const { base, opts, transition } = this;
 
       updateModule(this, AUTOFOCUS);
-      updateModule(this, A11Y);
 
       this.transition = Transition.createOrUpdate(
         transition,
@@ -4190,14 +4187,16 @@
         opts.toggler ?? getDefaultToggleSelector(id),
       ));
       if (!toggler) return;
-      opts.a11y[OPTION_ARIA_CONTROLS] && setAttribute(toggler, ARIA_CONTROLS, id);
+      opts.a11y && setAttribute(toggler, ARIA_CONTROLS, id);
       return this;
     }
-    destroy(opts) {
+    destroy(destroyOpts) {
       if (!this.isInit) return;
+      const { opts, toggler } = this;
       this.emit(EVENT_BEFORE_DESTROY);
-      removeClass(this[TOGGLER], opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
-      return baseDestroy(this, opts);
+      opts.a11y && removeAttribute(toggler, ARIA_CONTROLS);
+      removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+      return baseDestroy(this, destroyOpts);
     }
 
     async toggle(s, params) {
@@ -4236,7 +4235,7 @@
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-      a11y[OPTION_ARIA_EXPANDED] && toggler.setAttribute(ARIA_EXPANDED, !!s);
+      a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
       toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
 

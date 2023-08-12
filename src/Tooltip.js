@@ -30,7 +30,13 @@ import {
 
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
-import { getElement, setAttribute, toggleClass, inDOM } from "./helpers/dom";
+import {
+  getElement,
+  setAttribute,
+  toggleClass,
+  inDOM,
+  removeAttribute,
+} from "./helpers/dom";
 import Transition from "./helpers/Transition.js";
 
 import {
@@ -51,10 +57,6 @@ import {
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
 class Tooltip extends ToggleMixin(Base, TOOLTIP) {
-  static DefaultA11y = {
-    [ROLE]: TOOLTIP,
-    [OPTION_ARIA_DESCRIBEDBY]: true,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -85,16 +87,20 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       opts.transition,
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
-    updateModule(this, A11Y);
-    opts.a11y[ROLE] && setAttribute(tooltip, opts.a11y[ROLE]);
+
+    opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
   destroy(destroyOpts) {
-    const { isInit, anchor, id, _cache, emit } = this;
+    const { isInit, anchor, tooltip, id, _cache, emit, opts } = this;
     if (!isInit) return;
     emit(EVENT_BEFORE_DESTROY);
-    setAttribute(anchor, ARIA_DESCRIBEDBY, (val) =>
-      val === id + "-" + TARGET ? _cache[OPTION_ARIA_DESCRIBEDBY] : val,
-    );
+    if (opts.a11y) {
+      removeAttribute(tooltip, TOOLTIP);
+      setAttribute(anchor, ARIA_DESCRIBEDBY, (val) =>
+        val === id + "-" + TARGET ? _cache[OPTION_ARIA_DESCRIBEDBY] : val,
+      );
+    }
+
     if (_cache[TITLE]) {
       anchor[TITLE] = _cache[TITLE];
     }
@@ -171,7 +177,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-    if (opts.a11y[OPTION_ARIA_DESCRIBEDBY]) {
+    if (opts.a11y) {
       setAttribute(
         anchor,
         ARIA_DESCRIBEDBY,

@@ -14,10 +14,7 @@ import {
   DEFAULT_FLOATING_OPTIONS,
   DEFAULT_OPTIONS,
   AUTOFOCUS,
-  A11Y,
   DATA_UI_PREFIX,
-  OPTION_ARIA_CONTROLS,
-  OPTION_ARIA_EXPANDED,
   MODE,
   body,
   doc,
@@ -26,7 +23,13 @@ import {
   HIDE_MODE,
 } from "./helpers/constants";
 
-import { toggleClass, removeClass, setAttribute, focus } from "./helpers/dom";
+import {
+  toggleClass,
+  removeClass,
+  setAttribute,
+  focus,
+  removeAttribute,
+} from "./helpers/dom";
 import {
   normalizeToggleParameters,
   getDefaultToggleSelector,
@@ -47,10 +50,6 @@ import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
-  static DefaultA11y = {
-    [OPTION_ARIA_CONTROLS]: true,
-    [OPTION_ARIA_EXPANDED]: true,
-  };
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
@@ -86,7 +85,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     const { base, opts, transition } = this;
 
     updateModule(this, AUTOFOCUS);
-    updateModule(this, A11Y);
 
     this.transition = Transition.createOrUpdate(
       transition,
@@ -106,14 +104,16 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       opts.toggler ?? getDefaultToggleSelector(id),
     ));
     if (!toggler) return;
-    opts.a11y[OPTION_ARIA_CONTROLS] && setAttribute(toggler, ARIA_CONTROLS, id);
+    opts.a11y && setAttribute(toggler, ARIA_CONTROLS, id);
     return this;
   }
-  destroy(opts) {
+  destroy(destroyOpts) {
     if (!this.isInit) return;
+    const { opts, toggler } = this;
     this.emit(EVENT_BEFORE_DESTROY);
-    removeClass(this[TOGGLER], opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
-    return baseDestroy(this, opts);
+    opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
+    removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+    return baseDestroy(this, destroyOpts);
   }
 
   async toggle(s, params) {
@@ -152,7 +152,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-    a11y[OPTION_ARIA_EXPANDED] && toggler.setAttribute(ARIA_EXPANDED, !!s);
+    a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
 

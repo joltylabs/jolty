@@ -28,7 +28,6 @@ import {
   EVENT_BEFORE_INIT,
   EVENT_HIDDEN,
   EVENT_SHOWN,
-  A11Y,
   OPTION_GROUP,
   AUTOFOCUS,
   ACTION_DESTROY,
@@ -56,7 +55,7 @@ import {
   focus,
   closest,
   setAttribute,
-  removeAttr,
+  removeAttribute,
 } from "./helpers/dom";
 import {
   arrayFrom,
@@ -116,11 +115,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
   };
-  static DefaultA11y = {
-    [TABINDEX]: true,
-    [ROLE]: DIALOG,
-    disableIfDialog: true,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(MODAL),
@@ -157,7 +151,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
     updateModule(this, OPTION_GROUP, NAME);
     updateModule(this, OPTION_PREVENT_SCROLL);
     updateModule(this, AUTOFOCUS);
-    updateModule(this, A11Y);
 
     this.transitions ||= {};
 
@@ -201,9 +194,9 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     this._togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
 
-    if (a11y && (!isDialog || (isDialog && !a11y.disableIfDialog))) {
-      a11y[ROLE] && setAttribute(modal, ROLE, a11y[ROLE]);
-      a11y[TABINDEX] && setAttribute(modal, TABINDEX, -1);
+    if (a11y && !isDialog) {
+      setAttribute(modal, TABINDEX, -1);
+      setAttribute(modal, ROLE, DIALOG);
     }
 
     if (escapeHide) {
@@ -285,15 +278,15 @@ class Modal extends ToggleMixin(Base, MODAL) {
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
-    const { base, opts, title, description, togglers } = this;
-    const { a11y } = opts;
-    removeClass(togglers, opts[TOGGLER + CLASS_ACTIVE]);
-    removeAttr(base, [
-      a11y[TABINDEX] && TABINDEX,
-      a11y[ROLE] && ROLE,
-      title && ARIA_LABELLEDBY,
-      description && ARIA_DESCRIBEDBY,
-    ]);
+
+    removeClass(this.togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
+    this.opts.a11y &&
+      removeAttribute(this.base, [
+        TABINDEX,
+        ROLE,
+        ARIA_LABELLEDBY,
+        ARIA_DESCRIBEDBY,
+      ]);
     baseDestroy(this, destroyOpts);
     return this;
   }

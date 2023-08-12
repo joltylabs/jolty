@@ -27,7 +27,7 @@ import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
-import { removeAttr, setAttribute, toggleClass } from "./helpers/dom";
+import { removeAttribute, setAttribute, toggleClass } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   replaceWord,
@@ -49,11 +49,6 @@ import {
 const COLLAPSE = "collapse";
 
 class Collapse extends ToggleMixin(Base, COLLAPSE) {
-  static DefaultA11y = {
-    [OPTION_ARIA_CONTROLS]: true,
-    [OPTION_ARIA_EXPANDED]: true,
-    role: true,
-  };
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: false,
@@ -77,7 +72,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     addDismiss(this);
     updateModule(this, AUTOFOCUS);
-    updateModule(this, A11Y);
 
     this.teleport = Teleport.createOrUpdate(
       teleport,
@@ -96,17 +90,14 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     return this;
   }
   destroy(destroyOpts) {
-    let {
-      // eslint-disable-next-line prefer-const
-      opts: { a11y },
-      togglers,
-    } = this;
+    // eslint-disable-next-line prefer-const
+    let { opts, togglers } = this;
 
     if (!this.isInit) return;
 
     this.emit(EVENT_BEFORE_DESTROY);
 
-    if (a11y[OPTION_ARIA_CONTROLS]) {
+    if (opts.a11y) {
       const otherTogglers = arrayFrom(this.instances.values())
         .filter((item) => item !== this)
         .flatMap((item) => item.togglers.filter((t) => togglers.includes(t)));
@@ -123,11 +114,8 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       }
     }
 
-    removeAttr(togglers, [
-      a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
-      a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
-      a11y.role && ROLE,
-    ]);
+    opts.a11y &&
+      removeAttribute(togglers, [ARIA_CONTROLS, ARIA_EXPANDED, ROLE]);
 
     baseDestroy(this, destroyOpts);
     return this;
@@ -152,13 +140,13 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
         : opts[TOGGLER],
     ).map((toggler) => {
       if (!this.togglers?.includes(toggler)) {
-        if (opts.a11y[OPTION_ARIA_CONTROLS]) {
+        if (opts.a11y) {
           setAttribute(toggler, ARIA_CONTROLS, (v) =>
             v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
           );
-        }
-        if (opts.a11y.role && toggler.tagName !== BUTTON.toLowerCase()) {
-          setAttribute(toggler, ROLE, BUTTON);
+          if (toggler.tagName !== BUTTON.toLowerCase()) {
+            setAttribute(toggler, ROLE, BUTTON);
+          }
         }
         toggleClass(
           toggler,
@@ -201,7 +189,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-    a11y[OPTION_ARIA_EXPANDED] && setAttribute(togglers, ARIA_EXPANDED, !!s);
+    a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
     toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
     toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 

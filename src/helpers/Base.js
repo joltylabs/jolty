@@ -13,7 +13,7 @@ import {
   ACTION_ONCE,
   doc,
 } from "./constants";
-import { isArray, isFunction, isHTML, isString } from "./is";
+import { isArray, isFunction, isHTML, isObject, isString } from "./is";
 import { getElement, fragment } from "./dom";
 import {
   mergeDeep,
@@ -24,6 +24,14 @@ import {
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import Breakpoints from "./Breakpoints";
+
+function getDataValue(_data, dataName, elem) {
+  const value = callOrReturn(_data[dataName], elem);
+  if (!isObject(value)) return {};
+  return _data[value.data]
+    ? { ...getDataValue(_data, value.data, elem), ...value }
+    : value;
+}
 
 class Base {
   static allInstances = new Map();
@@ -37,11 +45,10 @@ class Base {
     const baseElemName = BASE_NODE_NAME ?? NAME;
 
     let dataName = opts.data;
-    let dataValue = dataName && _data[dataName];
     let datasetValue, isDataObject;
 
     if (elem == null) {
-      opts = mergeDeep(Default, callOrReturn(dataValue, elem), opts);
+      opts = mergeDeep(Default, getDataValue(_data, dataName, elem), opts);
       elem = isString(opts.template)
         ? callOrReturn(_templates[opts.template], opts)
         : opts.template(opts);
@@ -61,11 +68,9 @@ class Base {
 
       if (dataName && !_data[dataName]) return;
 
-      dataValue = _data[dataName] || {};
-
       opts = mergeDeep(
         Default,
-        callOrReturn(dataValue, elem),
+        getDataValue(_data, dataName, elem),
         datasetValue,
         opts,
       );

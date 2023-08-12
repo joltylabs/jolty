@@ -25,8 +25,10 @@ import {
   ARIA_LABELLEDBY,
   ARIA_HIDDEN,
   ARIA_EXPANDED,
+  ARIA_SELECTED,
   ARIA_ORIENTATION,
   ROLE,
+  BUTTON,
   TABINDEX,
   HIDDEN,
   INERT,
@@ -42,13 +44,13 @@ import {
   HORIZONTAL,
   VERTICAL,
   A11Y,
-  OPTION_ARIA_CONTROLS,
-  OPTION_ARIA_LABELLEDBY,
   OPTION_ARIA_EXPANDED,
+  OPTION_ARIA_SELECTED,
   OPTION_ARIA_HIDDEN,
   CLASS_ACTIVE_SUFFIX,
   ROLE_SUFFIX,
   doc,
+  UI_PREFIX,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -75,7 +77,7 @@ import {
 import {
   toggleClass,
   removeClass,
-  removeAttr,
+  removeAttribute,
   next,
   focus,
   parents,
@@ -106,9 +108,8 @@ class Tablist extends Base {
     [OPTION_TABPANEL_ROLE]: true,
     [OPTION_ARIA_ORIENTRATION]: true,
     [OPTION_ARIA_MULTISELECTABLE]: true,
-    [OPTION_ARIA_CONTROLS]: true,
-    [OPTION_ARIA_LABELLEDBY]: true,
     [OPTION_ARIA_EXPANDED]: true,
+    [OPTION_ARIA_SELECTED]: true,
     [TABINDEX]: true,
     [OPTION_TABPANEL_TABINDEX]: true,
   };
@@ -142,12 +143,15 @@ class Tablist extends Base {
   constructor(elem, opts) {
     super(elem, opts);
   }
+  get isA11yTablist() {
+    return !this.opts.multiExpand && this.opts.alwaysExpanded;
+  }
   _update() {
     const { a11y } = updateModule(this, A11Y);
-    const { tablist, tabs, lastShownTab, opts } = this;
+    const { tablist, tabs, lastShownTab, opts, isA11yTablist } = this;
 
     if (a11y) {
-      a11y[ROLE] && setAttribute(tablist, ROLE, TABLIST);
+      a11y[ROLE] && setAttribute(tablist, ROLE, isA11yTablist ? TABLIST : null);
       a11y[OPTION_ARIA_MULTISELECTABLE] &&
         setAttribute(tablist, ARIA_MULTISELECTABLE, opts.multiExpand || null);
       a11y[OPTION_ARIA_ORIENTRATION] &&
@@ -164,12 +168,12 @@ class Tablist extends Base {
       const { tab, tabpanel, teleport, transition } = tabObj;
 
       if (a11y) {
-        a11y[OPTION_ARIA_CONTROLS] &&
-          setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
-        a11y[OPTION_TAB_ROLE] && setAttribute(tab, ROLE, TAB);
-        a11y[OPTION_TABPANEL_ROLE] && setAttribute(tabpanel, ROLE, TABPANEL);
-        a11y[OPTION_ARIA_LABELLEDBY] &&
-          setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
+        setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
+        a11y[OPTION_TAB_ROLE] &&
+          setAttribute(tab, ROLE, isA11yTablist ? TAB : BUTTON);
+        a11y[OPTION_TABPANEL_ROLE] &&
+          setAttribute(tabpanel, ROLE, isA11yTablist ? TABPANEL : "region");
+        setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
       }
 
       tabObj.teleport = Teleport.createOrUpdate(
@@ -249,7 +253,7 @@ class Tablist extends Base {
     off(tabs);
 
     if (a11y) {
-      removeAttr(tablist, [
+      removeAttribute(tablist, [
         a11y[ROLE] && ROLE,
         a11y[OPTION_ARIA_MULTISELECTABLE] && ARIA_MULTISELECTABLE,
         a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
@@ -325,16 +329,17 @@ class Tablist extends Base {
       const opts = this.opts;
       const a11y = opts.a11y;
       if (a11y) {
-        removeAttr(tab, [
+        removeAttribute(tab, [
           a11y[OPTION_TAB_ROLE] && ROLE,
           a11y[TABINDEX] && TABINDEX,
-          a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
+          ARIA_CONTROLS,
           a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
+          a11y[OPTION_ARIA_SELECTED] && ARIA_SELECTED,
         ]);
-        removeAttr(tabpanel, [
+        removeAttribute(tabpanel, [
           a11y[OPTION_TABPANEL_ROLE] && ROLE,
           a11y[OPTION_TABPANEL_TABINDEX] && TABINDEX,
-          a11y[OPTION_ARIA_LABELLEDBY] && ARIA_LABELLEDBY,
+          ARIA_LABELLEDBY,
           a11y[OPTION_ARIA_HIDDEN] && ARIA_HIDDEN,
           HIDDEN,
           INERT,
@@ -492,6 +497,7 @@ class Tablist extends Base {
     if (!keyboard) return;
     activeIndex ??= this.shownTabs[0]?.index ?? this.firstActiveTabIndex;
     a11y &&
+      this.isA11yTablist &&
       this.tabs.forEach(({ tab, tabpanel }, i) =>
         setAttribute(
           [a11y[TABINDEX] && tab, a11y[OPTION_TABPANEL_TABINDEX] && tabpanel],
@@ -524,6 +530,7 @@ class Tablist extends Base {
     if (!tabInstance) return;
 
     const { opts, shownTabs, emit } = this;
+    const { a11y, multiExpand, awaitAnimation } = opts;
     const { tab, tabpanel, isShown, transition, index } = tabInstance;
 
     s = !!(s ?? !isShown);
@@ -532,15 +539,15 @@ class Tablist extends Base {
 
     if (
       s === isShown ||
-      (opts.awaitAnimation &&
+      (awaitAnimation &&
         transition.isAnimating &&
-        ((shownTabs.length <= 1 && !opts.multiExpand) || opts.multiExpand)) ||
+        ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
       (isShown && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
       (s && !this.focusFilter(tabInstance))
     )
       return;
 
-    if (transition.isAnimating && !opts.awaitAnimation) {
+    if (transition.isAnimating && !awaitAnimation) {
       await transition.cancel();
     }
 
@@ -551,7 +558,7 @@ class Tablist extends Base {
 
     tabInstance.isShown = s;
 
-    if (!opts.multiExpand && s) {
+    if (!multiExpand && s) {
       for (const shownTab of shownTabs) {
         if (tabInstance !== shownTab && shownTab.isShown) {
           shownTab.hide(animated);
@@ -570,9 +577,12 @@ class Tablist extends Base {
       ),
     );
 
-    const a11y = opts.a11y;
     if (a11y) {
-      a11y[OPTION_ARIA_EXPANDED] && setAttribute(tab, ARIA_EXPANDED, s);
+      if (this.isA11yTablist) {
+        a11y[OPTION_ARIA_SELECTED] && setAttribute(tab, ARIA_SELECTED, s);
+      } else {
+        a11y[OPTION_ARIA_EXPANDED] && setAttribute(tab, ARIA_EXPANDED, s);
+      }
       a11y[OPTION_ARIA_HIDDEN] && setAttribute(tabpanel, ARIA_HIDDEN, !s);
     }
 
@@ -617,5 +627,12 @@ class Tablist extends Base {
     }
   }
 }
+
+Tablist.data(UI_PREFIX + "tabs", {
+  alwaysExpanded: true,
+  horizontal: true,
+  siblings: false,
+  arrowActivation: true,
+});
 
 export default Tablist;

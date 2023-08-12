@@ -18,7 +18,7 @@ export { default as parent } from "./parent";
 export { default as parents } from "./parents";
 export { default as prev } from "./prev";
 export { default as prevAll } from "./prevAll";
-export { default as removeAttr } from "./removeAttr";
+export { default as removeAttribute } from "./removeAttribute";
 export { default as removeClass } from "./removeClass";
 export { default as repaint } from "./repaint";
 export { default as setAttribute } from "./setAttribute";

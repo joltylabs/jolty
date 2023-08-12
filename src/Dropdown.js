@@ -40,7 +40,7 @@ import ToggleMixin from "./helpers/ToggleMixin.js";
 import {
   toggleClass,
   removeClass,
-  removeAttr,
+  removeAttribute,
   setAttribute,
   closest,
 } from "./helpers/dom";
@@ -64,10 +64,6 @@ import {
 } from "./helpers/modules";
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
-  static DefaultA11y = {
-    [OPTION_ARIA_CONTROLS]: true,
-    [OPTION_ARIA_EXPANDED]: true,
-  };
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
     required: true,
@@ -92,7 +88,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     if (this.isInit) return;
     this._update();
 
-    const { opts, toggler, dropdown, show, on } = this;
+    const { toggler, dropdown, show, on } = this;
 
     toggleOnInterection({ anchor: toggler, target: dropdown, instance: this });
     addDismiss(this, dropdown);
@@ -100,10 +96,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
       const { keyCode, shiftKey } = event;
-      const horizontal = opts.togglerHorizontal;
-      const prevCode = horizontal ? KEY_ARROW_LEFT : KEY_ARROW_UP;
-      const nextCode = horizontal ? KEY_ARROW_RIGHT : KEY_ARROW_DOWN;
-      const arrowActivated = prevCode === keyCode || nextCode === keyCode;
+
+      const arrowActivated =
+        KEY_ARROW_UP === keyCode || KEY_ARROW_DOWN === keyCode;
       if (
         arrowActivated ||
         (keyCode === KEY_TAB && !shiftKey && this.isShown)
@@ -153,7 +148,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     ));
 
     if (!toggler) return;
-    opts.a11y[OPTION_ARIA_CONTROLS] && setAttribute(toggler, ARIA_CONTROLS, id);
+    opts.a11y && setAttribute(toggler, ARIA_CONTROLS, id);
     return this;
   }
   get focusableElems() {
@@ -227,14 +222,11 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     }
   }
   destroy(destroyOpts) {
-    const { isInit, toggler, opts } = this;
-    if (!isInit) return;
+    if (!this.isInit) return;
+    const { opts, toggler } = this;
     this.emit(EVENT_BEFORE_DESTROY);
+    opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
-    removeAttr(toggler, [
-      opts.a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
-      opts.a11y[OPTION_ARIA_CONTROLS] && ARIA_CONTROLS,
-    ]);
     return baseDestroy(this, destroyOpts);
   }
 
@@ -280,7 +272,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-    a11y[OPTION_ARIA_EXPANDED] && toggler.setAttribute(ARIA_EXPANDED, !!s);
+    a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
 
