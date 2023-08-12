@@ -2215,14 +2215,9 @@ var awaitPromise = async (promise, callback) => {
 const COLLAPSE = "collapse";
 
 class Collapse extends ToggleMixin(Base, COLLAPSE) {
-  static DefaultAutofocus = {
-    elem: DEFAULT_AUTOFOCUS,
-    required: false,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(COLLAPSE),
-    autofocus: true,
     hashNavigation: true,
     dismiss: true,
     [TOGGLER]: true,
@@ -2237,7 +2232,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     const { base, opts, transition, teleport } = this;
 
     addDismiss(this);
-    updateModule(this, AUTOFOCUS);
 
     this.teleport = Teleport.createOrUpdate(
       teleport,
