@@ -2220,7 +2220,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     eventPrefix: getEventsPrefix(COLLAPSE),
     hashNavigation: true,
     dismiss: true,
-    [TOGGLER]: true,
+    [TOGGLER]: ({ id }) => getDefaultToggleSelector(id, true),
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [COLLAPSE + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
@@ -2293,33 +2293,30 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   updateTriggers() {
     const { opts, id } = this;
 
-    return (this.togglers = getOptionElems(
-      this,
-      opts[TOGGLER] === true
-        ? ({ id }) => getDefaultToggleSelector(id, true)
-        : opts[TOGGLER],
-    ).map((toggler) => {
-      if (!this.togglers?.includes(toggler)) {
-        if (opts.a11y) {
-          setAttribute(toggler, ARIA_CONTROLS, (v) =>
-            v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
-          );
-          if (toggler.tagName !== BUTTON.toLowerCase()) {
-            setAttribute(toggler, ROLE, BUTTON);
+    return (this.togglers = getOptionElems(this, opts[TOGGLER]).map(
+      (toggler) => {
+        if (!this.togglers?.includes(toggler)) {
+          if (opts.a11y) {
+            setAttribute(toggler, ARIA_CONTROLS, (v) =>
+              v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
+            );
+            if (toggler.tagName !== BUTTON.toLowerCase()) {
+              setAttribute(toggler, ROLE, BUTTON);
+            }
           }
+          toggleClass(
+            toggler,
+            opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
+            !!this.isShown,
+          );
+          this.on(toggler, EVENT_CLICK, (event) => {
+            event.preventDefault();
+            this.toggle(null, { trigger: toggler, event });
+          });
         }
-        toggleClass(
-          toggler,
-          opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-          !!this.isShown,
-        );
-        this.on(toggler, EVENT_CLICK, (event) => {
-          event.preventDefault();
-          this.toggle(null, { trigger: toggler, event });
-        });
-      }
-      return toggler;
-    }));
+        return toggler;
+      },
+    ));
   }
   async toggle(s, params) {
     const { base, transition, togglers, opts, emit, isShown, isAnimating } =
@@ -2359,8 +2356,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       [EVENT_DESTROY]: () =>
         this.destroy({ remove: true, destroyTransition: false }),
     });
-
-    s && !ignoreAutofocus && callAutofocus(this);
 
     awaitPromise(promise, () =>
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
@@ -2607,8 +2602,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 const DOM_ELEMENTS = [MODAL, BACKDROP, CONTENT];
 const CLASS_PREVENT_SCROLL =
   UI_PREFIX + MODAL + "-" + ACTION_PREVENT + "-" + SCROLL;
-const PROPERTY_MODAL_DEEP = VAR_UI_PREFIX + MODAL + "-deep";
-const DATA_MODAL_DEEP = DATA_UI_PREFIX + MODAL + "-deep";
 
 const PROPERTY_ROOT_SCROLLBAR_WIDTH =
   VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
@@ -2659,7 +2652,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
     awaitAnimation: false,
     [CONTENT]: getDataSelector(MODAL, CONTENT),
     [BACKDROP]: getDataSelector(MODAL, BACKDROP),
-    backdropOutside: null,
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -2803,7 +2795,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
   destroy(destroyOpts) {
     if (!this.isInit) return;
 
-    removeClass(this.togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
+    removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
     this.opts.a11y &&
       removeAttribute(this.base, [
         TABINDEX,
@@ -2922,11 +2914,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     }
 
     toggleClass(
-      getElements(
-        opts[TOGGLER] === true
-          ? getDefaultToggleSelector(this.id)
-          : opts[TOGGLER],
-      ),
+      getElements(this._togglers),
       opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
       s,
     );
@@ -2948,12 +2936,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
       }
     }
 
-    opts.group &&
-      this.shownGroupModals.reverse().forEach(({ modal }, i) => {
-        modal.style.setProperty(PROPERTY_MODAL_DEEP, i);
-        setAttribute(modal, DATA_MODAL_DEEP, i || null);
-      });
-
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
     for (const elemName of [MODAL, BACKDROP, CONTENT]) {
@@ -2961,13 +2943,10 @@ class Modal extends ToggleMixin(Base, MODAL) {
         continue;
       }
       const transitionOpts = { allowRemove: elemName !== MODAL };
-      if (elemName === MODAL && !s) {
-        if (opts.group) {
-          transitionOpts[EVENT_HIDE] = () =>
-            modal.style.removeProperty(PROPERTY_MODAL_DEEP);
-        }
+
+      if (elemName !== MODAL) {
+        transitions[elemName]?.run(s, animated, transitionOpts);
       }
-      transitions[elemName]?.run(s, animated, transitionOpts);
     }
 
     this._preventScroll(s);

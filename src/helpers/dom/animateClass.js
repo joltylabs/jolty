@@ -1,8 +1,8 @@
-import { removeClass, repaint, addClass } from "./index.js";
+import { removeClass, addClass } from "./index.js";
 export default (elem, className) => {
   if (!elem || !className) return;
   removeClass(elem, className);
-  repaint(elem);
+  elem.offsetWidth;
   addClass(elem, className);
   const animations = elem.getAnimations();
   if (animations.length) {

@@ -39,7 +39,6 @@ import Transition from "./helpers/Transition.js";
 
 import {
   normalizeToggleParameters,
-  updateModule,
   getEventsPrefix,
   getClassActive,
 } from "./helpers/utils";

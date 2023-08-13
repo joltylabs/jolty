@@ -83,8 +83,6 @@ import Teleport from "./helpers/Teleport.js";
 const DOM_ELEMENTS = [MODAL, BACKDROP, CONTENT];
 const CLASS_PREVENT_SCROLL =
   UI_PREFIX + MODAL + "-" + ACTION_PREVENT + "-" + SCROLL;
-const PROPERTY_MODAL_DEEP = VAR_UI_PREFIX + MODAL + "-deep";
-const DATA_MODAL_DEEP = DATA_UI_PREFIX + MODAL + "-deep";
 
 const PROPERTY_ROOT_SCROLLBAR_WIDTH =
   VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
@@ -135,7 +133,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
     awaitAnimation: false,
     [CONTENT]: getDataSelector(MODAL, CONTENT),
     [BACKDROP]: getDataSelector(MODAL, BACKDROP),
-    backdropOutside: null,
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -279,7 +276,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
   destroy(destroyOpts) {
     if (!this.isInit) return;
 
-    removeClass(this.togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
+    removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
     this.opts.a11y &&
       removeAttribute(this.base, [
         TABINDEX,
@@ -398,11 +395,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     }
 
     toggleClass(
-      getElements(
-        opts[TOGGLER] === true
-          ? getDefaultToggleSelector(this.id)
-          : opts[TOGGLER],
-      ),
+      getElements(this._togglers),
       opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
       s,
     );
@@ -424,12 +417,6 @@ class Modal extends ToggleMixin(Base, MODAL) {
       }
     }
 
-    opts.group &&
-      this.shownGroupModals.reverse().forEach(({ modal }, i) => {
-        modal.style.setProperty(PROPERTY_MODAL_DEEP, i);
-        setAttribute(modal, DATA_MODAL_DEEP, i || null);
-      });
-
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
     for (const elemName of [MODAL, BACKDROP, CONTENT]) {
@@ -437,13 +424,10 @@ class Modal extends ToggleMixin(Base, MODAL) {
         continue;
       }
       const transitionOpts = { allowRemove: elemName !== MODAL };
-      if (elemName === MODAL && !s) {
-        if (opts.group) {
-          transitionOpts[EVENT_HIDE] = () =>
-            modal.style.removeProperty(PROPERTY_MODAL_DEEP);
-        }
+
+      if (elemName !== MODAL) {
+        transitions[elemName]?.run(s, animated, transitionOpts);
       }
-      transitions[elemName]?.run(s, animated, transitionOpts);
     }
 
     this._preventScroll(s);

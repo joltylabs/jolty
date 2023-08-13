@@ -29,8 +29,8 @@ import {
   arrayUnique,
   arrayFrom,
   getEventsPrefix,
-  getDefaultToggleSelector,
   getOptionElems,
+  getDefaultToggleSelector,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -48,7 +48,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     eventPrefix: getEventsPrefix(COLLAPSE),
     hashNavigation: true,
     dismiss: true,
-    [TOGGLER]: true,
+    [TOGGLER]: ({ id }) => getDefaultToggleSelector(id, true),
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [COLLAPSE + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
@@ -121,33 +121,30 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   updateTriggers() {
     const { opts, id } = this;
 
-    return (this.togglers = getOptionElems(
-      this,
-      opts[TOGGLER] === true
-        ? ({ id }) => getDefaultToggleSelector(id, true)
-        : opts[TOGGLER],
-    ).map((toggler) => {
-      if (!this.togglers?.includes(toggler)) {
-        if (opts.a11y) {
-          setAttribute(toggler, ARIA_CONTROLS, (v) =>
-            v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
-          );
-          if (toggler.tagName !== BUTTON.toLowerCase()) {
-            setAttribute(toggler, ROLE, BUTTON);
+    return (this.togglers = getOptionElems(this, opts[TOGGLER]).map(
+      (toggler) => {
+        if (!this.togglers?.includes(toggler)) {
+          if (opts.a11y) {
+            setAttribute(toggler, ARIA_CONTROLS, (v) =>
+              v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
+            );
+            if (toggler.tagName !== BUTTON.toLowerCase()) {
+              setAttribute(toggler, ROLE, BUTTON);
+            }
           }
+          toggleClass(
+            toggler,
+            opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
+            !!this.isShown,
+          );
+          this.on(toggler, EVENT_CLICK, (event) => {
+            event.preventDefault();
+            this.toggle(null, { trigger: toggler, event });
+          });
         }
-        toggleClass(
-          toggler,
-          opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-          !!this.isShown,
-        );
-        this.on(toggler, EVENT_CLICK, (event) => {
-          event.preventDefault();
-          this.toggle(null, { trigger: toggler, event });
-        });
-      }
-      return toggler;
-    }));
+        return toggler;
+      },
+    ));
   }
   async toggle(s, params) {
     const { base, transition, togglers, opts, emit, isShown, isAnimating } =
@@ -187,8 +184,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       [EVENT_DESTROY]: () =>
         this.destroy({ remove: true, destroyTransition: false }),
     });
-
-    s && !ignoreAutofocus && callAutofocus(this);
 
     awaitPromise(promise, () =>
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
