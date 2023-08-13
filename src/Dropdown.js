@@ -31,6 +31,7 @@ import {
   CLASS_ACTIVE_SUFFIX,
   doc,
   HIDE_MODE,
+  AUTOFOCUS,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -50,6 +51,7 @@ import {
   getDefaultToggleSelector,
   getOptionElems,
   getOptionElem,
+  updateModule,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -64,7 +66,7 @@ import {
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
-    required: true,
+    required: false,
   };
   static Default = {
     ...DEFAULT_OPTIONS,
@@ -90,6 +92,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     toggleOnInterection({ anchor: toggler, target: dropdown, instance: this });
     addDismiss(this, dropdown);
+    updateModule(this, AUTOFOCUS);
 
     on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
@@ -242,8 +245,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     const { awaitAnimation, autofocus, a11y } = opts;
     const {
       animated,
-      trigger,
       silent,
+      trigger,
       event,
       ignoreConditions,
       ignoreAutofocus,

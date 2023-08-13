@@ -216,8 +216,8 @@ const OPTION_ARIA_EXPANDED = kebabToCamel(ARIA_EXPANDED);
 const OPTION_ARIA_SELECTED = kebabToCamel(ARIA_SELECTED);
 kebabToCamel(ARIA_CONTROLS);
 const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
-const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
-const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
+kebabToCamel(ARIA_LIVE);
+kebabToCamel(ARIA_ATOMIC);
 const CLASS_ACTIVE_SUFFIX = "ClassActive";
 const ROLE_SUFFIX = upperFirst(ROLE);
 
@@ -699,7 +699,7 @@ var getDefaultToggleSelector = (id, multiply) =>
   }="${id}"],[href="#${id}"]`;
 
 const DEFAULT_PREFIX = upperFirst(DEFAULT);
-var updateModule = ({ opts, constructor }, name, property) => {
+var updateModule = ({ opts, constructor }, name, property = false) => {
   const defaultValue = constructor[DEFAULT_PREFIX + upperFirst(name)];
   const value = opts[name];
   if (isObject(value)) {
@@ -2278,6 +2278,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       removeAttribute(togglers, [ARIA_CONTROLS, ARIA_EXPANDED, ROLE]);
 
     baseDestroy(this, destroyOpts);
+
     return this;
   }
 
@@ -2322,14 +2323,8 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     const { base, transition, togglers, opts, emit, isShown, isAnimating } =
       this;
     const { awaitAnimation, a11y } = opts;
-    const {
-      animated,
-      silent,
-      trigger,
-      event,
-      ignoreConditions,
-      ignoreAutofocus,
-    } = normalizeToggleParameters(params);
+    const { animated, silent, trigger, event, ignoreConditions } =
+      normalizeToggleParameters(params);
 
     s ??= !isShown;
 
@@ -2370,7 +2365,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
-    required: true,
+    required: false,
   };
   static Default = {
     ...DEFAULT_OPTIONS,
@@ -2396,6 +2391,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     toggleOnInterection({ anchor: toggler, target: dropdown, instance: this });
     addDismiss(this, dropdown);
+    updateModule(this, AUTOFOCUS);
 
     on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
@@ -2546,8 +2542,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     const { awaitAnimation, autofocus, a11y } = opts;
     const {
       animated,
-      trigger,
       silent,
+      trigger,
       event,
       ignoreConditions,
       ignoreAutofocus,
@@ -3724,12 +3720,6 @@ const _containers = {};
 class Toast extends ToggleMixin(Base, TOAST) {
   static _templates = {};
 
-  static DefaultA11y = {
-    [OPTION_ARIA_LIVE]: "off",
-    [OPTION_ARIA_ATOMIC]: true,
-    [TABINDEX]: true,
-    [ROLE]: "status",
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(TOAST),
@@ -3767,13 +3757,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
       opts.autohide,
     );
 
-    const { a11y } = updateModule(this, A11Y);
-
-    a11y[OPTION_ARIA_LIVE] &&
-      setAttribute(base, ARIA_LIVE, a11y[OPTION_ARIA_LIVE]);
-    a11y[OPTION_ARIA_ATOMIC] && setAttribute(base, ARIA_ATOMIC, true);
-    a11y[TABINDEX] && setAttribute(base, TABINDEX, 0);
-    a11y[ROLE] && setAttribute(base, ROLE, a11y[ROLE]);
     return this;
   }
   destroy(opts) {

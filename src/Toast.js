@@ -9,22 +9,14 @@ import {
   body,
   DEFAULT_OPTIONS,
   ACTION_DESTROY,
-  ROLE,
-  ARIA_LIVE,
-  ARIA_ATOMIC,
-  TABINDEX,
-  A11Y,
-  OPTION_ARIA_LIVE,
-  OPTION_ARIA_ATOMIC,
   HIDE_MODE,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
-import { fragment, inDOM, setAttribute } from "./helpers/dom";
+import { fragment, inDOM } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   arrayFrom,
   getEventsPrefix,
-  updateModule,
   callOrReturn,
   getOptionElem,
 } from "./helpers/utils";
@@ -47,12 +39,6 @@ const _containers = {};
 class Toast extends ToggleMixin(Base, TOAST) {
   static _templates = {};
 
-  static DefaultA11y = {
-    [OPTION_ARIA_LIVE]: "off",
-    [OPTION_ARIA_ATOMIC]: true,
-    [TABINDEX]: true,
-    [ROLE]: "status",
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(TOAST),
@@ -90,13 +76,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
       opts.autohide,
     );
 
-    const { a11y } = updateModule(this, A11Y);
-
-    a11y[OPTION_ARIA_LIVE] &&
-      setAttribute(base, ARIA_LIVE, a11y[OPTION_ARIA_LIVE]);
-    a11y[OPTION_ARIA_ATOMIC] && setAttribute(base, ARIA_ATOMIC, true);
-    a11y[TABINDEX] && setAttribute(base, TABINDEX, 0);
-    a11y[ROLE] && setAttribute(base, ROLE, a11y[ROLE]);
     return this;
   }
   destroy(opts) {

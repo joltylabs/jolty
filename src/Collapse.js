@@ -35,7 +35,6 @@ import {
 import {
   addDismiss,
   baseDestroy,
-  callAutofocus,
   callInitShow,
   awaitPromise,
 } from "./helpers/modules";
@@ -106,6 +105,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       removeAttribute(togglers, [ARIA_CONTROLS, ARIA_EXPANDED, ROLE]);
 
     baseDestroy(this, destroyOpts);
+
     return this;
   }
 
@@ -150,14 +150,8 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     const { base, transition, togglers, opts, emit, isShown, isAnimating } =
       this;
     const { awaitAnimation, a11y } = opts;
-    const {
-      animated,
-      silent,
-      trigger,
-      event,
-      ignoreConditions,
-      ignoreAutofocus,
-    } = normalizeToggleParameters(params);
+    const { animated, silent, trigger, event, ignoreConditions } =
+      normalizeToggleParameters(params);
 
     s ??= !isShown;
 
