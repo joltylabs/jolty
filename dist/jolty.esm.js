@@ -185,7 +185,6 @@ const ARIA_CONTROLS = ARIA + "-controls";
 const ARIA_EXPANDED = ARIA + "-expanded";
 const ARIA_SELECTED = ARIA + "-selected";
 const ARIA_HIDDEN = ARIA + "-" + HIDDEN;
-const ARIA_MULTISELECTABLE = ARIA + "-multiselectable";
 const ARIA_LABELLEDBY = ARIA + "-labelledby";
 const ARIA_DESCRIBEDBY = ARIA + "-describedby";
 const ARIA_ORIENTATION = ARIA + "-orientation";
@@ -212,8 +211,8 @@ const OPTION_POSITION = "position";
 const OPTION_TO = "to";
 kebabToCamel(ARIA_LABELLEDBY);
 const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
-const OPTION_ARIA_EXPANDED = kebabToCamel(ARIA_EXPANDED);
-const OPTION_ARIA_SELECTED = kebabToCamel(ARIA_SELECTED);
+kebabToCamel(ARIA_EXPANDED);
+kebabToCamel(ARIA_SELECTED);
 kebabToCamel(ARIA_CONTROLS);
 const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
 kebabToCamel(ARIA_LIVE);
@@ -699,9 +698,12 @@ var getDefaultToggleSelector = (id, multiply) =>
   }="${id}"],[href="#${id}"]`;
 
 const DEFAULT_PREFIX = upperFirst(DEFAULT);
-var updateModule = ({ opts, constructor }, name, property = false) => {
+var updateModule = ({ opts, constructor }, name, property = false, defaults) => {
   const defaultValue = constructor[DEFAULT_PREFIX + upperFirst(name)];
-  const value = opts[name];
+  let value = opts[name];
+  if (value && isString(value)) {
+    value = defaults[value];
+  }
   if (isObject(value)) {
     opts[name] = { ...defaultValue, ...value };
   } else if (value) {
@@ -3036,30 +3038,43 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
 const TABLIST = "tablist";
 const TAB = "tab";
+const TABS = "tabs";
 const TABPANEL = "tabpanel";
 const ITEM = "item";
+const ACCORDION = "accordion";
 
 const ELEMS = [ITEM, TAB, TABPANEL];
 const OPTION_TAB_ROLE = TAB + ROLE_SUFFIX;
 const OPTION_TABPANEL_ROLE = TABPANEL + ROLE_SUFFIX;
 const OPTION_TABPANEL_TABINDEX = TABPANEL + upperFirst(TABINDEX);
 const OPTION_ARIA_ORIENTRATION = kebabToCamel(ARIA_ORIENTATION);
-const OPTION_ARIA_MULTISELECTABLE = kebabToCamel(ARIA_MULTISELECTABLE);
+const OPTION_STATE_ATTRIBUTE = "stateAttribute";
 
 const TABLIST_SECONDARY_METHODS = ["getTab", "isTab", "initTab", "initTabs"];
 
-class Tablist extends Base {
-  static DefaultA11y = {
-    [ROLE]: true,
-    [OPTION_TAB_ROLE]: true,
-    [OPTION_TABPANEL_ROLE]: true,
+const A11Y_DEFAULTS = {
+  [ACCORDION]: {
+    [ROLE]: null,
+    [OPTION_TAB_ROLE]: BUTTON,
+    [OPTION_TABPANEL_ROLE]: "region",
     [OPTION_ARIA_ORIENTRATION]: true,
-    [OPTION_ARIA_MULTISELECTABLE]: true,
-    [OPTION_ARIA_EXPANDED]: true,
-    [OPTION_ARIA_SELECTED]: true,
+    [OPTION_STATE_ATTRIBUTE]: ARIA_EXPANDED,
+    [TABINDEX]: false,
+    [OPTION_TABPANEL_TABINDEX]: false,
+  },
+  [TABS]: {
+    [ROLE]: TABLIST,
+    [OPTION_TAB_ROLE]: TAB,
+    [OPTION_TABPANEL_ROLE]: TABPANEL,
+    [OPTION_ARIA_ORIENTRATION]: true,
+    [OPTION_STATE_ATTRIBUTE]: ARIA_SELECTED,
     [TABINDEX]: true,
     [OPTION_TABPANEL_TABINDEX]: true,
-  };
+  },
+};
+
+class Tablist extends Base {
+  static DefaultA11y = { ...A11Y_DEFAULTS[ACCORDION] };
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(TABLIST),
@@ -3081,6 +3096,7 @@ class Tablist extends Base {
     [TAB + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [ITEM + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [TABPANEL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    a11y: ACCORDION,
   };
   static _data = {};
   static instances = new Map();
@@ -3090,17 +3106,12 @@ class Tablist extends Base {
   constructor(elem, opts) {
     super(elem, opts);
   }
-  get isA11yTablist() {
-    return !this.opts.multiExpand && this.opts.alwaysExpanded;
-  }
   _update() {
-    const { a11y } = updateModule(this, A11Y);
-    const { tablist, tabs, lastShownTab, opts, isA11yTablist } = this;
+    const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
+    const { tablist, tabs, lastShownTab, opts } = this;
 
     if (a11y) {
-      a11y[ROLE] && setAttribute(tablist, ROLE, isA11yTablist ? TABLIST : null);
-      a11y[OPTION_ARIA_MULTISELECTABLE] &&
-        setAttribute(tablist, ARIA_MULTISELECTABLE, opts.multiExpand || null);
+      setAttribute(tablist, ROLE, a11y[ROLE]);
       a11y[OPTION_ARIA_ORIENTRATION] &&
         setAttribute(
           tablist,
@@ -3115,11 +3126,10 @@ class Tablist extends Base {
       const { tab, tabpanel, teleport, transition } = tabObj;
 
       if (a11y) {
+        removeAttribute(tab, [ARIA_SELECTED, ARIA_EXPANDED]);
         setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
-        a11y[OPTION_TAB_ROLE] &&
-          setAttribute(tab, ROLE, isA11yTablist ? TAB : BUTTON);
-        a11y[OPTION_TABPANEL_ROLE] &&
-          setAttribute(tabpanel, ROLE, isA11yTablist ? TABPANEL : "region");
+        setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
+        setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
         setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
       }
 
@@ -3202,7 +3212,6 @@ class Tablist extends Base {
     if (a11y) {
       removeAttribute(tablist, [
         a11y[ROLE] && ROLE,
-        a11y[OPTION_ARIA_MULTISELECTABLE] && ARIA_MULTISELECTABLE,
         a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
       ]);
     }
@@ -3277,14 +3286,13 @@ class Tablist extends Base {
       const a11y = opts.a11y;
       if (a11y) {
         removeAttribute(tab, [
-          a11y[OPTION_TAB_ROLE] && ROLE,
+          ROLE,
           a11y[TABINDEX] && TABINDEX,
           ARIA_CONTROLS,
-          a11y[OPTION_ARIA_EXPANDED] && ARIA_EXPANDED,
-          a11y[OPTION_ARIA_SELECTED] && ARIA_SELECTED,
+          a11y[OPTION_STATE_ATTRIBUTE],
         ]);
         removeAttribute(tabpanel, [
-          a11y[OPTION_TABPANEL_ROLE] && ROLE,
+          ROLE,
           a11y[OPTION_TABPANEL_TABINDEX] && TABINDEX,
           ARIA_LABELLEDBY,
           a11y[OPTION_ARIA_HIDDEN] && ARIA_HIDDEN,
@@ -3478,7 +3486,7 @@ class Tablist extends Base {
 
     const { opts, shownTabs, emit } = this;
     const { a11y, multiExpand, awaitAnimation } = opts;
-    const { tab, tabpanel, isShown, transition, index } = tabInstance;
+    const { tab, isShown, transition, index } = tabInstance;
 
     s = !!(s ?? !isShown);
 
@@ -3525,12 +3533,8 @@ class Tablist extends Base {
     );
 
     if (a11y) {
-      if (this.isA11yTablist) {
-        a11y[OPTION_ARIA_SELECTED] && setAttribute(tab, ARIA_SELECTED, s);
-      } else {
-        a11y[OPTION_ARIA_EXPANDED] && setAttribute(tab, ARIA_EXPANDED, s);
-      }
-      a11y[OPTION_ARIA_HIDDEN] && setAttribute(tabpanel, ARIA_HIDDEN, !s);
+      a11y[OPTION_STATE_ATTRIBUTE] &&
+        setAttribute(tab, a11y[OPTION_STATE_ATTRIBUTE], s);
     }
 
     const promise = transition.run(s, animated, {
@@ -3575,11 +3579,11 @@ class Tablist extends Base {
   }
 }
 
-Tablist.data(UI_PREFIX + "tabs", {
+Tablist.data(UI_PREFIX + TABS, {
   alwaysExpanded: true,
   horizontal: true,
-  siblings: false,
   arrowActivation: true,
+  a11y: TABS,
 });
 
 class Autoaction {

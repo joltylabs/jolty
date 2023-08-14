@@ -1,10 +1,13 @@
 import { DEFAULT } from "../constants";
-import { isObject } from "../is";
+import { isObject, isString } from "../is";
 import { upperFirst } from "./index";
 const DEFAULT_PREFIX = upperFirst(DEFAULT);
-export default ({ opts, constructor }, name, property = false) => {
+export default ({ opts, constructor }, name, property = false, defaults) => {
   const defaultValue = constructor[DEFAULT_PREFIX + upperFirst(name)];
-  const value = opts[name];
+  let value = opts[name];
+  if (defaults && value && isString(value)) {
+    value = defaults[value];
+  }
   if (isObject(value)) {
     opts[name] = { ...defaultValue, ...value };
   } else if (value) {
