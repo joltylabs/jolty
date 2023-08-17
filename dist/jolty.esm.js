@@ -701,7 +701,7 @@ const DEFAULT_PREFIX = upperFirst(DEFAULT);
 var updateModule = ({ opts, constructor }, name, property = false, defaults) => {
   const defaultValue = constructor[DEFAULT_PREFIX + upperFirst(name)];
   let value = opts[name];
-  if (value && isString(value)) {
+  if (defaults && value && isString(value)) {
     value = defaults[value];
   }
   if (isObject(value)) {
@@ -3096,7 +3096,6 @@ class Tablist extends Base {
     [TAB + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [ITEM + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [TABPANEL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    a11y: ACCORDION,
   };
   static _data = {};
   static instances = new Map();
