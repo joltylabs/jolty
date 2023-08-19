@@ -316,7 +316,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       ({ opts }) => opts.preventScroll,
     ).length;
     if ((s && hasPreventScrollModals) || (!s && !hasPreventScrollModals)) {
-      toggleClass(doc.documentElement, this.opts.preventScroll.class, s);
+      toggleClass(body, this.opts.preventScroll.class, s);
     }
   }
   async toggle(s, params) {
