@@ -243,7 +243,6 @@ export const DEFAULT_OPTIONS = {
 export const DEFAULT_FLOATING_OPTIONS = {
   awaitAnimation: false,
   placement: BOTTOM,
-  absolute: false,
   offset: 10,
   padding: 0,
   delay: [200, 0],
@@ -253,6 +252,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   sticky: false,
   escapeHide: true,
   outsideHide: true,
+  mode: FIXED,
   arrow: {
     height: null,
     width: null,

@@ -123,7 +123,7 @@ export default class Floating {
 
     placement ||= opts[PLACEMENT];
 
-    const absolute = opts[ABSOLUTE];
+    const absolute = opts.mode === ABSOLUTE;
     const valuesNames = [
       PADDING,
       OFFSET,
@@ -234,6 +234,8 @@ export default class Floating {
       if (absolute) {
         anchorRect.left = anchor.offsetLeft;
         anchorRect.top = anchor.offsetTop;
+        anchorRect.right = anchor.offsetLeft + anchorRect.width;
+        anchorRect.bottom = anchor.offsetTop + anchorRect.height;
       }
 
       const position = getPosition({ ...params, anchorRect });
@@ -277,10 +279,19 @@ export default class Floating {
 
     updatePosition();
 
-    this.on(anchorScrollParents, EVENT_SCROLL, () => {
-      updatePosition();
+    this.on(
+      anchorScrollParents,
+      EVENT_SCROLL,
+      () => {
+        updatePosition();
+      },
+      {
+        passive: true,
+      },
+    );
+    this.on(window, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
+      passive: true,
     });
-    this.on(window, [EVENT_SCROLL, EVENT_RESIZE], updatePosition);
     this.updatePosition = updatePosition.bind(this);
     return this;
   }
@@ -291,11 +302,11 @@ export default class Floating {
       name,
       on,
       off,
-      opts: { absolute, interactive, mode, focusTrap, escapeHide },
+      opts: { mode, interactive, focusTrap, escapeHide },
     } = this;
     const attributes = {
       style: {
-        position: absolute ? ABSOLUTE : FIXED,
+        position: mode === ABSOLUTE ? ABSOLUTE : FIXED,
         top: 0,
         left: 0,
         zIndex: 999,

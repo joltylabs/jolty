@@ -32,6 +32,7 @@ import {
   doc,
   HIDE_MODE,
   AUTOFOCUS,
+  ABSOLUTE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -119,7 +120,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callInitShow(this, dropdown);
   }
   _update() {
-    const { base, opts, transition, on, off, hide, dropdown } = this;
+    const { base, opts, transition, on, off, hide } = this;
 
     this.transition = Transition.createOrUpdate(
       transition,
@@ -128,17 +129,18 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
 
-    opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
+    opts[MODE] =
+      base.getAttribute(DATA_UI_PREFIX + DROPDOWN + "-" + MODE) ?? opts[MODE];
 
     this.updateToggler();
 
     if (opts.itemClickHide) {
-      on(dropdown, EVENT_CLICK, (event) => {
+      on(base, EVENT_CLICK, (event) => {
         const trigger = closest(event.target, this.focusableElems);
         trigger && hide({ event, trigger });
       });
     } else {
-      off(dropdown, EVENT_CLICK);
+      off(base, EVENT_CLICK);
     }
   }
   updateToggler() {
@@ -234,7 +236,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   async toggle(s, params) {
     const {
       toggler,
-      dropdown,
+      base,
       opts,
       emit,
       teleport,
@@ -264,7 +266,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     }
 
     if (s) {
-      opts.absolute ? toggler.after(dropdown) : body.appendChild(dropdown);
+      opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
     }
 
     s && teleport?.move(this);
@@ -284,7 +286,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       eventParams,
     });
 
-    !s && dropdown.contains(doc.activeElement) && toggler.focus();
+    !s && base.contains(doc.activeElement) && toggler.focus();
 
     s && !ignoreAutofocus && autofocus && callAutofocus(this);
 

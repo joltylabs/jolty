@@ -24,6 +24,8 @@ import {
   body,
   CLASS_ACTIVE_SUFFIX,
   HIDE_MODE,
+  MODE,
+  ABSOLUTE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -84,6 +86,10 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       opts.transition,
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
+
+    opts[MODE] =
+      this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
+      opts[MODE];
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
@@ -190,7 +196,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
     if (s) {
-      opts.absolute ? anchor.after(tooltip) : body.appendChild(tooltip);
+      opts.mode === ABSOLUTE
+        ? anchor.after(tooltip)
+        : body.appendChild(tooltip);
     }
 
     const promise = floatingTransition(this, {

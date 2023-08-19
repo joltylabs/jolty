@@ -21,6 +21,7 @@ import {
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
   HIDE_MODE,
+  ABSOLUTE,
 } from "./helpers/constants";
 
 import {
@@ -49,6 +50,8 @@ import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 
+// modes POPOVER, DIALOG, FIXED, ABSOLUTE
+
 class Popover extends ToggleMixin(Base, POPOVER) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
@@ -59,7 +62,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     ...DEFAULT_FLOATING_OPTIONS,
     focusTrap: true,
     returnFocus: true,
-    mode: null,
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
@@ -95,7 +97,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     this.updateToggler();
 
-    opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
+    opts[MODE] =
+      base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
   }
   updateToggler() {
     const { opts, id } = this;
@@ -122,7 +125,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       isShown,
       isAnimating,
       toggler,
-      popover,
+      base,
       opts,
       emit,
       teleport,
@@ -143,7 +146,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     }
 
     if (s) {
-      opts.absolute ? toggler.after(popover) : body.appendChild(popover);
+      opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
     }
 
     s && teleport?.move(this);
@@ -163,7 +166,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       eventParams,
     });
 
-    !s && returnFocus && popover.contains(doc.activeElement) && focus(toggler);
+    !s && returnFocus && base.contains(doc.activeElement) && focus(toggler);
 
     s && !ignoreAutofocus && autofocus && callAutofocus(this);
 

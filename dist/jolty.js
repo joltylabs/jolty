@@ -241,7 +241,6 @@
   const DEFAULT_FLOATING_OPTIONS = {
     awaitAnimation: false,
     placement: BOTTOM,
-    absolute: false,
     offset: 10,
     padding: 0,
     delay: [200, 0],
@@ -251,6 +250,7 @@
     sticky: false,
     escapeHide: true,
     outsideHide: true,
+    mode: FIXED,
     arrow: {
       height: null,
       width: null,
@@ -1913,7 +1913,7 @@
 
       placement ||= opts[PLACEMENT];
 
-      const absolute = opts[ABSOLUTE];
+      const absolute = opts.mode === ABSOLUTE;
       const valuesNames = [
         PADDING,
         OFFSET,
@@ -2024,6 +2024,8 @@
         if (absolute) {
           anchorRect.left = anchor.offsetLeft;
           anchorRect.top = anchor.offsetTop;
+          anchorRect.right = anchor.offsetLeft + anchorRect.width;
+          anchorRect.bottom = anchor.offsetTop + anchorRect.height;
         }
 
         const position = getPosition({ ...params, anchorRect });
@@ -2067,10 +2069,19 @@
 
       updatePosition();
 
-      this.on(anchorScrollParents, EVENT_SCROLL, () => {
-        updatePosition();
+      this.on(
+        anchorScrollParents,
+        EVENT_SCROLL,
+        () => {
+          updatePosition();
+        },
+        {
+          passive: true,
+        },
+      );
+      this.on(window, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
+        passive: true,
       });
-      this.on(window, [EVENT_SCROLL, EVENT_RESIZE], updatePosition);
       this.updatePosition = updatePosition.bind(this);
       return this;
     }
@@ -2081,11 +2092,11 @@
         name,
         on,
         off,
-        opts: { absolute, interactive, mode, focusTrap, escapeHide },
+        opts: { mode, interactive, focusTrap, escapeHide },
       } = this;
       const attributes = {
         style: {
-          position: absolute ? ABSOLUTE : FIXED,
+          position: mode === ABSOLUTE ? ABSOLUTE : FIXED,
           top: 0,
           left: 0,
           zIndex: 999,
@@ -2426,7 +2437,7 @@
       return callInitShow(this, dropdown);
     }
     _update() {
-      const { base, opts, transition, on, off, hide, dropdown } = this;
+      const { base, opts, transition, on, off, hide } = this;
 
       this.transition = Transition.createOrUpdate(
         transition,
@@ -2435,17 +2446,18 @@
         { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
       );
 
-      opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
+      opts[MODE] =
+        base.getAttribute(DATA_UI_PREFIX + DROPDOWN + "-" + MODE) ?? opts[MODE];
 
       this.updateToggler();
 
       if (opts.itemClickHide) {
-        on(dropdown, EVENT_CLICK, (event) => {
+        on(base, EVENT_CLICK, (event) => {
           const trigger = closest(event.target, this.focusableElems);
           trigger && hide({ event, trigger });
         });
       } else {
-        off(dropdown, EVENT_CLICK);
+        off(base, EVENT_CLICK);
       }
     }
     updateToggler() {
@@ -2539,7 +2551,7 @@
     async toggle(s, params) {
       const {
         toggler,
-        dropdown,
+        base,
         opts,
         emit,
         teleport,
@@ -2569,7 +2581,7 @@
       }
 
       if (s) {
-        opts.absolute ? toggler.after(dropdown) : body.appendChild(dropdown);
+        opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
       }
 
       s && teleport?.move(this);
@@ -2589,7 +2601,7 @@
         eventParams,
       });
 
-      !s && dropdown.contains(doc.activeElement) && toggler.focus();
+      !s && base.contains(doc.activeElement) && toggler.focus();
 
       s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
@@ -2840,7 +2852,7 @@
         ({ opts }) => opts.preventScroll,
       ).length;
       if ((s && hasPreventScrollModals) || (!s && !hasPreventScrollModals)) {
-        toggleClass(doc, this.opts.preventScroll.class, s);
+        toggleClass(body, this.opts.preventScroll.class, s);
       }
     }
     async toggle(s, params) {
@@ -3966,6 +3978,10 @@
         { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
       );
 
+      opts[MODE] =
+        this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
+        opts[MODE];
+
       opts.a11y && setAttribute(tooltip, TOOLTIP);
     }
     destroy(destroyOpts) {
@@ -4071,7 +4087,9 @@
       toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
       if (s) {
-        opts.absolute ? anchor.after(tooltip) : body.appendChild(tooltip);
+        opts.mode === ABSOLUTE
+          ? anchor.after(tooltip)
+          : body.appendChild(tooltip);
       }
 
       const promise = floatingTransition(this, {
@@ -4091,6 +4109,8 @@
     }
   }
 
+  // modes POPOVER, DIALOG, FIXED, ABSOLUTE
+
   class Popover extends ToggleMixin(Base, POPOVER) {
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
@@ -4101,7 +4121,6 @@
       ...DEFAULT_FLOATING_OPTIONS,
       focusTrap: true,
       returnFocus: true,
-      mode: null,
       dismiss: true,
       autofocus: true,
       trigger: CLICK,
@@ -4137,7 +4156,8 @@
 
       this.updateToggler();
 
-      opts.mode = base.getAttribute(DATA_UI_PREFIX + MODE) ?? opts.mode;
+      opts[MODE] =
+        base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
     }
     updateToggler() {
       const { opts, id } = this;
@@ -4164,7 +4184,7 @@
         isShown,
         isAnimating,
         toggler,
-        popover,
+        base,
         opts,
         emit,
         teleport,
@@ -4185,7 +4205,7 @@
       }
 
       if (s) {
-        opts.absolute ? toggler.after(popover) : body.appendChild(popover);
+        opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
       }
 
       s && teleport?.move(this);
@@ -4205,7 +4225,7 @@
         eventParams,
       });
 
-      !s && returnFocus && popover.contains(doc.activeElement) && focus(toggler);
+      !s && returnFocus && base.contains(doc.activeElement) && focus(toggler);
 
       s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
