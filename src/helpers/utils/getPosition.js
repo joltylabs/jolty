@@ -21,19 +21,20 @@ export default function ({
   absolute,
   anchorRect,
   targetRect,
-  viewRect = { [WIDTH]: window.innerWidth, [HEIGHT]: window.innerHeight },
   arrow,
   placement,
   boundaryOffset = 0,
   offset = 0,
   padding = 0,
   shrink = false,
-  flip = false,
+  flip = true,
   sticky = false,
   minWidth = 0,
   minHeight = 0,
 }) {
   boundaryOffset = createInset(boundaryOffset);
+
+  const viewRect = visualViewport;
 
   if (absolute) {
     flip = false;

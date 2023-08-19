@@ -67,7 +67,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     removeTitle: true,
     tooltipClass: "",
     [ANCHOR + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
-    trigger: HOVER + " " + FOCUS,
+    rigger: HOVER + " " + FOCUS,
     content: null,
   };
 

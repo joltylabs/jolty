@@ -390,19 +390,20 @@
     absolute,
     anchorRect,
     targetRect,
-    viewRect = { [WIDTH]: window.innerWidth, [HEIGHT]: window.innerHeight },
     arrow,
     placement,
     boundaryOffset = 0,
     offset = 0,
     padding = 0,
     shrink = false,
-    flip = false,
+    flip = true,
     sticky = false,
     minWidth = 0,
     minHeight = 0,
   }) {
     boundaryOffset = createInset(boundaryOffset);
+
+    const viewRect = visualViewport;
 
     if (absolute) {
       flip = false;
@@ -1850,6 +1851,23 @@
   const valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
   const registerProperty = CSS.registerProperty;
 
+  const getBoundingClientRect = (elem, useScale) => {
+    const rect = elem.getBoundingClientRect().toJSON();
+    const vV = visualViewport;
+    if (
+      (useScale &&
+        vV.scale !== 1 &&
+        window.innerWidth / document.documentElement.clientWidth !== 1) ||
+      vV.height !== window.innerHeight
+    ) {
+      rect[TOP] += vV.offsetTop;
+      rect[LEFT] += vV.offsetLeft;
+      rect[RIGHT] = rect[LEFT] + rect[WIDTH];
+      rect[BOTTOM] = rect[TOP] + rect[HEIGHT];
+    }
+    return rect;
+  };
+
   let css = "";
   [TOOLTIP, DROPDOWN, POPOVER].forEach((name) => {
     const PREFIX = VAR_UI_PREFIX + name + "-";
@@ -1890,6 +1908,7 @@
       const targetStyles = getComputedStyle(target);
       const anchorStyles = getComputedStyle(anchor);
       const PREFIX = VAR_UI_PREFIX + name + "-";
+      let pendingUpdate = false;
 
       const minHeight = parseFloat(targetStyles.minHeight);
       const minWidth = parseFloat(targetStyles.minWidth);
@@ -1982,8 +2001,8 @@
         wrapperStyle.removeProperty(CLIP_PATH_PROPERTY);
       }
 
-      const arrowRect = arrow && arrow.getBoundingClientRect();
-      let anchorRect = anchor.getBoundingClientRect();
+      const arrowRect = arrow && getBoundingClientRect(arrow);
+      let anchorRect = getBoundingClientRect(arrow, !absolute);
 
       const targetRect = {};
       [WIDTH, HEIGHT].forEach((size) => {
@@ -2019,7 +2038,10 @@
       };
 
       const updatePosition = () => {
-        anchorRect = anchor.getBoundingClientRect().toJSON();
+        if (pendingUpdate) return;
+        pendingUpdate = true;
+
+        anchorRect = getBoundingClientRect(anchor, !absolute);
 
         if (absolute) {
           anchorRect.left = anchor.offsetLeft;
@@ -2059,6 +2081,10 @@
         );
 
         wrapperStyle.transform = `translate3d(${position.left}px,${position.top}px,0)`;
+
+        requestAnimationFrame(() => {
+          pendingUpdate = false;
+        });
       };
 
       observeResize(target, (width, height) => {
@@ -2079,7 +2105,18 @@
           passive: true,
         },
       );
-      this.on(window, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
+      this.on(
+        visualViewport,
+        [EVENT_SCROLL, EVENT_RESIZE],
+        (e) => {
+          console.log(e);
+          updatePosition();
+        },
+        {
+          passive: false,
+        },
+      );
+      this.on(window, EVENT_SCROLL, updatePosition, {
         passive: true,
       });
       this.updatePosition = updatePosition.bind(this);
@@ -3958,7 +3995,7 @@
       removeTitle: true,
       tooltipClass: "",
       [ANCHOR + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
-      trigger: HOVER + " " + FOCUS,
+      rigger: HOVER + " " + FOCUS,
       content: null,
     };
 
