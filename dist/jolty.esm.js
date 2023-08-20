@@ -1844,21 +1844,29 @@ const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
   : WEBKIT_PREFIX + CLIP_PATH;
 const valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
 const registerProperty = CSS.registerProperty;
-
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const getBoundingClientRect = (elem, useScale) => {
   const rect = elem.getBoundingClientRect().toJSON();
+
+  if (!useScale) return rect;
+
   const vV = visualViewport;
+  const hasScale = vV.scale > 1.01 || vV.scale < 0.99;
+  const iosScale = window.innerWidth / document.documentElement.clientWidth;
+  const hasIosScale = iosScale > 1.01 || iosScale < 0.99;
+  const keyboardOpen = vV.height !== window.innerHeight;
+
   if (
-    (useScale &&
-      vV.scale !== 1 &&
-      window.innerWidth / document.documentElement.clientWidth !== 1) ||
-    vV.height !== window.innerHeight
+    (!hasScale && hasIosScale) ||
+    (keyboardOpen && hasScale && hasIosScale) ||
+    (!hasScale && keyboardOpen && isIOS)
   ) {
     rect[TOP] += vV.offsetTop;
     rect[LEFT] += vV.offsetLeft;
     rect[RIGHT] = rect[LEFT] + rect[WIDTH];
     rect[BOTTOM] = rect[TOP] + rect[HEIGHT];
   }
+
   return rect;
 };
 
@@ -2099,17 +2107,9 @@ class Floating {
         passive: true,
       },
     );
-    this.on(
-      visualViewport,
-      [EVENT_SCROLL, EVENT_RESIZE],
-      (e) => {
-        console.log(e);
-        updatePosition();
-      },
-      {
-        passive: false,
-      },
-    );
+    this.on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
+      passive: false,
+    });
     this.on(window, EVENT_SCROLL, updatePosition, {
       passive: true,
     });
@@ -3497,10 +3497,9 @@ class Tablist extends Base {
   }
   _updateTabIndex(activeIndex) {
     const { keyboard, a11y } = this.opts;
-    if (!keyboard) return;
+    if (!keyboard || !a11y) return;
     activeIndex ??= this.shownTabs[0]?.index ?? this.firstActiveTabIndex;
     a11y &&
-      this.isA11yTablist &&
       this.tabs.forEach(({ tab, tabpanel }, i) =>
         setAttribute(
           [a11y[TABINDEX] && tab, a11y[OPTION_TABPANEL_TABINDEX] && tabpanel],

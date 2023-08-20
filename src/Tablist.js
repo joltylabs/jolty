@@ -496,10 +496,9 @@ class Tablist extends Base {
   }
   _updateTabIndex(activeIndex) {
     const { keyboard, a11y } = this.opts;
-    if (!keyboard) return;
+    if (!keyboard || !a11y) return;
     activeIndex ??= this.shownTabs[0]?.index ?? this.firstActiveTabIndex;
     a11y &&
-      this.isA11yTablist &&
       this.tabs.forEach(({ tab, tabpanel }, i) =>
         setAttribute(
           [a11y[TABINDEX] && tab, a11y[OPTION_TABPANEL_TABINDEX] && tabpanel],
