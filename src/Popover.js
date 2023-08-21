@@ -120,16 +120,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const {
-      transition,
-      isShown,
-      isAnimating,
-      toggler,
-      base,
-      opts,
-      emit,
-      teleport,
-    } = this;
+    const { transition, isShown, isAnimating, toggler, base, opts, emit } =
+      this;
     const { awaitAnimation, a11y, returnFocus, autofocus } = opts;
     const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -148,8 +140,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     if (s) {
       opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
     }
-
-    s && teleport?.move(this);
 
     const eventParams = { event };
 

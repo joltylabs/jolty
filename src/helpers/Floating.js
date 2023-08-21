@@ -42,6 +42,7 @@ import {
   doc,
   RIGHT,
   BOTTOM,
+  MODAL,
 } from "./constants";
 import {
   createElement,
@@ -115,6 +116,8 @@ let css = "";
 if (!registerProperty) {
   doc.head.appendChild(createElement(STYLE, false, `*{${css}}`));
 }
+
+const DIALOG_MODE = MODAL + "-" + POPOVER;
 
 export default class Floating {
   constructor({ target, anchor, arrow, opts, root = body, name = "" }) {
@@ -333,6 +336,7 @@ export default class Floating {
     this.updatePosition = updatePosition.bind(this);
     return this;
   }
+
   createWrapper(style = {}) {
     const {
       target,
@@ -340,6 +344,7 @@ export default class Floating {
       name,
       on,
       off,
+
       opts: { mode, interactive, focusTrap, escapeHide },
     } = this;
     const attributes = {
@@ -370,12 +375,12 @@ export default class Floating {
       attributes.style.pointerEvents = NONE;
     }
     const wrapper = (this.wrapper = createElement(
-      mode === DIALOG ? DIALOG : DIV,
+      mode === DIALOG_MODE ? DIALOG : DIV,
       attributes,
       target,
     ));
     root.append(wrapper);
-    if (mode === DIALOG) {
+    if (mode === DIALOG_MODE) {
       if (focusTrap) {
         wrapper.showModal();
       } else {

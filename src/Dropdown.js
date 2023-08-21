@@ -234,16 +234,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 
   async toggle(s, params) {
-    const {
-      toggler,
-      base,
-      opts,
-      emit,
-      teleport,
-      transition,
-      isShown,
-      isAnimating,
-    } = this;
+    const { toggler, base, opts, emit, transition, isShown, isAnimating } =
+      this;
     const { awaitAnimation, autofocus, a11y } = opts;
     const {
       animated,
@@ -268,8 +260,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     if (s) {
       opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
     }
-
-    s && teleport?.move(this);
 
     const eventParams = { event, trigger };
 

@@ -240,7 +240,7 @@ const DEFAULT_FLOATING_OPTIONS = {
   delay: [200, 0],
   boundaryOffset: 0,
   shrink: false,
-  flip: true,
+  flip: false,
   sticky: false,
   escapeHide: true,
   outsideHide: true,
@@ -1699,7 +1699,6 @@ function addEscapeHide (instance, s, elem = instance.base) {
 
 const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"])`;
 var callAutofocus = (instance, elem = instance.base) => {
-  // { opts: { autofocus }, base }
   const autofocus = instance.opts.autofocus;
   if (elem.contains(doc.activeElement)) return;
   let focusElem = getOptionElem(instance, autofocus.elem, elem);
@@ -1898,6 +1897,8 @@ let css = "";
 if (!registerProperty) {
   doc.head.appendChild(createElement(STYLE, false, `*{${css}}`));
 }
+
+const DIALOG_MODE = MODAL + "-" + POPOVER;
 
 class Floating {
   constructor({ target, anchor, arrow, opts, root = body, name = "" }) {
@@ -2116,6 +2117,7 @@ class Floating {
     this.updatePosition = updatePosition.bind(this);
     return this;
   }
+
   createWrapper(style = {}) {
     const {
       target,
@@ -2123,6 +2125,7 @@ class Floating {
       name,
       on,
       off,
+
       opts: { mode, interactive, focusTrap, escapeHide },
     } = this;
     const attributes = {
@@ -2153,12 +2156,12 @@ class Floating {
       attributes.style.pointerEvents = NONE;
     }
     const wrapper = (this.wrapper = createElement(
-      mode === DIALOG ? DIALOG : DIV,
+      mode === DIALOG_MODE ? DIALOG : DIV,
       attributes,
       target,
     ));
     root.append(wrapper);
-    if (mode === DIALOG) {
+    if (mode === DIALOG_MODE) {
       if (focusTrap) {
         wrapper.showModal();
       } else {
@@ -2580,16 +2583,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 
   async toggle(s, params) {
-    const {
-      toggler,
-      base,
-      opts,
-      emit,
-      teleport,
-      transition,
-      isShown,
-      isAnimating,
-    } = this;
+    const { toggler, base, opts, emit, transition, isShown, isAnimating } =
+      this;
     const { awaitAnimation, autofocus, a11y } = opts;
     const {
       animated,
@@ -2614,8 +2609,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     if (s) {
       opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
     }
-
-    s && teleport?.move(this);
 
     const eventParams = { event, trigger };
 
@@ -4209,16 +4202,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const {
-      transition,
-      isShown,
-      isAnimating,
-      toggler,
-      base,
-      opts,
-      emit,
-      teleport,
-    } = this;
+    const { transition, isShown, isAnimating, toggler, base, opts, emit } =
+      this;
     const { awaitAnimation, a11y, returnFocus, autofocus } = opts;
     const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -4237,8 +4222,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     if (s) {
       opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
     }
-
-    s && teleport?.move(this);
 
     const eventParams = { event };
 
