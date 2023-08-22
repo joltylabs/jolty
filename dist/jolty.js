@@ -1951,7 +1951,9 @@
       ];
       const values = valuesNames
         .map((name) => {
-          let value = targetStyles.getPropertyValue(PREFIX + name).trim();
+          let value =
+            anchorStyles.getPropertyValue(PREFIX + name).trim() ||
+            targetStyles.getPropertyValue(PREFIX + name).trim();
           if (!value) return;
           value = value.split(" ");
           if (name === BOUNDARY_OFFSET) {
