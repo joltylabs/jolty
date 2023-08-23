@@ -36,11 +36,11 @@ export default function ({
 
   const viewRect = visualViewport;
 
-  if (absolute) {
-    flip = false;
-    shrink = false;
-    sticky = false;
-  }
+  // if (absolute) {
+  //   flip = false;
+  //   shrink = false;
+  //   sticky = false;
+  // }
 
   flip = isArray(flip) ? flip : [flip];
   flip[1] ??= flip[0];

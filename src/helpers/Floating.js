@@ -124,20 +124,34 @@ export default class Floating {
       minWidth: parseFloat(targetStyles.minWidth),
     };
 
+    let prevTop = 0;
     let pendingUpdate = false;
     const updatePosition = () => {
       if (pendingUpdate) return;
       pendingUpdate = true;
 
-      anchorRect = getBoundingClientRect(anchor, !absolute);
-      if (absolute) {
-        anchorRect.left = anchor.offsetLeft;
-        anchorRect.top = anchor.offsetTop;
-        anchorRect.right = anchor.offsetLeft + anchorRect.width;
-        anchorRect.bottom = anchor.offsetTop + anchorRect.height;
-      }
+      anchorRect = getBoundingClientRect(anchor, true);
+      // if (absolute) {
+      //   anchorRect.left = anchor.offsetLeft;
+      //   anchorRect.top = anchor.offsetTop;
+      //   anchorRect.right = anchor.offsetLeft + anchorRect.width;
+      //   anchorRect.bottom = anchor.offsetTop + anchorRect.height;
+      // }
 
       const position = getPosition({ ...params, anchorRect });
+
+      position.top += window.scrollY;
+
+      // console.log(prevTop, position.top);
+      if (prevTop && Math.abs(prevTop - position.top) > 50) {
+        console.log("break", prevTop, position.top);
+        prevTop = position.top;
+        requestAnimationFrame(() => {
+          pendingUpdate = false;
+        });
+        return updatePosition();
+      }
+      prevTop = position.top;
 
       setAttribute(
         wrapper,
@@ -178,6 +192,15 @@ export default class Floating {
     });
 
     updatePosition();
+
+    if (opts.mode === DIALOG_MODE) {
+      wrapper.showModal();
+      if (opts.escapeHide) {
+        this.on(wrapper, CANCEL, (e) => e.preventDefault());
+      } else {
+        this.off(wrapper, CANCEL);
+      }
+    }
 
     this.on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
       passive: true,
@@ -236,18 +259,11 @@ export default class Floating {
       target,
     ));
 
-    mode === ABSOLUTE ? anchor.after(wrapper) : root.append(wrapper);
+    document.body.append(wrapper);
+    // mode === ABSOLUTE ? anchor.after(wrapper) : root.append(wrapper);
 
-    wrapper.showPopover?.();
+    // wrapper.showPopover?.();
 
-    if (mode === DIALOG_MODE) {
-      wrapper.showModal();
-      if (escapeHide) {
-        on(wrapper, CANCEL, (e) => e.preventDefault());
-      } else {
-        off(wrapper, CANCEL);
-      }
-    }
     return wrapper;
   }
   destroy() {

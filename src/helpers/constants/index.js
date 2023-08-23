@@ -248,7 +248,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   delay: [200, 0],
   boundaryOffset: 0,
   shrink: false,
-  flip: false,
+  flip: true,
   sticky: false,
   escapeHide: true,
   outsideHide: true,
