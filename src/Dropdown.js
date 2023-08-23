@@ -72,7 +72,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    focusTrap: true,
     itemClickHide: true,
     mode: false,
     autofocus: true,

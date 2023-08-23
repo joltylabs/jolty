@@ -24,3 +24,5 @@ export { default as repaint } from "./repaint";
 export { default as setAttribute } from "./setAttribute";
 export { default as siblings } from "./siblings";
 export { default as toggleClass } from "./toggleClass";
+export { default as getBoundingClientRect } from "./getBoundingClientRect";
+export { default as getPropertyValue } from "./getPropertyValue";

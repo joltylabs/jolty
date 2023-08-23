@@ -28,94 +28,25 @@ import {
   PLACEMENT,
   PADDING,
   OFFSET,
-  BOUNDARY_OFFSET,
   ARROW,
-  WEBKIT_PREFIX,
-  CLIP_PATH,
-  ARROW_OFFSET,
-  ARROW_PADDING,
   TRUE,
-  TOOLTIP,
-  DROPDOWN,
   POPOVER,
-  STYLE,
-  doc,
-  RIGHT,
-  BOTTOM,
   MODAL,
 } from "./constants";
 import {
   createElement,
-  kebabToCamel,
-  createInset,
   getPosition,
   returnArray,
   isOverflowElement,
   observeResize,
   resizeObserver,
+  ResetFloatingCssVariables,
+  collectCssVariables,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
-import { parents, setAttribute } from "./dom";
+import { getBoundingClientRect, parents, setAttribute } from "./dom";
 
-const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
-  ? CLIP_PATH
-  : WEBKIT_PREFIX + CLIP_PATH;
-const valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
-const registerProperty = CSS.registerProperty;
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-const getBoundingClientRect = (elem, useScale) => {
-  const rect = elem.getBoundingClientRect().toJSON();
-
-  if (!useScale) return rect;
-
-  const vV = visualViewport;
-  const hasScale = vV.scale > 1.01 || vV.scale < 0.99;
-  const iosScale = window.innerWidth / document.documentElement.clientWidth;
-  const hasIosScale = iosScale > 1.01 || iosScale < 0.99;
-  const keyboardOpen = vV.height !== window.innerHeight;
-
-  if (
-    (!hasScale && hasIosScale) ||
-    (keyboardOpen && hasScale && hasIosScale) ||
-    (!hasScale && keyboardOpen && isIOS)
-  ) {
-    rect[TOP] += vV.offsetTop;
-    rect[LEFT] += vV.offsetLeft;
-    rect[RIGHT] = rect[LEFT] + rect[WIDTH];
-    rect[BOTTOM] = rect[TOP] + rect[HEIGHT];
-  }
-
-  return rect;
-};
-
-let css = "";
-[TOOLTIP, DROPDOWN, POPOVER].forEach((name) => {
-  const PREFIX = VAR_UI_PREFIX + name + "-";
-  [
-    STICKY,
-    FLIP,
-    SHRINK,
-    PLACEMENT,
-    PADDING,
-    OFFSET,
-    BOUNDARY_OFFSET,
-    ARROW_OFFSET,
-    ARROW_PADDING,
-  ].forEach((prop) => {
-    if (registerProperty) {
-      registerProperty({
-        name: PREFIX + prop,
-        syntax: "*",
-        inherits: false,
-      });
-    } else {
-      css += PREFIX + prop + ":;";
-    }
-  });
-});
-if (!registerProperty) {
-  doc.head.appendChild(createElement(STYLE, false, `*{${css}}`));
-}
+ResetFloatingCssVariables();
 
 const DIALOG_MODE = MODAL + "-" + POPOVER;
 
@@ -126,107 +57,39 @@ export default class Floating {
   }
   recalculate() {
     const { target, anchor, arrow, opts, name } = this;
+    const PREFIX = VAR_UI_PREFIX + name + "-";
+
     const anchorScrollParents = parents(anchor, isOverflowElement);
     const targetStyles = getComputedStyle(target);
     const anchorStyles = getComputedStyle(anchor);
-    const PREFIX = VAR_UI_PREFIX + name + "-";
-    let pendingUpdate = false;
 
-    const minHeight = parseFloat(targetStyles.minHeight);
-    const minWidth = parseFloat(targetStyles.minWidth);
-
-    let [sticky, flip, shrink, placement] = [
-      STICKY,
-      FLIP,
-      SHRINK,
-      PLACEMENT,
-    ].map(
-      (name) =>
-        anchorStyles.getPropertyValue(PREFIX + name).trim() ||
-        targetStyles.getPropertyValue(PREFIX + name).trim(),
-    );
-
-    flip = flip
-      ? flip.split(" ").map((v) => v === TRUE)
-      : returnArray(opts[FLIP]);
-    sticky = sticky ? sticky === TRUE : opts[STICKY];
-    shrink = shrink ? shrink === TRUE : opts[SHRINK];
-
-    placement ||= opts[PLACEMENT];
-
-    const absolute = opts.mode === ABSOLUTE;
-    const valuesNames = [
-      PADDING,
-      OFFSET,
-      BOUNDARY_OFFSET,
-      ARROW_OFFSET,
-      ARROW_PADDING,
-    ];
-    const values = valuesNames
-      .map((name) => {
-        let value =
-          anchorStyles.getPropertyValue(PREFIX + name).trim() ||
-          targetStyles.getPropertyValue(PREFIX + name).trim();
-        if (!value) return;
-        value = value.split(" ");
-        if (name === BOUNDARY_OFFSET) {
-          value = createInset(value, true);
-        } else {
-          value[1] ??= value[0];
-        }
-        return { name, value };
-      })
-      .filter(Boolean);
-
-    const polygonValues = values
-      .map(({ name, value }) => {
-        if (name === BOUNDARY_OFFSET) {
-          const valueEnd = value.splice(2).join(" ");
-          value = value.join(" ");
-          return [value, valueEnd].join(",");
-        }
-        return value.join(" ");
-      })
-      .join(",");
-
-    const wrapper = this.createWrapper(
-      values.length
-        ? { [CLIP_PATH_PROPERTY]: `polygon(${polygonValues})` }
-        : {},
-    );
-    const wrapperComputedStyle = getComputedStyle(this.wrapper);
+    const wrapper = this.createWrapper();
     const wrapperStyle = wrapper.style;
 
-    const computedValues = wrapperComputedStyle[CLIP_PATH_PROPERTY].slice(8, -1)
-      .split(",")
-      .values();
-
-    const {
+    let {
       padding,
       offset = opts.offset,
       boundaryOffset = opts.boundaryOffset,
       arrowPadding = opts[ARROW]?.padding ?? 0,
       arrowOffset = opts[ARROW]?.offset ?? 0,
-    } = values.length
-      ? Object.fromEntries(
-          values.map(({ name }) => {
-            let value = valuesToArray(computedValues.next());
-            if (name === BOUNDARY_OFFSET) {
-              value = [...value, ...valuesToArray(computedValues.next())];
-            } else if (name === OFFSET || name === ARROW_OFFSET) {
-              value = value[0];
-            }
-            return [kebabToCamel(name), value];
-          }),
-        )
-      : {};
+      wrapperComputedStyle,
+      flip,
+      sticky,
+      shrink,
+      placement,
+    } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
 
-    if (values.length) {
-      wrapperStyle.removeProperty(CLIP_PATH_PROPERTY);
-    }
+    flip = flip
+      ? flip.split(" ").map((v) => v === TRUE)
+      : returnArray(opts[FLIP]);
 
-    const arrowRect = arrow && getBoundingClientRect(arrow);
-    let anchorRect = getBoundingClientRect(arrow, !absolute);
+    sticky = sticky ? sticky === TRUE : opts[STICKY];
+    shrink = shrink ? shrink === TRUE : opts[SHRINK];
+
+    placement ||= opts[PLACEMENT];
+
+    const absolute = true; //opts.mode === ABSOLUTE;
+    let anchorRect = getBoundingClientRect(anchor, !absolute);
 
     const targetRect = {};
     [WIDTH, HEIGHT].forEach((size) => {
@@ -238,12 +101,12 @@ export default class Floating {
       );
     });
 
-    const arrowData = arrow && {
-      [WIDTH]: arrowRect[WIDTH],
-      [HEIGHT]: arrowRect[HEIGHT],
-      [PADDING]: arrowPadding,
-      [OFFSET]: arrowOffset,
-    };
+    let arrowData;
+    if (arrow) {
+      arrowData = getBoundingClientRect(arrow);
+      arrowData[PADDING] = arrowPadding;
+      arrowData[OFFSET] = arrowOffset;
+    }
 
     const params = {
       anchorRect,
@@ -257,16 +120,16 @@ export default class Floating {
       offset,
       boundaryOffset,
       padding,
-      minHeight,
-      minWidth,
+      minHeight: parseFloat(targetStyles.minHeight),
+      minWidth: parseFloat(targetStyles.minWidth),
     };
 
+    let pendingUpdate = false;
     const updatePosition = () => {
       if (pendingUpdate) return;
       pendingUpdate = true;
 
       anchorRect = getBoundingClientRect(anchor, !absolute);
-
       if (absolute) {
         anchorRect.left = anchor.offsetLeft;
         anchorRect.top = anchor.offsetTop;
@@ -287,6 +150,7 @@ export default class Floating {
           wrapperStyle.setProperty(PREFIX + name, position[name] + PX),
         );
       }
+
       if (arrow) {
         [LEFT, TOP].forEach((dir, i) =>
           wrapperStyle.setProperty(
@@ -297,14 +161,10 @@ export default class Floating {
       }
       wrapperStyle.setProperty(
         PREFIX + "transform-origin",
-        position.transformOrigin[0] +
-          PX +
-          " " +
-          position.transformOrigin[1] +
-          PX,
+        `${position.transformOrigin[0]}px ${position.transformOrigin[1]}px`,
       );
 
-      wrapperStyle.transform = `translate3d(${position.left}px,${position.top}px,0)`;
+      wrapperStyle.translate = `${position.left}px ${position.top}px 0`;
 
       requestAnimationFrame(() => {
         pendingUpdate = false;
@@ -319,18 +179,11 @@ export default class Floating {
 
     updatePosition();
 
-    this.on(
-      anchorScrollParents,
-      EVENT_SCROLL,
-      () => {
-        updatePosition();
-      },
-      {
-        passive: true,
-      },
-    );
+    this.on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
+      passive: true,
+    });
     this.on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
-      passive: false,
+      passive: true,
     });
     this.on(window, EVENT_SCROLL, updatePosition, {
       passive: true,
@@ -344,16 +197,16 @@ export default class Floating {
       target,
       root,
       name,
+      anchor,
       on,
       off,
-
-      opts: { mode, interactive, focusTrap, escapeHide },
+      opts: { mode, interactive, escapeHide },
     } = this;
     const attributes = {
       style: {
-        position: mode === ABSOLUTE ? ABSOLUTE : FIXED,
-        top: 0,
+        position: ABSOLUTE, //mode === ABSOLUTE ? ABSOLUTE : FIXED,
         left: 0,
+        top: 0,
         zIndex: 999,
         margin: 0,
         padding: 0,
@@ -368,6 +221,7 @@ export default class Floating {
         overflow: "unset",
         ...style,
       },
+      [POPOVER]: "",
       [FLOATING_DATA_ATTRIBUTE]: "",
       [DATA_PREFIX + UI_PREFIX + name + "-wrapper"]: "",
     };
@@ -381,13 +235,13 @@ export default class Floating {
       attributes,
       target,
     ));
-    root.append(wrapper);
+
+    mode === ABSOLUTE ? anchor.after(wrapper) : root.append(wrapper);
+
+    wrapper.showPopover?.();
+
     if (mode === DIALOG_MODE) {
-      if (focusTrap) {
-        wrapper.showModal();
-      } else {
-        wrapper.show();
-      }
+      wrapper.showModal();
       if (escapeHide) {
         on(wrapper, CANCEL, (e) => e.preventDefault());
       } else {
@@ -400,6 +254,7 @@ export default class Floating {
     this.off();
     resizeObserver.unobserve(this.target);
     this.wrapper.close?.();
+    this.wrapper.hidePopover?.();
     this.wrapper.remove();
   }
 }

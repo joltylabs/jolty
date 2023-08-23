@@ -281,6 +281,10 @@
     y: "x",
   };
 
+  const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
+    ? CLIP_PATH
+    : WEBKIT_PREFIX + CLIP_PATH;
+
   var isArray = Array.isArray;
 
   var isElement = (value) => value && !!value.getElementsByClassName;
@@ -722,6 +726,112 @@
     return opts;
   };
 
+  const registerProperty = CSS.registerProperty;
+
+  var ResetFloatingCssVariables = () => {
+    let css = "";
+    [TOOLTIP, DROPDOWN, POPOVER].forEach((name) => {
+      const PREFIX = VAR_UI_PREFIX + name + "-";
+      [
+        STICKY,
+        FLIP,
+        SHRINK,
+        PLACEMENT,
+        PADDING,
+        OFFSET,
+        BOUNDARY_OFFSET,
+        ARROW_OFFSET,
+        ARROW_PADDING,
+      ].forEach((prop) => {
+        if (registerProperty) {
+          registerProperty({
+            name: PREFIX + prop,
+            syntax: "*",
+            inherits: false,
+          });
+        } else {
+          css += PREFIX + prop + ":;";
+        }
+      });
+    });
+
+    if (!registerProperty) {
+      doc.head.appendChild(createElement(STYLE, false, `*{${css}}`));
+    }
+  };
+
+  var collectCssVariables = (anchorStyles, targetStyles, wrapper, PREFIX) => {
+    const valuesNames = [
+      PADDING,
+      OFFSET,
+      BOUNDARY_OFFSET,
+      ARROW_OFFSET,
+      ARROW_PADDING,
+    ];
+    const values = valuesNames
+      .map((name) => {
+        let value =
+          getPropertyValue(anchorStyles, PREFIX + name) ||
+          getPropertyValue(targetStyles, PREFIX + name);
+        if (!value) return;
+        value = value.split(" ");
+        if (name === BOUNDARY_OFFSET) {
+          value = createInset(value, true);
+        } else {
+          value[1] ??= value[0];
+        }
+        return { name, value };
+      })
+      .filter(Boolean);
+
+    const polygonValues = values
+      .map(({ name, value }) => {
+        if (name === BOUNDARY_OFFSET) {
+          const valueEnd = value.splice(2).join(" ");
+          value = value.join(" ");
+          return [value, valueEnd].join(",");
+        }
+        return value.join(" ");
+      })
+      .join(",");
+
+    wrapper.style.setProperty(CLIP_PATH_PROPERTY, `polygon(${polygonValues})`);
+
+    const wrapperComputedStyle = getComputedStyle(wrapper);
+
+    const computedValues = wrapperComputedStyle[CLIP_PATH_PROPERTY].slice(8, -1)
+      .split(",")
+      .values();
+
+    const result = { wrapperComputedStyle };
+    [STICKY, FLIP, SHRINK, PLACEMENT].forEach(
+      (name) =>
+        (result[name] =
+          getPropertyValue(anchorStyles, PREFIX + name) ||
+          getPropertyValue(targetStyles, PREFIX + name)),
+    );
+
+    if (values.length) {
+      values.forEach(({ name }) => {
+        let value = valuesToArray(computedValues.next());
+        if (name === BOUNDARY_OFFSET) {
+          value = [...value, ...valuesToArray(computedValues.next())];
+        } else if (name === OFFSET || name === ARROW_OFFSET) {
+          value = value[0];
+        }
+        result[kebabToCamel(name)] = value;
+      });
+    }
+
+    if (values.length) {
+      wrapper.style.removeProperty(CLIP_PATH_PROPERTY);
+    }
+
+    return result;
+  };
+
+  var valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
+
   function addStyle(elem, name, value) {
     if (isIterable(elem)) {
       elem.forEach((elem) => addStyle(elem, name, value));
@@ -884,6 +994,35 @@
       elem.forEach((el) => toggleClass(el, cls, s));
     }
   }
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  var getBoundingClientRect = (elem, useScale) => {
+    const rect = elem.getBoundingClientRect().toJSON();
+
+    if (!useScale) return rect;
+
+    const vV = visualViewport;
+    const hasScale = vV.scale > 1.01 || vV.scale < 0.99;
+    const iosScale = window.innerWidth / document.documentElement.clientWidth;
+    const hasIosScale = iosScale > 1.01 || iosScale < 0.99;
+    const keyboardOpen = vV.height !== window.innerHeight;
+
+    if (
+      (!hasScale && hasIosScale) ||
+      (keyboardOpen && hasScale && hasIosScale) ||
+      (!hasScale && keyboardOpen && isIOS)
+    ) {
+      rect[TOP] += vV.offsetTop;
+      rect[LEFT] += vV.offsetLeft;
+      rect[RIGHT] = rect[LEFT] + rect[WIDTH];
+      rect[BOTTOM] = rect[TOP] + rect[HEIGHT];
+    }
+
+    return rect;
+  };
+
+  var getPropertyValue = (style, name) => style.getPropertyValue(name).trim();
 
   const getOptsObj = (args, newOpts) => {
     args = arrayFrom(args);
@@ -1844,65 +1983,7 @@
     }
   };
 
-  const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
-    ? CLIP_PATH
-    : WEBKIT_PREFIX + CLIP_PATH;
-  const valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
-  const registerProperty = CSS.registerProperty;
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const getBoundingClientRect = (elem, useScale) => {
-    const rect = elem.getBoundingClientRect().toJSON();
-
-    if (!useScale) return rect;
-
-    const vV = visualViewport;
-    const hasScale = vV.scale > 1.01 || vV.scale < 0.99;
-    const iosScale = window.innerWidth / document.documentElement.clientWidth;
-    const hasIosScale = iosScale > 1.01 || iosScale < 0.99;
-    const keyboardOpen = vV.height !== window.innerHeight;
-
-    if (
-      (!hasScale && hasIosScale) ||
-      (keyboardOpen && hasScale && hasIosScale) ||
-      (!hasScale && keyboardOpen && isIOS)
-    ) {
-      rect[TOP] += vV.offsetTop;
-      rect[LEFT] += vV.offsetLeft;
-      rect[RIGHT] = rect[LEFT] + rect[WIDTH];
-      rect[BOTTOM] = rect[TOP] + rect[HEIGHT];
-    }
-
-    return rect;
-  };
-
-  let css = "";
-  [TOOLTIP, DROPDOWN, POPOVER].forEach((name) => {
-    const PREFIX = VAR_UI_PREFIX + name + "-";
-    [
-      STICKY,
-      FLIP,
-      SHRINK,
-      PLACEMENT,
-      PADDING,
-      OFFSET,
-      BOUNDARY_OFFSET,
-      ARROW_OFFSET,
-      ARROW_PADDING,
-    ].forEach((prop) => {
-      if (registerProperty) {
-        registerProperty({
-          name: PREFIX + prop,
-          syntax: "*",
-          inherits: false,
-        });
-      } else {
-        css += PREFIX + prop + ":;";
-      }
-    });
-  });
-  if (!registerProperty) {
-    doc.head.appendChild(createElement(STYLE, false, `*{${css}}`));
-  }
+  ResetFloatingCssVariables();
 
   const DIALOG_MODE = MODAL + "-" + POPOVER;
 
@@ -1913,109 +1994,54 @@
     }
     recalculate() {
       const { target, anchor, arrow, opts, name } = this;
+
       const anchorScrollParents = parents(anchor, isOverflowElement);
       const targetStyles = getComputedStyle(target);
       const anchorStyles = getComputedStyle(anchor);
+
       const PREFIX = VAR_UI_PREFIX + name + "-";
+
       let pendingUpdate = false;
 
       const minHeight = parseFloat(targetStyles.minHeight);
       const minWidth = parseFloat(targetStyles.minWidth);
 
-      let [sticky, flip, shrink, placement] = [
-        STICKY,
-        FLIP,
-        SHRINK,
-        PLACEMENT,
-      ].map(
-        (name) =>
-          anchorStyles.getPropertyValue(PREFIX + name).trim() ||
-          targetStyles.getPropertyValue(PREFIX + name).trim(),
-      );
-
-      flip = flip
-        ? flip.split(" ").map((v) => v === TRUE)
-        : returnArray(opts[FLIP]);
-      sticky = sticky ? sticky === TRUE : opts[STICKY];
-      shrink = shrink ? shrink === TRUE : opts[SHRINK];
-
-      placement ||= opts[PLACEMENT];
-
-      const absolute = opts.mode === ABSOLUTE;
-      const valuesNames = [
-        PADDING,
-        OFFSET,
-        BOUNDARY_OFFSET,
-        ARROW_OFFSET,
-        ARROW_PADDING,
-      ];
-      const values = valuesNames
-        .map((name) => {
-          let value =
-            anchorStyles.getPropertyValue(PREFIX + name).trim() ||
-            targetStyles.getPropertyValue(PREFIX + name).trim();
-          if (!value) return;
-          value = value.split(" ");
-          if (name === BOUNDARY_OFFSET) {
-            value = createInset(value, true);
-          } else {
-            value[1] ??= value[0];
-          }
-          return { name, value };
-        })
-        .filter(Boolean);
-
-      const polygonValues = values
-        .map(({ name, value }) => {
-          if (name === BOUNDARY_OFFSET) {
-            const valueEnd = value.splice(2).join(" ");
-            value = value.join(" ");
-            return [value, valueEnd].join(",");
-          }
-          return value.join(" ");
-        })
-        .join(",");
-
-      const wrapper = this.createWrapper(
-        values.length
-          ? { [CLIP_PATH_PROPERTY]: `polygon(${polygonValues})` }
-          : {},
-      );
-      const wrapperComputedStyle = getComputedStyle(this.wrapper);
+      const wrapper = this.createWrapper();
       const wrapperStyle = wrapper.style;
 
-      const computedValues = wrapperComputedStyle[CLIP_PATH_PROPERTY].slice(8, -1)
-        .split(",")
-        .values();
+      const absolute = opts.mode === ABSOLUTE;
 
-      const {
+      const targetRect = {};
+
+      let {
         padding,
         offset = opts.offset,
         boundaryOffset = opts.boundaryOffset,
         arrowPadding = opts[ARROW]?.padding ?? 0,
         arrowOffset = opts[ARROW]?.offset ?? 0,
-      } = values.length
-        ? Object.fromEntries(
-            values.map(({ name }) => {
-              let value = valuesToArray(computedValues.next());
-              if (name === BOUNDARY_OFFSET) {
-                value = [...value, ...valuesToArray(computedValues.next())];
-              } else if (name === OFFSET || name === ARROW_OFFSET) {
-                value = value[0];
-              }
-              return [kebabToCamel(name), value];
-            }),
-          )
-        : {};
+        wrapperComputedStyle,
+        flip,
+        sticky,
+        shrink,
+        placement,
+      } = collectCssVariables(
+        anchorStyles,
+        targetStyles,
+        wrapper,
+        PREFIX);
 
-      if (values.length) {
-        wrapperStyle.removeProperty(CLIP_PATH_PROPERTY);
-      }
+      flip = flip
+        ? flip.split(" ").map((v) => v === TRUE)
+        : returnArray(opts[FLIP]);
+
+      sticky = sticky ? sticky === TRUE : opts[STICKY];
+      shrink = shrink ? shrink === TRUE : opts[SHRINK];
+
+      placement ||= opts[PLACEMENT];
 
       const arrowRect = arrow && getBoundingClientRect(arrow);
       let anchorRect = getBoundingClientRect(arrow, !absolute);
 
-      const targetRect = {};
       [WIDTH, HEIGHT].forEach((size) => {
         targetRect[size] = parseFloat(wrapperComputedStyle[size]);
         wrapperStyle.setProperty(PREFIX + size, targetRect[size] + PX);
@@ -2131,6 +2157,7 @@
         target,
         root,
         name,
+        anchor,
         on,
         off,
 
@@ -2168,7 +2195,7 @@
         attributes,
         target,
       ));
-      root.append(wrapper);
+      mode === ABSOLUTE ? anchor.after(wrapper) : root.append(wrapper);
       if (mode === DIALOG_MODE) {
         if (focusTrap) {
           wrapper.showModal();

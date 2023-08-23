@@ -282,3 +282,7 @@ export const MIRROR = {
   x: "y",
   y: "x",
 };
+
+export const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
+  ? CLIP_PATH
+  : WEBKIT_PREFIX + CLIP_PATH;

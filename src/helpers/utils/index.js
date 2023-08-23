@@ -29,3 +29,6 @@ export { default as getEventsPrefix } from "./getEventsPrefix";
 export { default as getClassActive } from "./getClassActive";
 export { default as getDefaultToggleSelector } from "./getDefaultToggleSelector";
 export { default as updateModule } from "./updateModule";
+export { default as ResetFloatingCssVariables } from "./floating/ResetFloatingCssVariables.js";
+export { default as collectCssVariables } from "./floating/collectCssVariables.js";
+export { default as valuesToArray } from "./valuesToArray";
