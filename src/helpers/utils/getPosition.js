@@ -22,6 +22,7 @@ export default function ({
   targetRect,
   arrow,
   placement,
+  inTopLayer,
   boundaryOffset = 0,
   offset = 0,
   padding = 0,
@@ -40,6 +41,12 @@ export default function ({
 
   padding = isArray(padding) ? padding : [padding];
   padding[1] ??= padding[0];
+
+  if (!inTopLayer) {
+    shrink = false;
+    flip = false;
+    sticky = false;
+  }
 
   const [baseM, baseS = CENTER] = placement.split("-");
   const hor = baseM === LEFT || baseM === RIGHT;

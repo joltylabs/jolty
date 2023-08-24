@@ -111,8 +111,7 @@ export default class Floating {
     }
 
     const wrapperStyle = wrapper.style;
-    const inTopLayer =
-      (topLayer && POPOVER_API_SUPPORTED) || mode.startsWith(MODAL);
+    const inTopLayer = topLayer || mode.startsWith(MODAL);
 
     const {
       padding,
@@ -123,8 +122,7 @@ export default class Floating {
       wrapperComputedStyle,
     } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
 
-    const absolute = true;
-    let anchorRect = getBoundingClientRect(anchor, !absolute);
+    let anchorRect = getBoundingClientRect(anchor);
 
     const targetRect = {};
     [WIDTH, HEIGHT].forEach((size) => {
@@ -148,7 +146,7 @@ export default class Floating {
       targetRect,
       arrow: arrowData,
       placement,
-      absolute,
+      inTopLayer,
       flip,
       sticky,
       shrink,
@@ -165,10 +163,11 @@ export default class Floating {
       if (pendingUpdate) return;
       pendingUpdate = true;
 
-      anchorRect = getBoundingClientRect(anchor, true);
-      if (absolute && !inTopLayer) {
-        anchorRect.left = anchor.offsetLeft;
-        anchorRect.top = anchor.offsetTop;
+      anchorRect = getBoundingClientRect(anchor);
+
+      if (!inTopLayer) {
+        anchorRect.left = anchorRect.x = anchor.offsetLeft;
+        anchorRect.top = anchorRect.y = anchor.offsetTop;
         anchorRect.right = anchor.offsetLeft + anchorRect.width;
         anchorRect.bottom = anchor.offsetTop + anchorRect.height;
       }
@@ -179,6 +178,11 @@ export default class Floating {
         position.top += window.scrollY;
         position.left += window.scrollX;
       }
+
+      // if (inTopLayer) {
+      //   position.top += window.scrollY;
+      //   position.left += window.scrollX;
+      // }
 
       if (prevTop && Math.abs(prevTop - position.top) > 50) {
         prevTop = position.top;
@@ -263,7 +267,7 @@ export default class Floating {
       target,
       name,
       anchor,
-      opts: { interactive },
+      opts: { interactive, disablePopoverApi },
     } = this;
 
     const style = {
@@ -301,7 +305,12 @@ export default class Floating {
       [DATA_UI_PREFIX + "current-mode"]: mode,
     };
 
-    if (topLayer && POPOVER_API_SUPPORTED && !mode.startsWith(MODAL)) {
+    if (
+      topLayer &&
+      POPOVER_API_SUPPORTED &&
+      !mode.startsWith(MODAL) &&
+      !disablePopoverApi
+    ) {
       attributes[POPOVER] = "";
     }
 

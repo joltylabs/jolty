@@ -45,6 +45,7 @@ import {
   DIALOG,
   doc,
   UI_EVENT_PREFIX,
+  POPOVER_API_SUPPORTED,
 } from "./helpers/constants";
 import { isString, isElement, isFunction } from "./helpers/is";
 import {
@@ -135,6 +136,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    detectPopoverApi: true,
   };
 
   constructor(elem, opts) {
@@ -405,7 +407,10 @@ class Modal extends ToggleMixin(Base, MODAL) {
       transitions[MODAL].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
       if (isDialog) {
-        if (opts.focusTrap) {
+        if (
+          opts.focusTrap &&
+          (!opts.detectPopoverApi || POPOVER_API_SUPPORTED)
+        ) {
           modal.showModal();
         } else {
           modal.show();

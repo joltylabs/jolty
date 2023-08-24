@@ -254,7 +254,8 @@ export const DEFAULT_FLOATING_OPTIONS = {
   escapeHide: true,
   outsideHide: true,
   mode: POPOVER,
-  topLayer: true,
+  topLayer: false,
+  disablePopoverApi: false,
   arrow: {
     height: null,
     width: null,

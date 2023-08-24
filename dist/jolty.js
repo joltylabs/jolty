@@ -252,7 +252,8 @@
     escapeHide: true,
     outsideHide: true,
     mode: POPOVER,
-    topLayer: true,
+    topLayer: false,
+    disablePopoverApi: false,
     arrow: {
       height: null,
       width: null,
@@ -400,6 +401,7 @@
     targetRect,
     arrow,
     placement,
+    inTopLayer,
     boundaryOffset = 0,
     offset = 0,
     padding = 0,
@@ -418,6 +420,12 @@
 
     padding = isArray(padding) ? padding : [padding];
     padding[1] ??= padding[0];
+
+    if (!inTopLayer) {
+      shrink = false;
+      flip = false;
+      sticky = false;
+    }
 
     const [baseM, baseS = CENTER] = placement.split("-");
     const hor = baseM === LEFT || baseM === RIGHT;
@@ -987,32 +995,7 @@
     }
   }
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-  var getBoundingClientRect = (elem, useScale) => {
-    const rect = elem.getBoundingClientRect().toJSON();
-
-    if (!useScale) return rect;
-
-    const vV = visualViewport;
-    const hasScale = vV.scale > 1.01 || vV.scale < 0.99;
-    const iosScale = window.innerWidth / document.documentElement.clientWidth;
-    const hasIosScale = iosScale > 1.01 || iosScale < 0.99;
-    const keyboardOpen = vV.height !== window.innerHeight;
-
-    if (
-      (!hasScale && hasIosScale) ||
-      (keyboardOpen && hasScale && hasIosScale) ||
-      (!hasScale && keyboardOpen && isIOS)
-    ) {
-      rect[TOP] += vV.offsetTop;
-      rect[LEFT] += vV.offsetLeft;
-      rect[RIGHT] = rect[LEFT] + rect[WIDTH];
-      rect[BOTTOM] = rect[TOP] + rect[HEIGHT];
-    }
-
-    return rect;
-  };
+  var getBoundingClientRect = (elem) => elem.getBoundingClientRect().toJSON();
 
   var getPropertyValue = (style, name) => style.getPropertyValue(name).trim();
 
@@ -2047,8 +2030,7 @@
       }
 
       const wrapperStyle = wrapper.style;
-      const inTopLayer =
-        (topLayer && POPOVER_API_SUPPORTED) || mode.startsWith(MODAL);
+      const inTopLayer = topLayer || mode.startsWith(MODAL);
 
       const {
         padding,
@@ -2059,8 +2041,7 @@
         wrapperComputedStyle,
       } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
 
-      const absolute = true;
-      let anchorRect = getBoundingClientRect(anchor, !absolute);
+      let anchorRect = getBoundingClientRect(anchor);
 
       const targetRect = {};
       [WIDTH, HEIGHT].forEach((size) => {
@@ -2084,7 +2065,7 @@
         targetRect,
         arrow: arrowData,
         placement,
-        absolute,
+        inTopLayer,
         flip,
         sticky,
         shrink,
@@ -2101,10 +2082,11 @@
         if (pendingUpdate) return;
         pendingUpdate = true;
 
-        anchorRect = getBoundingClientRect(anchor, true);
+        anchorRect = getBoundingClientRect(anchor);
+
         if (!inTopLayer) {
-          anchorRect.left = anchor.offsetLeft;
-          anchorRect.top = anchor.offsetTop;
+          anchorRect.left = anchorRect.x = anchor.offsetLeft;
+          anchorRect.top = anchorRect.y = anchor.offsetTop;
           anchorRect.right = anchor.offsetLeft + anchorRect.width;
           anchorRect.bottom = anchor.offsetTop + anchorRect.height;
         }
@@ -2115,6 +2097,11 @@
           position.top += window.scrollY;
           position.left += window.scrollX;
         }
+
+        // if (inTopLayer) {
+        //   position.top += window.scrollY;
+        //   position.left += window.scrollX;
+        // }
 
         if (prevTop && Math.abs(prevTop - position.top) > 50) {
           prevTop = position.top;
@@ -2199,7 +2186,7 @@
         target,
         name,
         anchor,
-        opts: { interactive },
+        opts: { interactive, disablePopoverApi },
       } = this;
 
       const style = {
@@ -2237,7 +2224,12 @@
         [DATA_UI_PREFIX + "current-mode"]: mode,
       };
 
-      if (topLayer && POPOVER_API_SUPPORTED && !mode.startsWith(MODAL)) {
+      if (
+        topLayer &&
+        POPOVER_API_SUPPORTED &&
+        !mode.startsWith(MODAL) &&
+        !disablePopoverApi
+      ) {
         attributes[POPOVER] = "";
       }
 
@@ -2794,6 +2786,7 @@
       [TOGGLER]: true,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+      detectPopoverApi: true,
     };
 
     constructor(elem, opts) {
@@ -3064,7 +3057,10 @@
         transitions[MODAL].toggleRemove(true);
         transitions[CONTENT].toggleRemove(true);
         if (isDialog) {
-          if (opts.focusTrap) {
+          if (
+            opts.focusTrap &&
+            (!opts.detectPopoverApi || POPOVER_API_SUPPORTED)
+          ) {
             modal.showModal();
           } else {
             modal.show();
