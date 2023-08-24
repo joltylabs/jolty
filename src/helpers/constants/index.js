@@ -101,6 +101,7 @@ export const CLIP_PATH = "clip-path";
 export const ARROW_OFFSET = ARROW + "-" + OFFSET;
 export const ARROW_PADDING = ARROW + "-" + PADDING;
 export const TRUE = "true";
+export const TOP_LAYER = "top-layer";
 
 export const doc = document;
 export const body = doc.body;
@@ -252,7 +253,8 @@ export const DEFAULT_FLOATING_OPTIONS = {
   sticky: false,
   escapeHide: true,
   outsideHide: true,
-  mode: FIXED,
+  mode: POPOVER,
+  topLayer: true,
   arrow: {
     height: null,
     width: null,
@@ -286,3 +288,6 @@ export const MIRROR = {
 export const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
   ? CLIP_PATH
   : WEBKIT_PREFIX + CLIP_PATH;
+
+export const POPOVER_API_SUPPORTED =
+  HTMLElement.prototype.hasOwnProperty("popover");

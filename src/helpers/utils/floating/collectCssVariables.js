@@ -57,12 +57,6 @@ export default (anchorStyles, targetStyles, wrapper, PREFIX) => {
     .values();
 
   const result = { wrapperComputedStyle };
-  [STICKY, FLIP, SHRINK, PLACEMENT].forEach(
-    (name) =>
-      (result[name] =
-        getPropertyValue(anchorStyles, PREFIX + name) ||
-        getPropertyValue(targetStyles, PREFIX + name)),
-  );
 
   if (values.length) {
     values.forEach(({ name }) => {

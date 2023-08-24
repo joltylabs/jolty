@@ -12,6 +12,9 @@ import {
   ACTION_EMIT,
   ACTION_ONCE,
   doc,
+  POPOVER_API_SUPPORTED,
+  UI_PREFIX,
+  POPOVER,
 } from "./constants";
 import { isArray, isFunction, isHTML, isObject, isString } from "./is";
 import { getElement, fragment } from "./dom";
@@ -24,6 +27,10 @@ import {
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import Breakpoints from "./Breakpoints";
+
+if (!POPOVER_API_SUPPORTED) {
+  document.documentElement.classList.add(UI_PREFIX + "no-" + POPOVER);
+}
 
 function getDataValue(_data, dataName, elem) {
   const value = callOrReturn(_data[dataName], elem);

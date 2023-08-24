@@ -18,7 +18,6 @@ import { createInset } from "./index.js";
 const { min, max } = Math;
 
 export default function ({
-  absolute,
   anchorRect,
   targetRect,
   arrow,
@@ -27,7 +26,7 @@ export default function ({
   offset = 0,
   padding = 0,
   shrink = false,
-  flip = true,
+  flip = false,
   sticky = false,
   minWidth = 0,
   minHeight = 0,
@@ -35,12 +34,6 @@ export default function ({
   boundaryOffset = createInset(boundaryOffset);
 
   const viewRect = visualViewport;
-
-  // if (absolute) {
-  //   flip = false;
-  //   shrink = false;
-  //   sticky = false;
-  // }
 
   flip = isArray(flip) ? flip : [flip];
   flip[1] ??= flip[0];

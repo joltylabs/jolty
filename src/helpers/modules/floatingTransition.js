@@ -16,18 +16,14 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   if (s) {
     transitionParams[EVENT_SHOW] = () => {
-      const root = target.parentNode;
       const arrow = target.querySelector(getDataSelector(name, ARROW));
-
       instance.floating = new Floating({
         anchor: toggler ?? base,
         target,
         arrow,
         opts,
-        root,
         name,
       }).recalculate();
-
       if (!silent) {
         emit(EVENT_SHOW, eventParams);
       }
