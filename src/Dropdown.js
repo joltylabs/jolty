@@ -11,7 +11,6 @@ import {
   ACTION_REMOVE,
   DROPDOWN,
   CLICK,
-  DATA_UI_PREFIX,
   KEY_ENTER,
   KEY_SPACE,
   KEY_END,
@@ -112,6 +111,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
         }
       }
       if (arrowActivated || (keyCode === KEY_TAB && !shiftKey)) {
+        if (this.isAnimating && !this.isShown) return;
         this.focusableElems[0]?.focus();
       }
     });
@@ -128,8 +128,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
 
-    opts[MODE] =
-      base.getAttribute(DATA_UI_PREFIX + DROPDOWN + "-" + MODE) ?? opts[MODE];
+    // opts[MODE] =
+    //   base.getAttribute(DATA_UI_PREFIX + DROPDOWN + "-" + MODE) ?? opts[MODE];
 
     this.updateToggler();
 
@@ -159,7 +159,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     );
   }
   _onKeydown(event) {
-    const { keyCode, shiftKey } = event;
+    const { keyCode } = event;
     const isControl = [
       KEY_ENTER,
       KEY_SPACE,
@@ -170,7 +170,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       KEY_ARROW_RIGHT,
       KEY_ARROW_DOWN,
     ].includes(keyCode);
-    const { toggler, focusableElems, hide, opts } = this;
+    const { focusableElems, hide, opts } = this;
 
     if (!isControl && keyCode !== KEY_TAB) {
       focusableElems
@@ -186,11 +186,11 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       (elem) => elem === doc.activeElement,
     );
 
-    if (currentIndex === 0 && shiftKey && keyCode === KEY_TAB) {
-      event.preventDefault();
-      toggler.focus();
-      return;
-    }
+    // if (currentIndex === 0 && shiftKey && keyCode === KEY_TAB) {
+    //   event.preventDefault();
+    //   toggler.focus();
+    //   return;
+    // }
 
     const nextIndex = currentIndex + 1 > lastIndex ? 0 : currentIndex + 1;
     const prevIndex = currentIndex ? currentIndex - 1 : lastIndex;
@@ -257,7 +257,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     }
 
     if (s) {
-      opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
+      body.appendChild(base);
     }
 
     const eventParams = { event, trigger };

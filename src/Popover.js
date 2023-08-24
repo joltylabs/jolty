@@ -95,8 +95,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     this.updateToggler();
 
-    opts[MODE] =
-      base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
+    // opts[MODE] =
+    //   base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
   }
   updateToggler() {
     const { opts, id } = this;
@@ -120,7 +120,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   async toggle(s, params) {
     const { transition, isShown, isAnimating, toggler, base, opts, emit } =
       this;
-    const { awaitAnimation, a11y, returnFocus, autofocus } = opts;
+    const { awaitAnimation, a11y, autofocus } = opts;
     const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
       normalizeToggleParameters(params);
 
@@ -136,7 +136,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     }
 
     if (s) {
-      opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
+      body.appendChild(base);
     }
 
     const eventParams = { event };
@@ -154,7 +154,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       eventParams,
     });
 
-    !s && returnFocus && base.contains(doc.activeElement) && focus(toggler);
+    !s && base.contains(doc.activeElement) && focus(toggler);
 
     s && !ignoreAutofocus && autofocus && callAutofocus(this);
 

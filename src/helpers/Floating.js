@@ -11,8 +11,6 @@ import {
   AVAILABLE_WIDTH,
   AVAILABLE_HEIGHT,
   body,
-  DATA_PREFIX,
-  UI_PREFIX,
   EVENT_SCROLL,
   EVENT_RESIZE,
   FLOATING_DATA_ATTRIBUTE,
@@ -34,7 +32,8 @@ import {
   MODE,
   POPOVER_API_SUPPORTED,
   TOP_LAYER,
-  UI,
+  FIXED,
+  TABINDEX,
 } from "./constants";
 import {
   createElement,
@@ -56,15 +55,13 @@ import {
 
 ResetFloatingCssVariables();
 
-const DIALOG_MODE = MODAL + "-" + POPOVER;
-
 export default class Floating {
-  constructor({ target, anchor, arrow, opts, name = "" }) {
+  constructor({ target, anchor, arrow, opts, name = "", base }) {
     const { on, off } = new EventHandler();
-    Object.assign(this, { target, anchor, arrow, opts, name, on, off });
+    Object.assign(this, { target, anchor, arrow, opts, name, on, off, base });
   }
   recalculate() {
-    const { target, anchor, arrow, opts, name } = this;
+    const { target, anchor, arrow, opts, name, base } = this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
 
     const anchorScrollParents = parents(anchor, isOverflowElement);
@@ -90,14 +87,32 @@ export default class Floating {
 
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
-    topLayer = topLayer ? topLayer === TRUE : opts.topLayer;
-    placement ||= opts[PLACEMENT];
-    mode ||= opts[MODE];
+    this.topLayer = topLayer = topLayer ? topLayer === TRUE : opts.topLayer;
+
+    this[PLACEMENT] = placement =
+      base.getAttribute(DATA_UI_PREFIX + name + "-" + PLACEMENT) ||
+      placement ||
+      opts[PLACEMENT];
+
+    this[MODE] = mode =
+      base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) ||
+      mode ||
+      opts[MODE];
 
     const wrapper = this.createWrapper(mode, topLayer);
+
+    if (!mode.startsWith(MODAL)) {
+      this.createFocusGuards();
+    }
+
+    if (mode === MODAL || mode === DIALOG) {
+      this.applyMode();
+      return this;
+    }
+
     const wrapperStyle = wrapper.style;
     const inTopLayer =
-      (topLayer && POPOVER_API_SUPPORTED) || mode === DIALOG_MODE;
+      (topLayer && POPOVER_API_SUPPORTED) || mode.startsWith(MODAL);
 
     const {
       padding,
@@ -176,7 +191,7 @@ export default class Floating {
 
       setAttribute(
         wrapper,
-        DATA_UI_PREFIX + "current-" + PLACEMENT,
+        `${DATA_UI_PREFIX}current-placement`,
         position[PLACEMENT],
       );
 
@@ -214,16 +229,7 @@ export default class Floating {
 
     updatePosition();
 
-    if (mode === DIALOG_MODE) {
-      wrapper.showModal();
-      if (opts.escapeHide) {
-        this.on(wrapper, CANCEL, (e) => e.preventDefault());
-      } else {
-        this.off(wrapper, CANCEL);
-      }
-    } else if (topLayer && POPOVER_API_SUPPORTED) {
-      wrapper.showPopover();
-    }
+    this.applyMode();
 
     this.on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
       passive: true,
@@ -238,6 +244,20 @@ export default class Floating {
     return this;
   }
 
+  applyMode() {
+    const { wrapper, opts, mode, topLayer } = this;
+    if (mode.startsWith(MODAL)) {
+      wrapper.showModal();
+      if (opts.escapeHide) {
+        this.on(wrapper, CANCEL, (e) => e.preventDefault());
+      } else {
+        this.off(wrapper, CANCEL);
+      }
+    } else if (topLayer && POPOVER_API_SUPPORTED) {
+      wrapper.hasAttribute(POPOVER) && wrapper.showPopover();
+    }
+  }
+
   createWrapper(mode, topLayer) {
     const {
       target,
@@ -245,39 +265,55 @@ export default class Floating {
       anchor,
       opts: { interactive },
     } = this;
-    const attributes = {
-      style: {
-        position: ABSOLUTE,
-        left: 0,
-        top: 0,
-        zIndex: 999,
-        margin: 0,
-        padding: 0,
-        background: NONE,
-        maxWidth: NONE,
-        maxHeight: NONE,
-        willChange: "transform",
-        width: "fit-content",
-        height: "fit-content",
-        minWidth: "max-content",
-        display: "block",
-        overflow: "unset",
-      },
-      [FLOATING_DATA_ATTRIBUTE]: name,
-      [DATA_UI_PREFIX + "current-" + MODE]: mode,
+
+    const style = {
+      zIndex: 999,
+      margin: 0,
+      padding: 0,
+      background: NONE,
+      maxWidth: NONE,
+      maxHeight: NONE,
+      width: "auto",
+      height: "auto",
+      overflow: "unset",
+      pointerEvents: "none",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
     };
 
-    if (topLayer && POPOVER_API_SUPPORTED && mode !== DIALOG_MODE) {
+    if (mode === MODAL || mode === DIALOG) {
+      style.position = FIXED;
+      style.inset = 0;
+    } else {
+      style.position = ABSOLUTE;
+      style.left = 0;
+      style.top = 0;
+      style.width = "fit-content";
+      style.height = "fit-content";
+      style.willChange = "transform";
+      style.minWidth = "max-content";
+    }
+
+    const attributes = {
+      style,
+      [FLOATING_DATA_ATTRIBUTE]: name,
+      [DATA_UI_PREFIX + "current-mode"]: mode,
+    };
+
+    if (topLayer && POPOVER_API_SUPPORTED && !mode.startsWith(MODAL)) {
       attributes[POPOVER] = "";
     }
 
     if (interactive !== undefined && !interactive) {
       attributes[INERT] = "";
       attributes.style.pointerEvents = NONE;
+    } else {
+      target.style.pointerEvents = "auto";
     }
 
     const wrapper = (this.wrapper = createElement(
-      mode === DIALOG_MODE ? DIALOG : DIV,
+      mode.startsWith(MODAL) ? DIALOG : DIV,
       attributes,
       target,
     ));
@@ -289,6 +325,18 @@ export default class Floating {
     }
     return wrapper;
   }
+  createFocusGuards() {
+    this.focusGuards = [];
+    ["prepend", "append"].forEach((methodName) => {
+      const focusGuard = createElement(DIV, {
+        [TABINDEX]: 0,
+        [DATA_UI_PREFIX + "focus-guard"]: "",
+        style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
+      });
+      this.wrapper[methodName](focusGuard);
+      this.focusGuards.push(focusGuard);
+    });
+  }
   destroy() {
     this.off();
     resizeObserver.unobserve(this.target);
@@ -296,7 +344,6 @@ export default class Floating {
     if (this.wrapper.hasAttribute(POPOVER) && POPOVER_API_SUPPORTED) {
       this.wrapper.hidePopover();
     }
-
     this.wrapper.remove();
   }
 }

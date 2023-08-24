@@ -87,9 +87,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
 
-    opts[MODE] =
-      this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
-      opts[MODE];
+    // opts[MODE] =
+    //   this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
+    //   opts[MODE];
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
@@ -196,9 +196,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
     if (s) {
-      opts.mode === ABSOLUTE
-        ? anchor.after(tooltip)
-        : body.appendChild(tooltip);
+      body.appendChild(tooltip);
     }
 
     const promise = floatingTransition(this, {

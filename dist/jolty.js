@@ -110,6 +110,7 @@
   const ARROW_OFFSET = ARROW + "-" + OFFSET;
   const ARROW_PADDING = ARROW + "-" + PADDING;
   const TRUE = "true";
+  const TOP_LAYER = "top-layer";
 
   const doc = document;
   const body = doc.body;
@@ -246,11 +247,12 @@
     delay: [200, 0],
     boundaryOffset: 0,
     shrink: false,
-    flip: false,
+    flip: true,
     sticky: false,
     escapeHide: true,
     outsideHide: true,
-    mode: FIXED,
+    mode: POPOVER,
+    topLayer: true,
     arrow: {
       height: null,
       width: null,
@@ -284,6 +286,9 @@
   const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
     ? CLIP_PATH
     : WEBKIT_PREFIX + CLIP_PATH;
+
+  const POPOVER_API_SUPPORTED =
+    HTMLElement.prototype.hasOwnProperty("popover");
 
   var isArray = Array.isArray;
 
@@ -391,7 +396,6 @@
   const { min, max } = Math;
 
   function getPosition ({
-    absolute,
     anchorRect,
     targetRect,
     arrow,
@@ -400,7 +404,7 @@
     offset = 0,
     padding = 0,
     shrink = false,
-    flip = true,
+    flip = false,
     sticky = false,
     minWidth = 0,
     minHeight = 0,
@@ -408,12 +412,6 @@
     boundaryOffset = createInset(boundaryOffset);
 
     const viewRect = visualViewport;
-
-    if (absolute) {
-      flip = false;
-      shrink = false;
-      sticky = false;
-    }
 
     flip = isArray(flip) ? flip : [flip];
     flip[1] ??= flip[0];
@@ -804,12 +802,6 @@
       .values();
 
     const result = { wrapperComputedStyle };
-    [STICKY, FLIP, SHRINK, PLACEMENT].forEach(
-      (name) =>
-        (result[name] =
-          getPropertyValue(anchorStyles, PREFIX + name) ||
-          getPropertyValue(targetStyles, PREFIX + name)),
-    );
 
     if (values.length) {
       values.forEach(({ name }) => {
@@ -1208,6 +1200,10 @@
       );
       this.constructor.instances.delete(this);
     }
+  }
+
+  if (!POPOVER_API_SUPPORTED) {
+    document.documentElement.classList.add(UI_PREFIX + "no-" + POPOVER);
   }
 
   function getDataValue(_data, dataName, elem) {
@@ -1842,7 +1838,7 @@
     }
   }
 
-  const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"])`;
+  const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
   var callAutofocus = (instance, elem = instance.base) => {
     const autofocus = instance.opts.autofocus;
     if (elem.contains(doc.activeElement)) return;
@@ -1861,12 +1857,22 @@
   };
 
   var addOutsideHide = (instance, s, activeElems) => {
+    const { focusGuards, anchor } = instance[FLOATING] ?? {};
     if (s) {
+      if (focusGuards) {
+        instance.on(focusGuards, EVENT_FOCUS, (event) => {
+          instance.hide({ event });
+          anchor.focus();
+        });
+      }
       instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
         !closest(event.target, activeElems) && instance.hide({ event });
       });
     } else {
       instance.off(doc, EVENT_ACTION_OUTSIDE);
+      if (focusGuards) {
+        instance.off(focusGuards, EVENT_ACTION_OUTSIDE);
+      }
     }
   };
 
@@ -1985,50 +1991,31 @@
 
   ResetFloatingCssVariables();
 
-  const DIALOG_MODE = MODAL + "-" + POPOVER;
-
   class Floating {
-    constructor({ target, anchor, arrow, opts, root = body, name = "" }) {
+    constructor({ target, anchor, arrow, opts, name = "", base }) {
       const { on, off } = new EventHandler();
-      Object.assign(this, { target, anchor, arrow, opts, root, name, on, off });
+      Object.assign(this, { target, anchor, arrow, opts, name, on, off, base });
     }
     recalculate() {
-      const { target, anchor, arrow, opts, name } = this;
+      const { target, anchor, arrow, opts, name, base } = this;
+      const PREFIX = VAR_UI_PREFIX + name + "-";
 
       const anchorScrollParents = parents(anchor, isOverflowElement);
       const targetStyles = getComputedStyle(target);
       const anchorStyles = getComputedStyle(anchor);
 
-      const PREFIX = VAR_UI_PREFIX + name + "-";
-
-      let pendingUpdate = false;
-
-      const minHeight = parseFloat(targetStyles.minHeight);
-      const minWidth = parseFloat(targetStyles.minWidth);
-
-      const wrapper = this.createWrapper();
-      const wrapperStyle = wrapper.style;
-
-      const absolute = opts.mode === ABSOLUTE;
-
-      const targetRect = {};
-
-      let {
-        padding,
-        offset = opts.offset,
-        boundaryOffset = opts.boundaryOffset,
-        arrowPadding = opts[ARROW]?.padding ?? 0,
-        arrowOffset = opts[ARROW]?.offset ?? 0,
-        wrapperComputedStyle,
-        flip,
-        sticky,
-        shrink,
-        placement,
-      } = collectCssVariables(
-        anchorStyles,
-        targetStyles,
-        wrapper,
-        PREFIX);
+      let [flip, sticky, shrink, placement, mode, topLayer] = [
+        STICKY,
+        FLIP,
+        SHRINK,
+        PLACEMENT,
+        MODE,
+        TOP_LAYER,
+      ].map(
+        (name) =>
+          getPropertyValue(anchorStyles, PREFIX + name) ||
+          getPropertyValue(targetStyles, PREFIX + name),
+      );
 
       flip = flip
         ? flip.split(" ").map((v) => v === TRUE)
@@ -2036,12 +2023,46 @@
 
       sticky = sticky ? sticky === TRUE : opts[STICKY];
       shrink = shrink ? shrink === TRUE : opts[SHRINK];
+      this.topLayer = topLayer = topLayer ? topLayer === TRUE : opts.topLayer;
 
-      placement ||= opts[PLACEMENT];
+      this[PLACEMENT] = placement =
+        base.getAttribute(DATA_UI_PREFIX + name + "-" + PLACEMENT) ||
+        placement ||
+        opts[PLACEMENT];
 
-      const arrowRect = arrow && getBoundingClientRect(arrow);
-      let anchorRect = getBoundingClientRect(arrow, !absolute);
+      this[MODE] = mode =
+        base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) ||
+        mode ||
+        opts[MODE];
 
+      const wrapper = this.createWrapper(mode, topLayer);
+
+      if (!mode.startsWith(MODAL)) {
+        this.createFocusGuards();
+      }
+
+      if (mode === MODAL || mode === DIALOG) {
+        this.applyMode();
+        return this;
+      }
+
+      const wrapperStyle = wrapper.style;
+      const inTopLayer =
+        (topLayer && POPOVER_API_SUPPORTED) || mode.startsWith(MODAL);
+
+      const {
+        padding,
+        offset = opts.offset,
+        boundaryOffset = opts.boundaryOffset,
+        arrowPadding = opts[ARROW]?.padding ?? 0,
+        arrowOffset = opts[ARROW]?.offset ?? 0,
+        wrapperComputedStyle,
+      } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
+
+      const absolute = true;
+      let anchorRect = getBoundingClientRect(anchor, !absolute);
+
+      const targetRect = {};
       [WIDTH, HEIGHT].forEach((size) => {
         targetRect[size] = parseFloat(wrapperComputedStyle[size]);
         wrapperStyle.setProperty(PREFIX + size, targetRect[size] + PX);
@@ -2051,12 +2072,12 @@
         );
       });
 
-      const arrowData = arrow && {
-        [WIDTH]: arrowRect[WIDTH],
-        [HEIGHT]: arrowRect[HEIGHT],
-        [PADDING]: arrowPadding,
-        [OFFSET]: arrowOffset,
-      };
+      let arrowData;
+      if (arrow) {
+        arrowData = getBoundingClientRect(arrow);
+        arrowData[PADDING] = arrowPadding;
+        arrowData[OFFSET] = arrowOffset;
+      }
 
       const params = {
         anchorRect,
@@ -2070,17 +2091,18 @@
         offset,
         boundaryOffset,
         padding,
-        minHeight,
-        minWidth,
+        minHeight: parseFloat(targetStyles.minHeight),
+        minWidth: parseFloat(targetStyles.minWidth),
       };
 
+      let prevTop = 0;
+      let pendingUpdate = false;
       const updatePosition = () => {
         if (pendingUpdate) return;
         pendingUpdate = true;
 
-        anchorRect = getBoundingClientRect(anchor, !absolute);
-
-        if (absolute) {
+        anchorRect = getBoundingClientRect(anchor, true);
+        if (!inTopLayer) {
           anchorRect.left = anchor.offsetLeft;
           anchorRect.top = anchor.offsetTop;
           anchorRect.right = anchor.offsetLeft + anchorRect.width;
@@ -2089,10 +2111,24 @@
 
         const position = getPosition({ ...params, anchorRect });
 
+        if (inTopLayer) {
+          position.top += window.scrollY;
+          position.left += window.scrollX;
+        }
+
+        if (prevTop && Math.abs(prevTop - position.top) > 50) {
+          prevTop = position.top;
+          requestAnimationFrame(() => {
+            pendingUpdate = false;
+          });
+          return updatePosition();
+        }
+        prevTop = position.top;
+
         setAttribute(
           wrapper,
-          DATA_UI_PREFIX + "current-" + PLACEMENT,
-          position.placement,
+          `${DATA_UI_PREFIX}current-placement`,
+          position[PLACEMENT],
         );
 
         if (shrink) {
@@ -2100,6 +2136,7 @@
             wrapperStyle.setProperty(PREFIX + name, position[name] + PX),
           );
         }
+
         if (arrow) {
           [LEFT, TOP].forEach((dir, i) =>
             wrapperStyle.setProperty(
@@ -2110,14 +2147,10 @@
         }
         wrapperStyle.setProperty(
           PREFIX + "transform-origin",
-          position.transformOrigin[0] +
-            PX +
-            " " +
-            position.transformOrigin[1] +
-            PX,
+          `${position.transformOrigin[0]}px ${position.transformOrigin[1]}px`,
         );
 
-        wrapperStyle.transform = `translate3d(${position.left}px,${position.top}px,0)`;
+        wrapperStyle.translate = `${position.left}px ${position.top}px 0`;
 
         requestAnimationFrame(() => {
           pendingUpdate = false;
@@ -2132,18 +2165,13 @@
 
       updatePosition();
 
-      this.on(
-        anchorScrollParents,
-        EVENT_SCROLL,
-        () => {
-          updatePosition();
-        },
-        {
-          passive: true,
-        },
-      );
+      this.applyMode();
+
+      this.on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
+        passive: true,
+      });
       this.on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
-        passive: false,
+        passive: true,
       });
       this.on(window, EVENT_SCROLL, updatePosition, {
         passive: true,
@@ -2152,68 +2180,106 @@
       return this;
     }
 
-    createWrapper(style = {}) {
+    applyMode() {
+      const { wrapper, opts, mode, topLayer } = this;
+      if (mode.startsWith(MODAL)) {
+        wrapper.showModal();
+        if (opts.escapeHide) {
+          this.on(wrapper, CANCEL, (e) => e.preventDefault());
+        } else {
+          this.off(wrapper, CANCEL);
+        }
+      } else if (topLayer && POPOVER_API_SUPPORTED) {
+        wrapper.hasAttribute(POPOVER) && wrapper.showPopover();
+      }
+    }
+
+    createWrapper(mode, topLayer) {
       const {
         target,
-        root,
         name,
         anchor,
-        on,
-        off,
-
-        opts: { mode, interactive, focusTrap, escapeHide },
+        opts: { interactive },
       } = this;
-      const attributes = {
-        style: {
-          position: mode === ABSOLUTE ? ABSOLUTE : FIXED,
-          top: 0,
-          left: 0,
-          zIndex: 999,
-          margin: 0,
-          padding: 0,
-          background: NONE,
-          maxWidth: NONE,
-          maxHeight: NONE,
-          willChange: "transform",
-          width: "fit-content",
-          height: "fit-content",
-          minWidth: "max-content",
-          display: "block",
-          overflow: "unset",
-          ...style,
-        },
-        [FLOATING_DATA_ATTRIBUTE]: "",
-        [DATA_PREFIX + UI_PREFIX + name + "-wrapper"]: "",
+
+      const style = {
+        zIndex: 999,
+        margin: 0,
+        padding: 0,
+        background: NONE,
+        maxWidth: NONE,
+        maxHeight: NONE,
+        width: "auto",
+        height: "auto",
+        overflow: "unset",
+        pointerEvents: "none",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
       };
+
+      if (mode === MODAL || mode === DIALOG) {
+        style.position = FIXED;
+        style.inset = 0;
+      } else {
+        style.position = ABSOLUTE;
+        style.left = 0;
+        style.top = 0;
+        style.width = "fit-content";
+        style.height = "fit-content";
+        style.willChange = "transform";
+        style.minWidth = "max-content";
+      }
+
+      const attributes = {
+        style,
+        [FLOATING_DATA_ATTRIBUTE]: name,
+        [DATA_UI_PREFIX + "current-mode"]: mode,
+      };
+
+      if (topLayer && POPOVER_API_SUPPORTED && !mode.startsWith(MODAL)) {
+        attributes[POPOVER] = "";
+      }
 
       if (interactive !== undefined && !interactive) {
         attributes[INERT] = "";
         attributes.style.pointerEvents = NONE;
+      } else {
+        target.style.pointerEvents = "auto";
       }
+
       const wrapper = (this.wrapper = createElement(
-        mode === DIALOG_MODE ? DIALOG : DIV,
+        mode.startsWith(MODAL) ? DIALOG : DIV,
         attributes,
         target,
       ));
-      mode === ABSOLUTE ? anchor.after(wrapper) : root.append(wrapper);
-      if (mode === DIALOG_MODE) {
-        if (focusTrap) {
-          wrapper.showModal();
-        } else {
-          wrapper.show();
-        }
-        if (escapeHide) {
-          on(wrapper, CANCEL, (e) => e.preventDefault());
-        } else {
-          off(wrapper, CANCEL);
-        }
+
+      if (topLayer) {
+        body.append(wrapper);
+      } else {
+        anchor.after(wrapper);
       }
       return wrapper;
+    }
+    createFocusGuards() {
+      this.focusGuards = [];
+      ["prepend", "append"].forEach((methodName) => {
+        const focusGuard = createElement(DIV, {
+          [TABINDEX]: 0,
+          [DATA_UI_PREFIX + "focus-guard"]: "",
+          style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
+        });
+        this.wrapper[methodName](focusGuard);
+        this.focusGuards.push(focusGuard);
+      });
     }
     destroy() {
       this.off();
       resizeObserver.unobserve(this.target);
       this.wrapper.close?.();
+      if (this.wrapper.hasAttribute(POPOVER) && POPOVER_API_SUPPORTED) {
+        this.wrapper.hidePopover();
+      }
       this.wrapper.remove();
     }
   }
@@ -2222,6 +2288,7 @@
     const { transition, base, opts, toggler, emit, constructor } = instance;
     const name = constructor.NAME;
     const target = instance[name];
+    const anchor = toggler ?? base;
     const transitionParams = { allowRemove: false };
     transition.parent = null;
 
@@ -2231,18 +2298,15 @@
 
     if (s) {
       transitionParams[EVENT_SHOW] = () => {
-        const root = target.parentNode;
         const arrow = target.querySelector(getDataSelector(name, ARROW));
-
         instance.floating = new Floating({
-          anchor: toggler ?? base,
+          base,
+          anchor,
           target,
           arrow,
           opts,
-          root,
           name,
         }).recalculate();
-
         if (!silent) {
           emit(EVENT_SHOW, eventParams);
         }
@@ -2458,7 +2522,6 @@
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
-      focusTrap: true,
       itemClickHide: true,
       mode: false,
       autofocus: true,
@@ -2499,6 +2562,7 @@
           }
         }
         if (arrowActivated || (keyCode === KEY_TAB && !shiftKey)) {
+          if (this.isAnimating && !this.isShown) return;
           this.focusableElems[0]?.focus();
         }
       });
@@ -2515,8 +2579,8 @@
         { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
       );
 
-      opts[MODE] =
-        base.getAttribute(DATA_UI_PREFIX + DROPDOWN + "-" + MODE) ?? opts[MODE];
+      // opts[MODE] =
+      //   base.getAttribute(DATA_UI_PREFIX + DROPDOWN + "-" + MODE) ?? opts[MODE];
 
       this.updateToggler();
 
@@ -2546,7 +2610,7 @@
       );
     }
     _onKeydown(event) {
-      const { keyCode, shiftKey } = event;
+      const { keyCode } = event;
       const isControl = [
         KEY_ENTER,
         KEY_SPACE,
@@ -2557,7 +2621,7 @@
         KEY_ARROW_RIGHT,
         KEY_ARROW_DOWN,
       ].includes(keyCode);
-      const { toggler, focusableElems, hide, opts } = this;
+      const { focusableElems, hide, opts } = this;
 
       if (!isControl && keyCode !== KEY_TAB) {
         focusableElems
@@ -2571,11 +2635,11 @@
         (elem) => elem === doc.activeElement,
       );
 
-      if (currentIndex === 0 && shiftKey && keyCode === KEY_TAB) {
-        event.preventDefault();
-        toggler.focus();
-        return;
-      }
+      // if (currentIndex === 0 && shiftKey && keyCode === KEY_TAB) {
+      //   event.preventDefault();
+      //   toggler.focus();
+      //   return;
+      // }
 
       const nextIndex = currentIndex + 1 > lastIndex ? 0 : currentIndex + 1;
       const prevIndex = currentIndex ? currentIndex - 1 : lastIndex;
@@ -2642,7 +2706,7 @@
       }
 
       if (s) {
-        opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
+        body.appendChild(base);
       }
 
       const eventParams = { event, trigger };
@@ -4036,9 +4100,9 @@
         { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
       );
 
-      opts[MODE] =
-        this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
-        opts[MODE];
+      // opts[MODE] =
+      //   this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
+      //   opts[MODE];
 
       opts.a11y && setAttribute(tooltip, TOOLTIP);
     }
@@ -4145,9 +4209,7 @@
       toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
       if (s) {
-        opts.mode === ABSOLUTE
-          ? anchor.after(tooltip)
-          : body.appendChild(tooltip);
+        body.appendChild(tooltip);
       }
 
       const promise = floatingTransition(this, {
@@ -4177,8 +4239,6 @@
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
-      focusTrap: true,
-      returnFocus: true,
       dismiss: true,
       autofocus: true,
       trigger: CLICK,
@@ -4214,8 +4274,8 @@
 
       this.updateToggler();
 
-      opts[MODE] =
-        base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
+      // opts[MODE] =
+      //   base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
     }
     updateToggler() {
       const { opts, id } = this;
@@ -4239,7 +4299,7 @@
     async toggle(s, params) {
       const { transition, isShown, isAnimating, toggler, base, opts, emit } =
         this;
-      const { awaitAnimation, a11y, returnFocus, autofocus } = opts;
+      const { awaitAnimation, a11y, autofocus } = opts;
       const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
         normalizeToggleParameters(params);
 
@@ -4255,7 +4315,7 @@
       }
 
       if (s) {
-        opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
+        body.appendChild(base);
       }
 
       const eventParams = { event };
@@ -4273,7 +4333,7 @@
         eventParams,
       });
 
-      !s && returnFocus && base.contains(doc.activeElement) && focus(toggler);
+      !s && base.contains(doc.activeElement) && focus(toggler);
 
       s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
