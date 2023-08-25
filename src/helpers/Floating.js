@@ -33,7 +33,6 @@ import {
   POPOVER_API_SUPPORTED,
   TOP_LAYER,
   FIXED,
-  TABINDEX,
 } from "./constants";
 import {
   createElement,
@@ -52,6 +51,7 @@ import {
   parents,
   setAttribute,
 } from "./dom";
+import { FocusGuards } from "./modules/index.js";
 
 ResetFloatingCssVariables();
 
@@ -102,7 +102,9 @@ export default class Floating {
     const wrapper = this.createWrapper(mode, topLayer);
 
     if (!mode.startsWith(MODAL)) {
-      this.createFocusGuards();
+      this.focusGuards = new FocusGuards(target, {
+        returnElem: opts.focusTrap ? false : anchor,
+      });
     }
 
     if (mode === MODAL || mode === DIALOG) {
@@ -153,8 +155,8 @@ export default class Floating {
       offset,
       boundaryOffset,
       padding,
-      minHeight: parseFloat(targetStyles.minHeight),
-      minWidth: parseFloat(targetStyles.minWidth),
+      minHeight: parseFloat(targetStyles.minHeight) || 0,
+      minWidth: parseFloat(targetStyles.minWidth) || 0,
     };
 
     let prevTop = 0;
@@ -254,8 +256,6 @@ export default class Floating {
       wrapper.showModal();
       if (opts.escapeHide) {
         this.on(wrapper, CANCEL, (e) => e.preventDefault());
-      } else {
-        this.off(wrapper, CANCEL);
       }
     } else if (topLayer && POPOVER_API_SUPPORTED) {
       wrapper.hasAttribute(POPOVER) && wrapper.showPopover();
@@ -311,7 +311,7 @@ export default class Floating {
       !mode.startsWith(MODAL) &&
       !disablePopoverApi
     ) {
-      attributes[POPOVER] = "";
+      attributes[POPOVER] = "manual";
     }
 
     if (interactive !== undefined && !interactive) {
@@ -327,24 +327,13 @@ export default class Floating {
       target,
     ));
 
-    if (topLayer) {
-      body.append(wrapper);
-    } else {
-      anchor.after(wrapper);
-    }
+    // if (topLayer) {
+    //   body.append(wrapper);
+    // } else {
+    //   anchor.after(wrapper);
+    // }
+    anchor.after(wrapper);
     return wrapper;
-  }
-  createFocusGuards() {
-    this.focusGuards = [];
-    ["prepend", "append"].forEach((methodName) => {
-      const focusGuard = createElement(DIV, {
-        [TABINDEX]: 0,
-        [DATA_UI_PREFIX + "focus-guard"]: "",
-        style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
-      });
-      this.wrapper[methodName](focusGuard);
-      this.focusGuards.push(focusGuard);
-    });
   }
   destroy() {
     this.off();
@@ -353,6 +342,7 @@ export default class Floating {
     if (this.wrapper.hasAttribute(POPOVER) && POPOVER_API_SUPPORTED) {
       this.wrapper.hidePopover();
     }
+    this.focusGuards?.destroy();
     this.wrapper.remove();
   }
 }

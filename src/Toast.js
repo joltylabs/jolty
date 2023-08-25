@@ -51,6 +51,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limitAnimateEnter: true,
     limitAnimateLeave: true,
     autohide: false,
+    topLayer: true,
+    disablePopoverApi: false,
   };
   constructor(elem, opts) {
     if (isObject(elem)) {

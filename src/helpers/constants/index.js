@@ -249,13 +249,14 @@ export const DEFAULT_FLOATING_OPTIONS = {
   delay: [200, 0],
   boundaryOffset: 0,
   shrink: false,
-  flip: true,
+  flip: false,
   sticky: false,
   escapeHide: true,
   outsideHide: true,
   mode: POPOVER,
-  topLayer: false,
+  topLayer: true,
   disablePopoverApi: false,
+  focusTrap: true,
   arrow: {
     height: null,
     width: null,
@@ -292,3 +293,5 @@ export const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
 
 export const POPOVER_API_SUPPORTED =
   HTMLElement.prototype.hasOwnProperty("popover");
+
+export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;

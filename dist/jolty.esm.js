@@ -241,13 +241,14 @@ const DEFAULT_FLOATING_OPTIONS = {
   delay: [200, 0],
   boundaryOffset: 0,
   shrink: false,
-  flip: true,
+  flip: false,
   sticky: false,
   escapeHide: true,
   outsideHide: true,
   mode: POPOVER,
-  topLayer: false,
+  topLayer: true,
   disablePopoverApi: false,
+  focusTrap: true,
   arrow: {
     height: null,
     width: null,
@@ -284,6 +285,8 @@ const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
 
 const POPOVER_API_SUPPORTED =
   HTMLElement.prototype.hasOwnProperty("popover");
+
+const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
 
 var isArray = Array.isArray;
 
@@ -1815,7 +1818,6 @@ function addEscapeHide (instance, s, elem = instance.base) {
   }
 }
 
-const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
 var callAutofocus = (instance, elem = instance.base) => {
   const autofocus = instance.opts.autofocus;
   if (elem.contains(doc.activeElement)) return;
@@ -1834,22 +1836,12 @@ var callAutofocus = (instance, elem = instance.base) => {
 };
 
 var addOutsideHide = (instance, s, activeElems) => {
-  const { focusGuards, anchor } = instance[FLOATING] ?? {};
   if (s) {
-    if (focusGuards) {
-      instance.on(focusGuards, EVENT_FOCUS, (event) => {
-        instance.hide({ event });
-        anchor.focus();
-      });
-    }
     instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
       !closest(event.target, activeElems) && instance.hide({ event });
     });
   } else {
     instance.off(doc, EVENT_ACTION_OUTSIDE);
-    if (focusGuards) {
-      instance.off(focusGuards, EVENT_ACTION_OUTSIDE);
-    }
   }
 };
 
@@ -2015,7 +2007,9 @@ class Floating {
     const wrapper = this.createWrapper(mode, topLayer);
 
     if (!mode.startsWith(MODAL)) {
-      this.createFocusGuards();
+      this.focusGuards = new FocusGuards(target, {
+        returnElem: opts.focusTrap ? false : anchor,
+      });
     }
 
     if (mode === MODAL || mode === DIALOG) {
@@ -2066,8 +2060,8 @@ class Floating {
       offset,
       boundaryOffset,
       padding,
-      minHeight: parseFloat(targetStyles.minHeight),
-      minWidth: parseFloat(targetStyles.minWidth),
+      minHeight: parseFloat(targetStyles.minHeight) || 0,
+      minWidth: parseFloat(targetStyles.minWidth) || 0,
     };
 
     let prevTop = 0;
@@ -2167,8 +2161,6 @@ class Floating {
       wrapper.showModal();
       if (opts.escapeHide) {
         this.on(wrapper, CANCEL, (e) => e.preventDefault());
-      } else {
-        this.off(wrapper, CANCEL);
       }
     } else if (topLayer && POPOVER_API_SUPPORTED) {
       wrapper.hasAttribute(POPOVER) && wrapper.showPopover();
@@ -2224,7 +2216,7 @@ class Floating {
       !mode.startsWith(MODAL) &&
       !disablePopoverApi
     ) {
-      attributes[POPOVER] = "";
+      attributes[POPOVER] = "manual";
     }
 
     if (interactive !== undefined && !interactive) {
@@ -2240,24 +2232,13 @@ class Floating {
       target,
     ));
 
-    if (topLayer) {
-      body.append(wrapper);
-    } else {
-      anchor.after(wrapper);
-    }
+    // if (topLayer) {
+    //   body.append(wrapper);
+    // } else {
+    //   anchor.after(wrapper);
+    // }
+    anchor.after(wrapper);
     return wrapper;
-  }
-  createFocusGuards() {
-    this.focusGuards = [];
-    ["prepend", "append"].forEach((methodName) => {
-      const focusGuard = createElement(DIV, {
-        [TABINDEX]: 0,
-        [DATA_UI_PREFIX + "focus-guard"]: "",
-        style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
-      });
-      this.wrapper[methodName](focusGuard);
-      this.focusGuards.push(focusGuard);
-    });
   }
   destroy() {
     this.off();
@@ -2266,6 +2247,7 @@ class Floating {
     if (this.wrapper.hasAttribute(POPOVER) && POPOVER_API_SUPPORTED) {
       this.wrapper.hidePopover();
     }
+    this.focusGuards?.destroy();
     this.wrapper.remove();
   }
 }
@@ -2349,6 +2331,71 @@ var awaitPromise = async (promise, callback) => {
   await promise;
   callback();
 };
+
+const FOCUS_GUARD = FOCUS + "-guard";
+
+class FocusGuards {
+  constructor(target, opts = {}) {
+    this.target = target;
+    this.opts = opts;
+    this.init();
+  }
+  init() {
+    const { target, opts } = this;
+
+    this.onFocus = (e) => {
+      let returnElem = opts.returnElem;
+      let focusFirst = false;
+      if (e.relatedTarget === returnElem) {
+        returnElem = false;
+        focusFirst = true;
+      }
+      if (!returnElem) {
+        const returnElems = target.querySelectorAll(
+          FOCUSABLE_ELEMENTS_SELECTOR,
+        );
+        if (
+          !focusFirst &&
+          e.target.getAttribute(DATA_UI_PREFIX + FOCUS_GUARD) === BEFORE
+        ) {
+          returnElem = returnElems[returnElems.length - 1];
+        } else {
+          returnElem = returnElems[0];
+        }
+      }
+      returnElem?.focus();
+    };
+
+    this.focusGuards = [BEFORE, AFTER].map((methodName) => {
+      const focusGuard = createElement("span", {
+        [TABINDEX]: 0,
+        [DATA_UI_PREFIX + FOCUS_GUARD]: methodName,
+        style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
+      });
+      target[methodName](focusGuard);
+      focusGuard.addEventListener(FOCUS, this.onFocus);
+      return focusGuard;
+    });
+  }
+  destroy() {
+    this.focusGuards.forEach((focusGuard) => {
+      focusGuard.remove();
+      focusGuard.removeEventListener(FOCUS, this.onFocus);
+    });
+  }
+}
+
+// export default function (elem) {
+//   return [BEFORE, AFTER].map((methodName) => {
+//     const focusGuard = createElement("span", {
+//       [TABINDEX]: 0,
+//       [DATA_UI_PREFIX + "focus-guard"]: "",
+//       style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
+//     });
+//     elem[methodName](focusGuard);
+//     return focusGuard;
+//   });
+// }
 
 const COLLAPSE = "collapse";
 
@@ -2817,7 +2864,9 @@ class Modal extends ToggleMixin(Base, MODAL) {
     this.teleport = Teleport.createOrUpdate(
       teleport,
       modal,
-      teleportOpts == null && (!isDialog || _fromHTML) ? body : teleportOpts,
+      (teleportOpts == null && _fromHTML) || teleportOpts === true
+        ? body
+        : teleportOpts,
       {
         keepPlace: false,
       },
@@ -3050,6 +3099,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     if (s) {
       transitions[MODAL].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
+      // modal.show();
       if (isDialog) {
         if (
           opts.focusTrap &&
@@ -3059,6 +3109,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
         } else {
           modal.show();
         }
+      } else if (opts.focusTrap) {
+        this.focusGuards = new FocusGuards(modal);
       }
       if (opts.returnFocus) {
         this.returnFocusElem = doc.activeElement;
@@ -3094,12 +3146,12 @@ class Modal extends ToggleMixin(Base, MODAL) {
       });
     } else {
       this._mousedownTarget = null;
-
       off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
-
       if (isDialog && !optReturnFocusAwait) {
         modal.close();
       }
+      this.focusGuards?.destroy();
+      this.focusGuards = false;
     }
 
     const promise = this.transitionPromise;
@@ -3127,11 +3179,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
   }
 
   returnFocus() {
-    if (
-      !this.isDialog &&
-      this.opts.returnFocus &&
-      this.modal.contains(doc.activeElement)
-    ) {
+    if (this.opts.returnFocus && this.modal.contains(doc.activeElement)) {
       focus(this.returnFocusElem);
     }
   }
@@ -3865,6 +3913,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limitAnimateEnter: true,
     limitAnimateLeave: true,
     autohide: false,
+    topLayer: true,
+    disablePopoverApi: false,
   };
   constructor(elem, opts) {
     if (isObject(elem)) {
@@ -4248,6 +4298,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     toggleOnInterection({ anchor: toggler, target: popover, instance: this });
     addDismiss(this, popover);
 
+    // body.appendChild(popover);
+
     return callInitShow(this);
   }
   _update() {
@@ -4302,10 +4354,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();
-    }
-
-    if (s) {
-      body.appendChild(base);
     }
 
     const eventParams = { event };

@@ -79,6 +79,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     toggleOnInterection({ anchor: toggler, target: popover, instance: this });
     addDismiss(this, popover);
 
+    // body.appendChild(popover);
+
     return callInitShow(this);
   }
   _update() {
@@ -133,10 +135,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();
-    }
-
-    if (s) {
-      body.appendChild(base);
     }
 
     const eventParams = { event };

@@ -79,6 +79,7 @@ import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
+import { FocusGuards } from "./helpers/modules/index.js";
 
 const DOM_ELEMENTS = [MODAL, BACKDROP, CONTENT];
 const CLASS_PREVENT_SCROLL =
@@ -173,7 +174,9 @@ class Modal extends ToggleMixin(Base, MODAL) {
     this.teleport = Teleport.createOrUpdate(
       teleport,
       modal,
-      teleportOpts == null && (!isDialog || _fromHTML) ? body : teleportOpts,
+      (teleportOpts == null && _fromHTML) || teleportOpts === true
+        ? body
+        : teleportOpts,
       {
         keepPlace: false,
       },
@@ -406,6 +409,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
     if (s) {
       transitions[MODAL].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
+      // modal.show();
       if (isDialog) {
         if (
           opts.focusTrap &&
@@ -415,6 +419,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
         } else {
           modal.show();
         }
+      } else if (opts.focusTrap) {
+        this.focusGuards = new FocusGuards(modal);
       }
       if (opts.returnFocus) {
         this.returnFocusElem = doc.activeElement;
@@ -450,12 +456,12 @@ class Modal extends ToggleMixin(Base, MODAL) {
       });
     } else {
       this._mousedownTarget = null;
-
       off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
-
       if (isDialog && !optReturnFocusAwait) {
         modal.close();
       }
+      this.focusGuards?.destroy();
+      this.focusGuards = false;
     }
 
     const promise = this.transitionPromise;
@@ -483,11 +489,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
   }
 
   returnFocus() {
-    if (
-      !this.isDialog &&
-      this.opts.returnFocus &&
-      this.modal.contains(doc.activeElement)
-    ) {
+    if (this.opts.returnFocus && this.modal.contains(doc.activeElement)) {
       focus(this.returnFocusElem);
     }
   }
