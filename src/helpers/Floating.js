@@ -33,6 +33,9 @@ import {
   POPOVER_API_SUPPORTED,
   TOP_LAYER,
   FIXED,
+  EVENT_KEYDOWN,
+  FOCUSABLE_ELEMENTS_SELECTOR,
+  KEY_TAB,
 } from "./constants";
 import {
   createElement,
@@ -60,8 +63,8 @@ export default class Floating {
     const { on, off } = new EventHandler();
     Object.assign(this, { target, anchor, arrow, opts, name, on, off, base });
   }
-  recalculate() {
-    const { target, anchor, arrow, opts, name, base } = this;
+  init() {
+    const { target, anchor, arrow, opts, name, base, on } = this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
 
     const anchorScrollParents = parents(anchor, isOverflowElement);
@@ -87,6 +90,7 @@ export default class Floating {
 
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
+
     this.topLayer = topLayer = topLayer ? topLayer === TRUE : opts.topLayer;
 
     this[PLACEMENT] = placement =
@@ -99,11 +103,38 @@ export default class Floating {
       mode ||
       opts[MODE];
 
-    const wrapper = this.createWrapper(mode, topLayer);
+    const modeIsModal = mode.startsWith(MODAL);
 
-    if (!mode.startsWith(MODAL)) {
+    const usePopoverApi =
+      topLayer && !modeIsModal && opts.popoverApi && POPOVER_API_SUPPORTED;
+
+    const inTopLayer =
+      (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) || modeIsModal;
+
+    const moveToRoot =
+      topLayer &&
+      (!modeIsModal || opts.moveModal) &&
+      (!usePopoverApi || opts.movePopover);
+
+    const wrapper = this.createWrapper(mode, moveToRoot, usePopoverApi);
+
+    if (moveToRoot && !modeIsModal && !opts.focusTrap) {
+      this.on(anchor, EVENT_KEYDOWN, (e) => {
+        if (e.keyCode === KEY_TAB && !e.shiftKey) {
+          const focusElem = target.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
+          if (focusElem) {
+            e.preventDefault();
+            focusElem.focus();
+          }
+        }
+      });
+    }
+
+    if ((opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot)) {
       this.focusGuards = new FocusGuards(target, {
-        returnElem: opts.focusTrap ? false : anchor,
+        focusAfterAnchor: !opts.focusTrap,
+        anchor,
+        topLayer,
       });
     }
 
@@ -113,7 +144,6 @@ export default class Floating {
     }
 
     const wrapperStyle = wrapper.style;
-    const inTopLayer = topLayer || mode.startsWith(MODAL);
 
     const {
       padding,
@@ -180,11 +210,6 @@ export default class Floating {
         position.top += window.scrollY;
         position.left += window.scrollX;
       }
-
-      // if (inTopLayer) {
-      //   position.top += window.scrollY;
-      //   position.left += window.scrollX;
-      // }
 
       if (prevTop && Math.abs(prevTop - position.top) > 50) {
         prevTop = position.top;
@@ -262,13 +287,8 @@ export default class Floating {
     }
   }
 
-  createWrapper(mode, topLayer) {
-    const {
-      target,
-      name,
-      anchor,
-      opts: { interactive, disablePopoverApi },
-    } = this;
+  createWrapper(mode, moveToRoot, usePopoverApi) {
+    const { target, name, anchor, opts } = this;
 
     const style = {
       zIndex: 999,
@@ -305,16 +325,11 @@ export default class Floating {
       [DATA_UI_PREFIX + "current-mode"]: mode,
     };
 
-    if (
-      topLayer &&
-      POPOVER_API_SUPPORTED &&
-      !mode.startsWith(MODAL) &&
-      !disablePopoverApi
-    ) {
+    if (usePopoverApi) {
       attributes[POPOVER] = "manual";
     }
 
-    if (interactive !== undefined && !interactive) {
+    if (opts.interactive !== undefined && !opts.interactive) {
       attributes[INERT] = "";
       attributes.style.pointerEvents = NONE;
     } else {
@@ -327,12 +342,12 @@ export default class Floating {
       target,
     ));
 
-    // if (topLayer) {
-    //   body.append(wrapper);
-    // } else {
-    //   anchor.after(wrapper);
-    // }
-    anchor.after(wrapper);
+    if (moveToRoot) {
+      body.append(wrapper);
+    } else {
+      anchor.after(wrapper);
+    }
+
     return wrapper;
   }
   destroy() {

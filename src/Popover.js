@@ -55,7 +55,6 @@ import Transition from "./helpers/Transition.js";
 class Popover extends ToggleMixin(Base, POPOVER) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
-    required: true,
   };
   static Default = {
     ...DEFAULT_OPTIONS,
@@ -122,8 +121,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   async toggle(s, params) {
     const { transition, isShown, isAnimating, toggler, base, opts, emit } =
       this;
-    const { awaitAnimation, a11y, autofocus } = opts;
-    const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
+    const { awaitAnimation, a11y } = opts;
+    const { animated, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
     s ??= !isShown;
@@ -153,8 +152,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     });
 
     !s && base.contains(doc.activeElement) && focus(toggler);
-
-    s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
     awaitPromise(promise, () =>
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),

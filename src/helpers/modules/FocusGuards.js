@@ -20,24 +20,32 @@ export default class FocusGuards {
     const { target, opts } = this;
 
     this.onFocus = (e) => {
-      let returnElem = opts.returnElem;
+      let returnElem = opts.anchor;
       let focusFirst = false;
+      const isGuardBefore =
+        e.target.getAttribute(DATA_UI_PREFIX + FOCUS_GUARD) === BEFORE;
+
+      if (opts.focusAfterAnchor && returnElem) {
+        if (!isGuardBefore) {
+          const globalReturnElems = [
+            ...document.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
+          ];
+          returnElem =
+            globalReturnElems[
+              globalReturnElems.findIndex((el) => el === returnElem) + 1
+            ];
+        }
+        return returnElem.focus();
+      }
+
       if (e.relatedTarget === returnElem) {
-        returnElem = false;
         focusFirst = true;
       }
-      if (!returnElem) {
-        const returnElems = target.querySelectorAll(
-          FOCUSABLE_ELEMENTS_SELECTOR,
-        );
-        if (
-          !focusFirst &&
-          e.target.getAttribute(DATA_UI_PREFIX + FOCUS_GUARD) === BEFORE
-        ) {
-          returnElem = returnElems[returnElems.length - 1];
-        } else {
-          returnElem = returnElems[0];
-        }
+      const returnElems = target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR);
+      if (!focusFirst && isGuardBefore) {
+        returnElem = returnElems[returnElems.length - 1];
+      } else {
+        returnElem = returnElems[0];
       }
       returnElem?.focus();
     };

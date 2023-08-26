@@ -24,14 +24,12 @@ import {
   DEFAULT_OPTIONS,
   ARIA_EXPANDED,
   KEY_TAB,
-  MODE,
   body,
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   doc,
   HIDE_MODE,
   AUTOFOCUS,
-  ABSOLUTE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -66,7 +64,6 @@ import {
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static DefaultAutofocus = {
     elem: DEFAULT_AUTOFOCUS,
-    required: false,
   };
   static Default = {
     ...DEFAULT_OPTIONS,
@@ -95,14 +92,11 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
-      const { keyCode, shiftKey } = event;
+      const { keyCode } = event;
 
       const arrowActivated =
         KEY_ARROW_UP === keyCode || KEY_ARROW_DOWN === keyCode;
-      if (
-        arrowActivated ||
-        (keyCode === KEY_TAB && !shiftKey && this.isShown)
-      ) {
+      if (arrowActivated) {
         event.preventDefault();
       }
       if (arrowActivated) {
@@ -110,7 +104,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
           await show({ event, trigger: toggler });
         }
       }
-      if (arrowActivated || (keyCode === KEY_TAB && !shiftKey)) {
+      if (arrowActivated) {
         if (this.isAnimating && !this.isShown) return;
         this.focusableElems[0]?.focus();
       }
@@ -235,15 +229,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   async toggle(s, params) {
     const { toggler, base, opts, emit, transition, isShown, isAnimating } =
       this;
-    const { awaitAnimation, autofocus, a11y } = opts;
-    const {
-      animated,
-      silent,
-      trigger,
-      event,
-      ignoreConditions,
-      ignoreAutofocus,
-    } = normalizeToggleParameters(params);
+    const { awaitAnimation, a11y } = opts;
+    const { animated, silent, trigger, event, ignoreConditions } =
+      normalizeToggleParameters(params);
 
     s ??= !isShown;
 
@@ -276,8 +264,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     });
 
     !s && base.contains(doc.activeElement) && toggler.focus();
-
-    s && !ignoreAutofocus && autofocus && callAutofocus(this);
 
     awaitPromise(promise, () =>
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),

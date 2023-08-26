@@ -11,13 +11,13 @@ export default (instance, elem = instance.base) => {
   if (elem.contains(doc.activeElement)) return;
   let focusElem = getOptionElem(instance, autofocus.elem, elem);
   const isDialog = elem.tagName === "DIALOG";
-  if ((!focusElem && autofocus.required && !isDialog) || isDialog) {
+  console.log("s");
+  if (!focusElem && instance.opts.focusTrap && !isDialog) {
     focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
     if (!focusElem && elem.hasAttribute(TABINDEX)) {
       focusElem = elem;
     }
   }
-
   focusElem?.focus({
     [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,
   });

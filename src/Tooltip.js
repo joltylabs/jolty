@@ -87,10 +87,6 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
 
-    // opts[MODE] =
-    //   this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
-    //   opts[MODE];
-
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
   destroy(destroyOpts) {

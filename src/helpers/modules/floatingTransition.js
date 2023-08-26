@@ -1,6 +1,6 @@
 import { EVENT_SHOW, EVENT_HIDE, ARROW, doc } from "../constants";
 import { getDataSelector } from "../utils";
-import { addOutsideHide, addEscapeHide } from "../modules";
+import { addOutsideHide, addEscapeHide, callAutofocus } from "../modules";
 import Floating from "../Floating.js";
 
 export default (instance, { s, animated, silent, eventParams }) => {
@@ -25,7 +25,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
         arrow,
         opts,
         name,
-      }).recalculate();
+      }).init();
       if (!silent) {
         emit(EVENT_SHOW, eventParams);
       }
@@ -39,6 +39,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
   if (s) {
     opts.outsideHide && addOutsideHide(instance, s, [toggler ?? base, target]);
     opts.escapeHide && addEscapeHide(instance, s, doc);
+    opts.autofocus && callAutofocus(instance);
   }
 
   !s &&
