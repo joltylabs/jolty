@@ -416,6 +416,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
           (!opts.detectPopoverApi || POPOVER_API_SUPPORTED)
         ) {
           modal.showModal();
+          Modal.dispatchTopLayer(MODAL);
         } else {
           modal.show();
         }
@@ -461,7 +462,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
         modal.close();
       }
       this.focusGuards?.destroy();
-      this.focusGuards = false;
+      this.focusGuards = null;
     }
 
     const promise = this.transitionPromise;

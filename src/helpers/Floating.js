@@ -36,6 +36,7 @@ import {
   EVENT_KEYDOWN,
   FOCUSABLE_ELEMENTS_SELECTOR,
   KEY_TAB,
+  POPOVER_API_MODE_MANUAL,
 } from "./constants";
 import {
   createElement,
@@ -53,15 +54,26 @@ import {
   getPropertyValue,
   parents,
   setAttribute,
+  focus,
 } from "./dom";
 import { FocusGuards } from "./modules/index.js";
 
 ResetFloatingCssVariables();
 
 export default class Floating {
-  constructor({ target, anchor, arrow, opts, name = "", base }) {
+  constructor({ target, anchor, arrow, opts, name = "", base, onTopLayer }) {
     const { on, off } = new EventHandler();
-    Object.assign(this, { target, anchor, arrow, opts, name, on, off, base });
+    Object.assign(this, {
+      target,
+      anchor,
+      arrow,
+      opts,
+      name,
+      on,
+      off,
+      base,
+      onTopLayer,
+    });
   }
   init() {
     const { target, anchor, arrow, opts, name, base, on } = this;
@@ -116,30 +128,25 @@ export default class Floating {
       (!modeIsModal || opts.moveModal) &&
       (!usePopoverApi || opts.movePopover);
 
+    const useFocusGuards =
+      (opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot);
+
     const wrapper = this.createWrapper(mode, moveToRoot, usePopoverApi);
 
     if (moveToRoot && !modeIsModal && !opts.focusTrap) {
-      this.on(anchor, EVENT_KEYDOWN, (e) => {
+      on(anchor, EVENT_KEYDOWN, (e) => {
         if (e.keyCode === KEY_TAB && !e.shiftKey) {
           const focusElem = target.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
           if (focusElem) {
             e.preventDefault();
-            focusElem.focus();
+            focus(focusElem);
           }
         }
       });
     }
 
-    if ((opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot)) {
-      this.focusGuards = new FocusGuards(target, {
-        focusAfterAnchor: !opts.focusTrap,
-        anchor,
-        topLayer,
-      });
-    }
-
     if (mode === MODAL || mode === DIALOG) {
-      this.applyMode();
+      this.applyMode(useFocusGuards);
       return this;
     }
 
@@ -260,30 +267,44 @@ export default class Floating {
 
     updatePosition();
 
-    this.applyMode();
+    this.applyMode(useFocusGuards);
 
-    this.on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
+    on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
       passive: true,
     });
-    this.on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
+    on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
       passive: true,
     });
-    this.on(window, EVENT_SCROLL, updatePosition, {
+    on(window, EVENT_SCROLL, updatePosition, {
       passive: true,
     });
     this.updatePosition = updatePosition.bind(this);
     return this;
   }
 
-  applyMode() {
-    const { wrapper, opts, mode, topLayer } = this;
-    if (mode.startsWith(MODAL)) {
-      wrapper.showModal();
+  applyMode(useFocusGuards) {
+    const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
+    if (mode.startsWith(MODAL) || mode.startsWith(DIALOG)) {
+      if (mode.startsWith(MODAL)) {
+        wrapper.showModal();
+        onTopLayer?.(MODAL);
+      } else {
+        wrapper.show();
+      }
       if (opts.escapeHide) {
         this.on(wrapper, CANCEL, (e) => e.preventDefault());
       }
-    } else if (topLayer && POPOVER_API_SUPPORTED) {
-      wrapper.hasAttribute(POPOVER) && wrapper.showPopover();
+    } else if (topLayer && POPOVER_API_SUPPORTED && wrapper.popover) {
+      wrapper.showPopover();
+      onTopLayer?.(POPOVER);
+    }
+    if (useFocusGuards) {
+      this.focusGuards = new FocusGuards(target, {
+        focusAfterAnchor: !opts.focusTrap,
+        anchor,
+        topLayer,
+        strategy: ABSOLUTE,
+      });
     }
   }
 
@@ -297,8 +318,8 @@ export default class Floating {
       background: NONE,
       maxWidth: NONE,
       maxHeight: NONE,
-      width: "auto",
-      height: "auto",
+      width: "fit-content",
+      height: "fit-content",
       overflow: "unset",
       pointerEvents: "none",
       display: "flex",
@@ -326,7 +347,7 @@ export default class Floating {
     };
 
     if (usePopoverApi) {
-      attributes[POPOVER] = "manual";
+      attributes[POPOVER] = POPOVER_API_MODE_MANUAL;
     }
 
     if (opts.interactive !== undefined && !opts.interactive) {
@@ -337,7 +358,7 @@ export default class Floating {
     }
 
     const wrapper = (this.wrapper = createElement(
-      mode.startsWith(MODAL) ? DIALOG : DIV,
+      mode.startsWith(MODAL) || mode.startsWith(DIALOG) ? DIALOG : DIV,
       attributes,
       target,
     ));
@@ -354,7 +375,7 @@ export default class Floating {
     this.off();
     resizeObserver.unobserve(this.target);
     this.wrapper.close?.();
-    if (this.wrapper.hasAttribute(POPOVER) && POPOVER_API_SUPPORTED) {
+    if (this.wrapper.popover && POPOVER_API_SUPPORTED) {
       this.wrapper.hidePopover();
     }
     this.focusGuards?.destroy();

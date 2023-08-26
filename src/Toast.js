@@ -10,6 +10,9 @@ import {
   DEFAULT_OPTIONS,
   ACTION_DESTROY,
   HIDE_MODE,
+  POPOVER_API_SUPPORTED,
+  POPOVER_API_MODE_MANUAL,
+  POPOVER,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
 import { fragment, inDOM } from "./helpers/dom";
@@ -52,7 +55,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limitAnimateLeave: true,
     autohide: false,
     topLayer: true,
-    disablePopoverApi: false,
+    keepTopLayer: true,
+    popoverApi: true,
   };
   constructor(elem, opts) {
     if (isObject(elem)) {
@@ -103,6 +107,9 @@ class Toast extends ToggleMixin(Base, TOAST) {
         limitAnimateEnter,
         position,
         container,
+        popoverApi,
+        topLayer,
+        keepTopLayer,
       },
       autohide,
       base,
@@ -145,9 +152,21 @@ class Toast extends ToggleMixin(Base, TOAST) {
             position,
             root,
             container,
+            keepTopLayer,
           }));
+
+          if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+            wrapper[POPOVER] = POPOVER_API_MODE_MANUAL;
+          } else {
+            wrapper[POPOVER] = null;
+          }
+
           if (wrapper && wrapper.parentElement !== root) {
             root.append(wrapper);
+          }
+          if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+            wrapper.hidePopover();
+            wrapper.showPopover();
           }
         }
         to.append(base);
@@ -191,7 +210,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     return this;
   }
 
-  static getWrapper({ position, root = body, container = "" }) {
+  static getWrapper({ position, root = body, container = "", keepTopLayer }) {
     let rootWrappers = wrappers.get(root);
     if (!rootWrappers) {
       rootWrappers = new Set();
@@ -213,7 +232,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
         : container(containerParams),
     );
 
-    rootWrappers.add({ wrapper, container, position, root });
+    rootWrappers.add({ wrapper, container, position, root, keepTopLayer });
     return wrapper;
   }
   static addPosition(position, container = "") {
@@ -241,6 +260,21 @@ class Toast extends ToggleMixin(Base, TOAST) {
     if (!opts) return _containers[name];
     _containers[name] = opts;
     return this;
+  }
+  static forceTopLayer() {
+    [...wrappers.values()].forEach((set) => {
+      set.forEach(({ wrapper, root, keepTopLayer }) => {
+        if (
+          keepTopLayer &&
+          POPOVER_API_SUPPORTED &&
+          wrapper.popover &&
+          root.contains(wrapper)
+        ) {
+          wrapper.hidePopover();
+          wrapper.showPopover();
+        }
+      });
+    });
   }
 }
 

@@ -2,9 +2,7 @@ import {
   EVENT_BEFORE_INIT,
   EVENT_BEFORE_DESTROY,
   EVENT_BEFORE_SHOW,
-  EVENT_SHOWN,
   EVENT_BEFORE_HIDE,
-  EVENT_HIDDEN,
   CLASS,
   HOVER,
   FOCUS,
@@ -21,11 +19,8 @@ import {
   TITLE,
   CONTENT,
   TOOLTIP,
-  body,
   CLASS_ACTIVE_SUFFIX,
   HIDE_MODE,
-  MODE,
-  ABSOLUTE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -50,7 +45,6 @@ import {
   toggleOnInterection,
   floatingTransition,
   callInitShow,
-  awaitPromise,
 } from "./helpers/modules";
 
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
@@ -191,20 +185,12 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
-    if (s) {
-      body.appendChild(tooltip);
-    }
-
     const promise = floatingTransition(this, {
       s,
       animated,
       silent,
       eventParams,
     });
-
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
 
     animated && awaitAnimation && (await promise);
 

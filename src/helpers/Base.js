@@ -42,6 +42,7 @@ function getDataValue(_data, dataName, elem) {
 
 class Base {
   static allInstances = new Map();
+  static components = {};
   constructor(elem, opts) {
     if (isFunction(opts)) {
       opts = opts(elem);
@@ -49,6 +50,9 @@ class Base {
     opts ??= {};
     const { NAME, BASE_NODE_NAME, Default, _data, _templates, allInstances } =
       this.constructor;
+
+    Base.components[NAME] = this.constructor;
+
     const baseElemName = BASE_NODE_NAME ?? NAME;
 
     let dataName = opts.data;
@@ -211,6 +215,12 @@ class Base {
     if (!opts) return this._data[name];
     this._data[name] = opts;
     return this;
+  }
+  static dispatchTopLayer(type) {
+    const Toast = this.components.toast;
+    if (Toast) {
+      Toast.forceTopLayer(type);
+    }
   }
 }
 export default Base;

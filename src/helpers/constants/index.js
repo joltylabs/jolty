@@ -148,6 +148,7 @@ export const POPOVER_DATA_ATTRIBUTE = DATA_UI_PREFIX + POPOVER + "-wrapper";
 export const FLOATING_DATA_ATTRIBUTE = DATA_UI_PREFIX + FLOATING;
 export const DATA_PREVENT_INERT = DATA_UI_PREFIX + ACTION_PREVENT + "-" + INERT;
 export const DATA_APPEAR = DATA_UI_PREFIX + APPEAR;
+export const POPOVER_API_MODE_MANUAL = "manual";
 
 export const EVENT_INIT = ACTION_INIT;
 export const EVENT_BEFORE_INIT = BEFORE + upperFirst(EVENT_INIT);
@@ -249,11 +250,11 @@ export const DEFAULT_FLOATING_OPTIONS = {
   delay: [200, 0],
   boundaryOffset: 0,
   shrink: false,
-  flip: false,
+  flip: true,
   sticky: false,
   escapeHide: true,
   outsideHide: true,
-  mode: "popover",
+  mode: POPOVER,
   topLayer: true,
   moveModal: true,
   movePopover: true,

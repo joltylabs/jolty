@@ -155,6 +155,7 @@
   const DISABLED = "disabled";
   const FLOATING_DATA_ATTRIBUTE = DATA_UI_PREFIX + FLOATING;
   const DATA_APPEAR = DATA_UI_PREFIX + APPEAR;
+  const POPOVER_API_MODE_MANUAL = "manual";
 
   const EVENT_INIT = ACTION_INIT;
   const EVENT_BEFORE_INIT = BEFORE + upperFirst(EVENT_INIT);
@@ -247,14 +248,16 @@
     delay: [200, 0],
     boundaryOffset: 0,
     shrink: false,
-    flip: false,
+    flip: true,
     sticky: false,
     escapeHide: true,
     outsideHide: true,
     mode: POPOVER,
     topLayer: true,
-    disablePopoverApi: false,
-    focusTrap: true,
+    moveModal: true,
+    movePopover: true,
+    popoverApi: true,
+    focusTrap: false,
     arrow: {
       height: null,
       width: null,
@@ -310,6 +313,8 @@
 
   var isString = (value) => typeof value === "string";
 
+  var isDialog = (elem) => elem?.tagName === "DIALOG";
+
   var addClass = (elem, classes) => toggleClass(elem, classes, true);
 
   var arrayFrom = Array.from;
@@ -336,7 +341,11 @@
         if (name === CLASS) {
           addClass(elem, value);
         } else if (name === STYLE) {
-          addStyle(elem, value);
+          if (isString(value)) {
+            elem.style = value;
+          } else {
+            addStyle(elem, value);
+          }
         } else {
           setAttribute(elem, camelToKebab(name), value);
         }
@@ -1202,6 +1211,7 @@
 
   class Base {
     static allInstances = new Map();
+    static components = {};
     constructor(elem, opts) {
       if (isFunction(opts)) {
         opts = opts(elem);
@@ -1209,6 +1219,9 @@
       opts ??= {};
       const { NAME, BASE_NODE_NAME, Default, _data, _templates, allInstances } =
         this.constructor;
+
+      Base.components[NAME] = this.constructor;
+
       const baseElemName = BASE_NODE_NAME ?? NAME;
 
       let dataName = opts.data;
@@ -1371,6 +1384,12 @@
       if (!opts) return this._data[name];
       this._data[name] = opts;
       return this;
+    }
+    static dispatchTopLayer(type) {
+      const Toast = this.components.toast;
+      if (Toast) {
+        Toast.forceTopLayer(type);
+      }
     }
   }
 
@@ -1828,14 +1847,9 @@
     const autofocus = instance.opts.autofocus;
     if (elem.contains(doc.activeElement)) return;
     let focusElem = getOptionElem(instance, autofocus.elem, elem);
-    const isDialog = elem.tagName === "DIALOG";
-    if ((!focusElem && autofocus.required && !isDialog) || isDialog) {
-      focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
-      if (!focusElem && elem.hasAttribute(TABINDEX)) {
-        focusElem = elem;
-      }
+    if (!focusElem && instance.opts.focusTrap && !isDialog(elem)) {
+      focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR) ?? elem;
     }
-
     focusElem?.focus({
       [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,
     });
@@ -1967,12 +1981,22 @@
   ResetFloatingCssVariables();
 
   class Floating {
-    constructor({ target, anchor, arrow, opts, name = "", base }) {
+    constructor({ target, anchor, arrow, opts, name = "", base, onTopLayer }) {
       const { on, off } = new EventHandler();
-      Object.assign(this, { target, anchor, arrow, opts, name, on, off, base });
+      Object.assign(this, {
+        target,
+        anchor,
+        arrow,
+        opts,
+        name,
+        on,
+        off,
+        base,
+        onTopLayer,
+      });
     }
-    recalculate() {
-      const { target, anchor, arrow, opts, name, base } = this;
+    init() {
+      const { target, anchor, arrow, opts, name, base, on } = this;
       const PREFIX = VAR_UI_PREFIX + name + "-";
 
       const anchorScrollParents = parents(anchor, isOverflowElement);
@@ -1998,6 +2022,7 @@
 
       sticky = sticky ? sticky === TRUE : opts[STICKY];
       shrink = shrink ? shrink === TRUE : opts[SHRINK];
+
       this.topLayer = topLayer = topLayer ? topLayer === TRUE : opts.topLayer;
 
       this[PLACEMENT] = placement =
@@ -2010,21 +2035,42 @@
         mode ||
         opts[MODE];
 
-      const wrapper = this.createWrapper(mode, topLayer);
+      const modeIsModal = mode.startsWith(MODAL);
 
-      if (!mode.startsWith(MODAL)) {
-        this.focusGuards = new FocusGuards(target, {
-          returnElem: opts.focusTrap ? false : anchor,
+      const usePopoverApi =
+        topLayer && !modeIsModal && opts.popoverApi && POPOVER_API_SUPPORTED;
+
+      const inTopLayer =
+        (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) || modeIsModal;
+
+      const moveToRoot =
+        topLayer &&
+        (!modeIsModal || opts.moveModal) &&
+        (!usePopoverApi || opts.movePopover);
+
+      const useFocusGuards =
+        (opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot);
+
+      const wrapper = this.createWrapper(mode, moveToRoot, usePopoverApi);
+
+      if (moveToRoot && !modeIsModal && !opts.focusTrap) {
+        on(anchor, EVENT_KEYDOWN, (e) => {
+          if (e.keyCode === KEY_TAB && !e.shiftKey) {
+            const focusElem = target.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
+            if (focusElem) {
+              e.preventDefault();
+              focus(focusElem);
+            }
+          }
         });
       }
 
       if (mode === MODAL || mode === DIALOG) {
-        this.applyMode();
+        this.applyMode(useFocusGuards);
         return this;
       }
 
       const wrapperStyle = wrapper.style;
-      const inTopLayer = topLayer || mode.startsWith(MODAL);
 
       const {
         padding,
@@ -2092,11 +2138,6 @@
           position.left += window.scrollX;
         }
 
-        // if (inTopLayer) {
-        //   position.top += window.scrollY;
-        //   position.left += window.scrollX;
-        // }
-
         if (prevTop && Math.abs(prevTop - position.top) > 50) {
           prevTop = position.top;
           requestAnimationFrame(() => {
@@ -2146,40 +2187,49 @@
 
       updatePosition();
 
-      this.applyMode();
+      this.applyMode(useFocusGuards);
 
-      this.on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
+      on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
         passive: true,
       });
-      this.on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
+      on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
         passive: true,
       });
-      this.on(window, EVENT_SCROLL, updatePosition, {
+      on(window, EVENT_SCROLL, updatePosition, {
         passive: true,
       });
       this.updatePosition = updatePosition.bind(this);
       return this;
     }
 
-    applyMode() {
-      const { wrapper, opts, mode, topLayer } = this;
-      if (mode.startsWith(MODAL)) {
-        wrapper.showModal();
+    applyMode(useFocusGuards) {
+      const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
+      if (mode.startsWith(MODAL) || mode.startsWith(DIALOG)) {
+        if (mode.startsWith(MODAL)) {
+          wrapper.showModal();
+          onTopLayer?.(MODAL);
+        } else {
+          wrapper.show();
+        }
         if (opts.escapeHide) {
           this.on(wrapper, CANCEL, (e) => e.preventDefault());
         }
-      } else if (topLayer && POPOVER_API_SUPPORTED) {
-        wrapper.hasAttribute(POPOVER) && wrapper.showPopover();
+      } else if (topLayer && POPOVER_API_SUPPORTED && wrapper.popover) {
+        wrapper.showPopover();
+        onTopLayer?.(POPOVER);
+      }
+      if (useFocusGuards) {
+        this.focusGuards = new FocusGuards(target, {
+          focusAfterAnchor: !opts.focusTrap,
+          anchor,
+          topLayer,
+          strategy: ABSOLUTE,
+        });
       }
     }
 
-    createWrapper(mode, topLayer) {
-      const {
-        target,
-        name,
-        anchor,
-        opts: { interactive, disablePopoverApi },
-      } = this;
+    createWrapper(mode, moveToRoot, usePopoverApi) {
+      const { target, name, anchor, opts } = this;
 
       const style = {
         zIndex: 999,
@@ -2216,16 +2266,11 @@
         [DATA_UI_PREFIX + "current-mode"]: mode,
       };
 
-      if (
-        topLayer &&
-        POPOVER_API_SUPPORTED &&
-        !mode.startsWith(MODAL) &&
-        !disablePopoverApi
-      ) {
-        attributes[POPOVER] = "manual";
+      if (usePopoverApi) {
+        attributes[POPOVER] = POPOVER_API_MODE_MANUAL;
       }
 
-      if (interactive !== undefined && !interactive) {
+      if (opts.interactive !== undefined && !opts.interactive) {
         attributes[INERT] = "";
         attributes.style.pointerEvents = NONE;
       } else {
@@ -2233,24 +2278,24 @@
       }
 
       const wrapper = (this.wrapper = createElement(
-        mode.startsWith(MODAL) ? DIALOG : DIV,
+        mode.startsWith(MODAL) || mode.startsWith(DIALOG) ? DIALOG : DIV,
         attributes,
         target,
       ));
 
-      // if (topLayer) {
-      //   body.append(wrapper);
-      // } else {
-      //   anchor.after(wrapper);
-      // }
-      anchor.after(wrapper);
+      if (moveToRoot) {
+        body.append(wrapper);
+      } else {
+        anchor.after(wrapper);
+      }
+
       return wrapper;
     }
     destroy() {
       this.off();
       resizeObserver.unobserve(this.target);
       this.wrapper.close?.();
-      if (this.wrapper.hasAttribute(POPOVER) && POPOVER_API_SUPPORTED) {
+      if (this.wrapper.popover && POPOVER_API_SUPPORTED) {
         this.wrapper.hidePopover();
       }
       this.focusGuards?.destroy();
@@ -2280,7 +2325,10 @@
           arrow,
           opts,
           name,
-        }).recalculate();
+          onTopLayer(type) {
+            constructor.dispatchTopLayer(type);
+          },
+        }).init();
         if (!silent) {
           emit(EVENT_SHOW, eventParams);
         }
@@ -2294,19 +2342,24 @@
     if (s) {
       opts.outsideHide && addOutsideHide(instance, s, [toggler ?? base, target]);
       opts.escapeHide && addEscapeHide(instance, s, doc);
+      opts.autofocus && callAutofocus(instance);
+    } else {
+      !s && target.contains(doc.activeElement) && focus(toggler);
     }
 
-    !s &&
-      (async () => {
-        if (animated) {
-          await promise;
-        }
-        if (transition.placeholder) {
-          instance.floating.wrapper.replaceWith(transition.placeholder);
-        }
-        instance.floating?.destroy();
-        instance.floating = null;
-      })();
+    (async () => {
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+
+      if (s) return;
+      if (animated) {
+        await promise;
+      }
+      if (transition.placeholder) {
+        instance.floating.wrapper.replaceWith(transition.placeholder);
+      }
+      instance.floating?.destroy();
+      instance.floating = null;
+    })();
 
     return promise;
   };
@@ -2350,33 +2403,44 @@
       const { target, opts } = this;
 
       this.onFocus = (e) => {
-        let returnElem = opts.returnElem;
+        let returnElem = opts.anchor;
         let focusFirst = false;
+        const isGuardBefore =
+          e.target.getAttribute(DATA_UI_PREFIX + FOCUS_GUARD) === BEFORE;
+
+        if (opts.focusAfterAnchor && returnElem) {
+          if (!isGuardBefore) {
+            const globalReturnElems = [
+              ...document.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
+            ];
+            returnElem =
+              globalReturnElems[
+                globalReturnElems.findIndex((el) => el === returnElem) + 1
+              ];
+          }
+
+          return focus(returnElem);
+        }
+
         if (e.relatedTarget === returnElem) {
-          returnElem = false;
           focusFirst = true;
         }
-        if (!returnElem) {
-          const returnElems = target.querySelectorAll(
-            FOCUSABLE_ELEMENTS_SELECTOR,
-          );
-          if (
-            !focusFirst &&
-            e.target.getAttribute(DATA_UI_PREFIX + FOCUS_GUARD) === BEFORE
-          ) {
-            returnElem = returnElems[returnElems.length - 1];
-          } else {
-            returnElem = returnElems[0];
-          }
+        const returnElems = target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR);
+        if (!focusFirst && isGuardBefore) {
+          returnElem = returnElems[returnElems.length - 1];
+        } else {
+          returnElem = returnElems[0];
         }
-        returnElem?.focus();
+        focus(returnElem);
       };
 
       this.focusGuards = [BEFORE, AFTER].map((methodName) => {
         const focusGuard = createElement("span", {
           [TABINDEX]: 0,
           [DATA_UI_PREFIX + FOCUS_GUARD]: methodName,
-          style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
+          style: `outline:none;opacity:0;position:${
+          opts.strategy ?? FIXED
+        };pointer-events:none;`,
         });
         target[methodName](focusGuard);
         focusGuard.addEventListener(FOCUS, this.onFocus);
@@ -2556,7 +2620,6 @@
   class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
-      required: false,
     };
     static Default = {
       ...DEFAULT_OPTIONS,
@@ -2585,14 +2648,11 @@
 
       on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
       on(toggler, EVENT_KEYDOWN, async (event) => {
-        const { keyCode, shiftKey } = event;
+        const { keyCode } = event;
 
         const arrowActivated =
           KEY_ARROW_UP === keyCode || KEY_ARROW_DOWN === keyCode;
-        if (
-          arrowActivated ||
-          (keyCode === KEY_TAB && !shiftKey && this.isShown)
-        ) {
+        if (arrowActivated) {
           event.preventDefault();
         }
         if (arrowActivated) {
@@ -2600,7 +2660,7 @@
             await show({ event, trigger: toggler });
           }
         }
-        if (arrowActivated || (keyCode === KEY_TAB && !shiftKey)) {
+        if (arrowActivated) {
           if (this.isAnimating && !this.isShown) return;
           this.focusableElems[0]?.focus();
         }
@@ -2723,15 +2783,9 @@
     async toggle(s, params) {
       const { toggler, base, opts, emit, transition, isShown, isAnimating } =
         this;
-      const { awaitAnimation, autofocus, a11y } = opts;
-      const {
-        animated,
-        silent,
-        trigger,
-        event,
-        ignoreConditions,
-        ignoreAutofocus,
-      } = normalizeToggleParameters(params);
+      const { awaitAnimation, a11y } = opts;
+      const { animated, silent, trigger, event, ignoreConditions } =
+        normalizeToggleParameters(params);
 
       s ??= !isShown;
 
@@ -2762,14 +2816,6 @@
         silent,
         eventParams,
       });
-
-      !s && base.contains(doc.activeElement) && toggler.focus();
-
-      s && !ignoreAutofocus && autofocus && callAutofocus(this);
-
-      awaitPromise(promise, () =>
-        emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-      );
 
       animated && awaitAnimation && (await promise);
 
@@ -3112,6 +3158,7 @@
             (!opts.detectPopoverApi || POPOVER_API_SUPPORTED)
           ) {
             modal.showModal();
+            Modal.dispatchTopLayer(MODAL);
           } else {
             modal.show();
           }
@@ -3157,7 +3204,7 @@
           modal.close();
         }
         this.focusGuards?.destroy();
-        this.focusGuards = false;
+        this.focusGuards = null;
       }
 
       const promise = this.transitionPromise;
@@ -3920,7 +3967,8 @@
       limitAnimateLeave: true,
       autohide: false,
       topLayer: true,
-      disablePopoverApi: false,
+      keepTopLayer: true,
+      popoverApi: true,
     };
     constructor(elem, opts) {
       if (isObject(elem)) {
@@ -3971,6 +4019,9 @@
           limitAnimateEnter,
           position,
           container,
+          popoverApi,
+          topLayer,
+          keepTopLayer,
         },
         autohide,
         base,
@@ -4013,9 +4064,21 @@
               position,
               root,
               container,
+              keepTopLayer,
             }));
+
+            if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+              wrapper[POPOVER] = POPOVER_API_MODE_MANUAL;
+            } else {
+              wrapper[POPOVER] = null;
+            }
+
             if (wrapper && wrapper.parentElement !== root) {
               root.append(wrapper);
+            }
+            if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+              wrapper.hidePopover();
+              wrapper.showPopover();
             }
           }
           to.append(base);
@@ -4059,7 +4122,7 @@
       return this;
     }
 
-    static getWrapper({ position, root = body, container = "" }) {
+    static getWrapper({ position, root = body, container = "", keepTopLayer }) {
       let rootWrappers = wrappers.get(root);
       if (!rootWrappers) {
         rootWrappers = new Set();
@@ -4081,7 +4144,7 @@
           : container(containerParams),
       );
 
-      rootWrappers.add({ wrapper, container, position, root });
+      rootWrappers.add({ wrapper, container, position, root, keepTopLayer });
       return wrapper;
     }
     static addPosition(position, container = "") {
@@ -4109,6 +4172,21 @@
       if (!opts) return _containers[name];
       _containers[name] = opts;
       return this;
+    }
+    static forceTopLayer() {
+      [...wrappers.values()].forEach((set) => {
+        set.forEach(({ wrapper, root, keepTopLayer }) => {
+          if (
+            keepTopLayer &&
+            POPOVER_API_SUPPORTED &&
+            wrapper.popover &&
+            root.contains(wrapper)
+          ) {
+            wrapper.hidePopover();
+            wrapper.showPopover();
+          }
+        });
+      });
     }
   }
 
@@ -4145,10 +4223,6 @@
         opts.transition,
         { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
       );
-
-      // opts[MODE] =
-      //   this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
-      //   opts[MODE];
 
       opts.a11y && setAttribute(tooltip, TOOLTIP);
     }
@@ -4254,20 +4328,12 @@
 
       toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
-      if (s) {
-        body.appendChild(tooltip);
-      }
-
       const promise = floatingTransition(this, {
         s,
         animated,
         silent,
         eventParams,
       });
-
-      awaitPromise(promise, () =>
-        emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-      );
 
       animated && awaitAnimation && (await promise);
 
@@ -4280,7 +4346,6 @@
   class Popover extends ToggleMixin(Base, POPOVER) {
     static DefaultAutofocus = {
       elem: DEFAULT_AUTOFOCUS,
-      required: true,
     };
     static Default = {
       ...DEFAULT_OPTIONS,
@@ -4345,10 +4410,9 @@
     }
 
     async toggle(s, params) {
-      const { transition, isShown, isAnimating, toggler, base, opts, emit } =
-        this;
-      const { awaitAnimation, a11y, autofocus } = opts;
-      const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
+      const { transition, isShown, isAnimating, toggler, opts, emit } = this;
+      const { awaitAnimation, a11y } = opts;
+      const { animated, silent, event, ignoreConditions } =
         normalizeToggleParameters(params);
 
       s ??= !isShown;
@@ -4376,14 +4440,6 @@
         silent,
         eventParams,
       });
-
-      !s && base.contains(doc.activeElement) && focus(toggler);
-
-      s && !ignoreAutofocus && autofocus && callAutofocus(this);
-
-      awaitPromise(promise, () =>
-        emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-      );
 
       animated && awaitAnimation && (await promise);
 

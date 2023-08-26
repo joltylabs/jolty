@@ -28,7 +28,6 @@ import {
   toggleClass,
   removeClass,
   setAttribute,
-  focus,
   removeAttribute,
 } from "./helpers/dom";
 import {
@@ -40,7 +39,6 @@ import {
 import {
   addDismiss,
   baseDestroy,
-  callAutofocus,
   toggleOnInterection,
   floatingTransition,
   callInitShow,
@@ -119,8 +117,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const { transition, isShown, isAnimating, toggler, base, opts, emit } =
-      this;
+    const { transition, isShown, isAnimating, toggler, opts, emit } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -150,12 +147,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       silent,
       eventParams,
     });
-
-    !s && base.contains(doc.activeElement) && focus(toggler);
-
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
 
     animated && awaitAnimation && (await promise);
 

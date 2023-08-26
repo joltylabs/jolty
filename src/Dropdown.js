@@ -263,12 +263,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       eventParams,
     });
 
-    !s && base.contains(doc.activeElement) && toggler.focus();
-
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
-
     animated && awaitAnimation && (await promise);
 
     return this;
