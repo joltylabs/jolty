@@ -58,6 +58,7 @@ import {
   focus,
 } from "./dom";
 import { FocusGuards } from "./modules/index.js";
+import { isDialog } from "./is/index.js";
 
 ResetFloatingCssVariables();
 
@@ -147,7 +148,7 @@ export default class Floating {
     }
 
     if (mode === MODAL || mode === DIALOG) {
-      this.applyMode(useFocusGuards);
+      this._toggleApi(useFocusGuards);
       return this;
     }
 
@@ -268,7 +269,7 @@ export default class Floating {
 
     updatePosition();
 
-    this.applyMode(useFocusGuards);
+    this._toggleApi(useFocusGuards);
 
     on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
       passive: true,
@@ -283,21 +284,33 @@ export default class Floating {
     return this;
   }
 
-  applyMode(useFocusGuards) {
+  _toggleApi(useFocusGuards) {
     const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
-    if (mode.startsWith(MODAL) || mode.startsWith(DIALOG)) {
-      if (mode.startsWith(MODAL)) {
+    const wrapperIsDialog = isDialog(wrapper);
+    const isModal =
+      mode.startsWith(MODAL) && (!opts.safeModal || POPOVER_API_SUPPORTED);
+    const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
+
+    if (wrapperIsDialog) {
+      if (isModal) {
         if (wrapper.open) wrapper.close();
         wrapper.showModal();
         onTopLayer?.(MODAL);
       } else {
-        wrapper.show();
+        if (isPopover) {
+          wrapper.showPopover();
+          wrapper.open = true;
+          onTopLayer?.(POPOVER);
+        } else {
+          wrapper.show();
+        }
       }
       this.on(wrapper, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-    } else if (topLayer && POPOVER_API_SUPPORTED && wrapper.popover) {
+    } else if (isPopover) {
       wrapper.showPopover();
       onTopLayer?.(POPOVER);
     }
+
     if (useFocusGuards) {
       this.focusGuards = new FocusGuards(target, {
         focusAfterAnchor: !opts.focusTrap,
@@ -328,15 +341,13 @@ export default class Floating {
     if (mode === MODAL || mode === DIALOG) {
       style.position = FIXED;
       style.inset = 0;
-      style.width = "auto";
-      style.height = "auto";
+      style.height = style.width = "auto";
     } else {
       style.position = ABSOLUTE;
       style.inset = "auto";
       style.left = 0;
       style.top = 0;
-      style.width = "fit-content";
-      style.height = "fit-content";
+      style.height = style.width = "fit-content";
       style.willChange = "transform";
       style.minWidth = "max-content";
     }

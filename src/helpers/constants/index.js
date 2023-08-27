@@ -254,11 +254,12 @@ export const DEFAULT_FLOATING_OPTIONS = {
   escapeHide: true,
   outsideHide: true,
   mode: POPOVER,
+  focusTrap: false,
   topLayer: true,
   moveIfModal: true,
   moveIfPopover: true,
   popoverApi: true,
-  focusTrap: false,
+  safeModal: true,
   arrow: {
     height: null,
     width: null,

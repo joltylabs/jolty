@@ -45,6 +45,8 @@ import {
   MODAL,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_SCROLL,
+  POPOVER,
+  POPOVER_API_MODE_MANUAL,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -165,20 +167,14 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this.transitions ||= {};
 
-    const {
-      base,
-      transitions,
-      opts: { transitions: transitionsOpts, toggler, a11y, topLayer },
-      _fromHTML,
-      teleport,
-      id,
-      on,
-    } = this;
+    const { base, transitions, opts, _fromHTML, teleport, id, on } = this;
+
+    const isDialogElem = isDialog(base);
 
     this.teleport = Teleport.createOrUpdate(
       teleport,
       base,
-      topLayer === true || _fromHTML ? body : false,
+      opts.topLayer === true || _fromHTML ? body : false,
       {
         disableAttributes: true,
       },
@@ -189,22 +185,31 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         transitions[elemName] = Transition.createOrUpdate(
           transitions[elemName],
           this[elemName],
-          transitionsOpts?.[elemName],
+          opts.transitions?.[elemName],
           { keepPlace: elemName === CONTENT },
         );
       }
     }
 
-    this._togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
+    this._togglers =
+      opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
 
-    if (a11y && !isDialog(base)) {
+    if (opts.a11y && !isDialogElem) {
       setAttribute(base, TABINDEX, -1);
       setAttribute(base, ROLE, DIALOG);
     }
 
-    if (isDialog(base)) {
+    if (isDialogElem) {
       on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     }
+
+    base.popover =
+      opts.topLayer &&
+      (!isDialogElem || !opts.modal) &&
+      POPOVER_API_SUPPORTED &&
+      opts.popoverApi
+        ? POPOVER_API_MODE_MANUAL
+        : null;
 
     return this;
   }
@@ -353,8 +358,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    const baseIsDialog = isDialog(base);
-
     s = !!(s ?? !isOpen);
 
     if (
@@ -413,21 +416,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     if (s) {
       transitions[DIALOG].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
-      if (baseIsDialog) {
-        if (
-          opts.focusTrap &&
-          (!opts.safeModal || POPOVER_API_SUPPORTED) &&
-          opts.modal
-        ) {
-          if (base.open) base.close();
-          base.showModal();
-          Dialog.dispatchTopLayer(MODAL);
-        } else {
-          base.show();
-        }
-      } else if (opts.focusTrap) {
-        this.focusGuards = new FocusGuards(base);
-      }
+      this._toggleApi(true);
       if (opts.returnFocus) {
         this.returnFocusElem = doc.activeElement;
       }
@@ -462,11 +451,9 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     } else {
       this._mousedownTarget = null;
       off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
-      if (baseIsDialog && !optReturnFocusAwait) {
-        base.close();
+      if (!optReturnFocusAwait) {
+        this._toggleApi(false);
       }
-      this.focusGuards?.destroy();
-      this.focusGuards = null;
     }
 
     const promise = this.transitionPromise;
@@ -475,9 +462,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
       if (!s && optReturnFocusAwait) {
-        if (baseIsDialog) {
-          base.close();
-        }
+        this._toggleApi(false);
         this.returnFocus();
       }
       if (!s) {
@@ -492,7 +477,47 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     return this;
   }
+  _toggleApi(s) {
+    const { base, opts } = this;
+    const baseIsDialog = isDialog(base);
+    if (s) {
+      const isModal =
+        baseIsDialog &&
+        (!opts.safeModal || POPOVER_API_SUPPORTED) &&
+        opts.modal;
+      const isPopover =
+        opts.topLayer && POPOVER_API_SUPPORTED && opts.popoverApi;
 
+      if (baseIsDialog) {
+        if (isModal) {
+          if (base.open) base.close();
+          base.showModal();
+          Dialog.dispatchTopLayer(MODAL);
+        } else {
+          if (isPopover) {
+            base.showPopover();
+            base.open = true;
+            Dialog.dispatchTopLayer(POPOVER);
+          } else {
+            base.show();
+          }
+        }
+      } else if (isPopover) {
+        base.showPopover();
+        Dialog.dispatchTopLayer(POPOVER);
+      }
+      if (opts.focusTrap && !isModal) {
+        this.focusGuards = new FocusGuards(base);
+      }
+    } else {
+      base.close?.();
+      base.popover && base.hidePopover();
+      if (this.focusGuards) {
+        this.focusGuards?.destroy();
+        this.focusGuards = null;
+      }
+    }
+  }
   returnFocus() {
     if (this.opts.returnFocus && this.base.contains(doc.activeElement)) {
       focus(this.returnFocusElem);

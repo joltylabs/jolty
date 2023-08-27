@@ -10,7 +10,7 @@ import { focus } from "../dom/index.js";
 
 export default (instance, elem = instance.base) => {
   const autofocus = instance.opts.autofocus;
-  const optionsAutofocus = getOptionElem(
+  let focusElem = getOptionElem(
     instance,
     autofocus === true
       ? `[${AUTOFOCUS}],[${DATA_UI_PREFIX + AUTOFOCUS}=""],[${
@@ -20,11 +20,11 @@ export default (instance, elem = instance.base) => {
     elem,
   );
 
-  let focusElem =
-    optionsAutofocus || (elem.contains(doc.activeElement) && doc.activeElement);
+  focusElem ||= elem.contains(doc.activeElement) && doc.activeElement;
 
   if (!focusElem && instance.opts.focusTrap && !isDialog(elem)) {
     focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR) ?? elem;
   }
+
   focus(focusElem);
 };

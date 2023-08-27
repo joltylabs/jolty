@@ -13,7 +13,6 @@ import {
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
   HIDE_MODE,
-  MODAL,
   DIALOG,
 } from "./helpers/constants";
 
@@ -45,7 +44,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    mode: DIALOG + "-" + POPOVER,
+    mode: "dialog-popover",
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
