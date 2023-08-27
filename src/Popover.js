@@ -14,6 +14,10 @@ import {
   TOGGLER,
   HIDE_MODE,
   DIALOG,
+  DEFAULT_TOP_LAYER_OPTIONS,
+  OPTION_GROUP,
+  NAME,
+  OPTION_TOP_LAYER,
 } from "./helpers/constants";
 
 import {
@@ -26,6 +30,7 @@ import {
   normalizeToggleParameters,
   getDefaultToggleSelector,
   getOptionElem,
+  updateModule,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -41,10 +46,13 @@ import Transition from "./helpers/Transition.js";
 // modes POPOVER, DIALOG, FIXED, ABSOLUTE
 
 class Popover extends ToggleMixin(Base, POPOVER) {
+  static DefaultTopLayer = {
+    ...DEFAULT_TOP_LAYER_OPTIONS,
+  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    mode: "dialog-popover",
+    mode: DIALOG + "-" + POPOVER,
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
@@ -67,6 +75,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     return callInitShow(this);
   }
   _update() {
+    updateModule(this, OPTION_TOP_LAYER);
+
     const { base, opts, transition } = this;
 
     this.transition = Transition.createOrUpdate(

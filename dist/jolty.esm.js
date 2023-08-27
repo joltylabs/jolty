@@ -233,6 +233,10 @@ const DEFAULT_OPTIONS = {
   shown: null,
   a11y: true,
 };
+const DEFAULT_TOP_LAYER_OPTIONS = {
+  moveModal: true,
+  movePopover: true,
+};
 const DEFAULT_FLOATING_OPTIONS = {
   awaitAnimation: false,
   placement: BOTTOM,
@@ -248,8 +252,6 @@ const DEFAULT_FLOATING_OPTIONS = {
   mode: POPOVER,
   focusTrap: false,
   topLayer: true,
-  moveIfModal: true,
-  moveIfPopover: true,
   popoverApi: true,
   safeModal: true,
   arrow: {
@@ -1874,16 +1876,6 @@ var callAutofocus = (instance, elem = instance.base) => {
   focus(focusElem);
 };
 
-var addOutsideHide = (instance, s, activeElems) => {
-  if (s) {
-    instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
-      !closest(event.target, activeElems) && instance.hide({ event });
-    });
-  } else {
-    instance.off(doc, EVENT_ACTION_OUTSIDE);
-  }
-};
-
 var baseDestroy = (
   instance,
   {
@@ -2000,7 +1992,17 @@ var toggleOnInterection = ({
 ResetFloatingCssVariables();
 
 class Floating {
-  constructor({ target, anchor, arrow, opts, name = "", base, onTopLayer }) {
+  constructor({
+    target,
+    anchor,
+    arrow,
+    opts,
+    name = "",
+    base,
+    onTopLayer,
+    defaultTopLayerOpts,
+    hide,
+  }) {
     const { on, off } = new EventHandler();
     Object.assign(this, {
       target,
@@ -2012,10 +2014,13 @@ class Floating {
       off,
       base,
       onTopLayer,
+      defaultTopLayerOpts,
+      hide,
     });
   }
   init() {
-    const { target, anchor, arrow, opts, name, base, on } = this;
+    const { target, anchor, arrow, opts, name, base, on, defaultTopLayerOpts } =
+      this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
 
     const anchorScrollParents = parents(anchor, isOverflowElement);
@@ -2042,7 +2047,11 @@ class Floating {
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
-    this.topLayer = topLayer = topLayer ? topLayer === TRUE : opts.topLayer;
+    if (topLayer !== FALSE) {
+      this.topLayer = topLayer = opts[TOP_LAYER] || defaultTopLayerOpts;
+    } else {
+      this.topLayer = topLayer = false;
+    }
 
     this[PLACEMENT] = placement =
       base.getAttribute(DATA_UI_PREFIX + name + "-" + PLACEMENT) ||
@@ -2064,8 +2073,8 @@ class Floating {
 
     const moveToRoot =
       topLayer &&
-      (!modeIsModal || opts.moveIfModal) &&
-      (!usePopoverApi || opts.moveIfPopover);
+      (!modeIsModal || topLayer.moveModal) &&
+      (!usePopoverApi || topLayer.movePopover);
 
     const useFocusGuards =
       (opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot);
@@ -2254,6 +2263,11 @@ class Floating {
         anchor,
         topLayer,
         strategy: ABSOLUTE,
+        onFocusOut: () => {
+          if (wrapperIsDialog) {
+            this.hide?.();
+          }
+        },
       });
     }
   }
@@ -2347,12 +2361,14 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
   if (s) {
     transitionParams[EVENT_SHOW] = () => {
       const arrow = target.querySelector(getDataSelector(name, ARROW));
-      instance.floating = new Floating({
+      instance[FLOATING] = new Floating({
         base,
         anchor,
         target,
         arrow,
         opts,
+        hide: instance.hide,
+        defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
         name,
         onTopLayer(type) {
           constructor.dispatchTopLayer(type);
@@ -2364,12 +2380,20 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
     };
   }
 
-  !s && instance?.floating?.wrapper.close?.();
+  !s && instance[FLOATING]?.wrapper.close?.();
 
   const promise = transition.run(s, animated, transitionParams);
 
+  if (opts.outsideHide && s) {
+    instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
+      !closest(event.target, [toggler ?? base, target]) &&
+        instance.hide({ event });
+    });
+  } else {
+    instance.off(doc, EVENT_ACTION_OUTSIDE);
+  }
+
   if (s) {
-    opts.outsideHide && addOutsideHide(instance, s, [toggler ?? base, target]);
     opts.escapeHide && addEscapeHide(instance, s, doc);
     opts.autofocus && callAutofocus(instance);
   } else {
@@ -2384,10 +2408,10 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
       await promise;
     }
     if (transition.placeholder) {
-      instance.floating.wrapper.replaceWith(transition.placeholder);
+      instance[FLOATING].wrapper.replaceWith(transition.placeholder);
     }
-    instance.floating?.destroy();
-    instance.floating = null;
+    instance[FLOATING]?.destroy();
+    instance[FLOATING] = null;
   })();
 
   return promise;
@@ -2447,7 +2471,7 @@ class FocusGuards {
               globalReturnElems.findIndex((el) => el === returnElem) + 1
             ];
         }
-
+        opts.onFocusOut?.();
         return focus(returnElem);
       }
 
@@ -2647,6 +2671,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 }
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
+  static DefaultTopLayer = {
+    ...DEFAULT_TOP_LAYER_OPTIONS,
+  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -2694,6 +2721,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callInitShow(this, dropdown);
   }
   _update() {
+    updateModule(this, OPTION_TOP_LAYER);
     const { base, opts, transition, on, off, hide } = this;
 
     this.transition = Transition.createOrUpdate(
@@ -2861,6 +2889,9 @@ const DIALOG_DATA_OPTIONS = [
 ];
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
+  static DefaultTopLayer = {
+    ...DEFAULT_TOP_LAYER_OPTIONS,
+  };
   static DefaultGroup = {
     name: "",
     awaitPrevious: true,
@@ -2893,8 +2924,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     modal: true,
     topLayer: true,
-    moveIfModal: true,
-    moveIfPopover: true,
 
     popoverApi: true,
     safeModal: true,
@@ -2913,6 +2942,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       DIALOG_DATA_OPTIONS,
     );
 
+    updateModule(this, OPTION_TOP_LAYER);
     updateModule(this, OPTION_GROUP, NAME);
 
     this.transitions ||= {};
@@ -2921,10 +2951,17 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     const isDialogElem = isDialog(base);
 
+    const moveToBody =
+      (opts.topLayer &&
+        (!opts.modal || opts.topLayer.moveModal) &&
+        (!opts.popoverApi ||
+          (opts.topLayer.movePopover && POPOVER_API_SUPPORTED))) ||
+      _fromHTML;
+
     this.teleport = Teleport.createOrUpdate(
       teleport,
       base,
-      opts.topLayer === true || _fromHTML ? body : false,
+      moveToBody ? body : false,
       {
         disableAttributes: true,
       },
@@ -4228,6 +4265,9 @@ class Toast extends ToggleMixin(Base, TOAST) {
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
 class Tooltip extends ToggleMixin(Base, TOOLTIP) {
+  static DefaultTopLayer = {
+    ...DEFAULT_TOP_LAYER_OPTIONS,
+  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -4250,6 +4290,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     super(elem, opts);
   }
   _update() {
+    updateModule(this, OPTION_TOP_LAYER);
     const { tooltip, opts, transition } = this;
 
     this.transition = Transition.createOrUpdate(
@@ -4379,10 +4420,13 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 // modes POPOVER, DIALOG, FIXED, ABSOLUTE
 
 class Popover extends ToggleMixin(Base, POPOVER) {
+  static DefaultTopLayer = {
+    ...DEFAULT_TOP_LAYER_OPTIONS,
+  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    mode: "dialog-popover",
+    mode: DIALOG + "-" + POPOVER,
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
@@ -4405,6 +4449,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     return callInitShow(this);
   }
   _update() {
+    updateModule(this, OPTION_TOP_LAYER);
+
     const { base, opts, transition } = this;
 
     this.transition = Transition.createOrUpdate(

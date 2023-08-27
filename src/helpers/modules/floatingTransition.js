@@ -5,11 +5,13 @@ import {
   doc,
   EVENT_SHOWN,
   EVENT_HIDDEN,
+  FLOATING,
+  EVENT_ACTION_OUTSIDE,
 } from "../constants";
 import { getDataSelector } from "../utils";
-import { addOutsideHide, addEscapeHide, callAutofocus } from "../modules";
+import { addEscapeHide, callAutofocus } from "../modules";
 import Floating from "../Floating.js";
-import { focus } from "../dom/index.js";
+import { closest, focus } from "../dom/index.js";
 
 export default (instance, { s, animated, silent, eventParams }) => {
   const { transition, base, opts, toggler, emit, constructor } = instance;
@@ -26,12 +28,14 @@ export default (instance, { s, animated, silent, eventParams }) => {
   if (s) {
     transitionParams[EVENT_SHOW] = () => {
       const arrow = target.querySelector(getDataSelector(name, ARROW));
-      instance.floating = new Floating({
+      instance[FLOATING] = new Floating({
         base,
         anchor,
         target,
         arrow,
         opts,
+        hide: instance.hide,
+        defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
         name,
         onTopLayer(type) {
           constructor.dispatchTopLayer(type);
@@ -43,12 +47,20 @@ export default (instance, { s, animated, silent, eventParams }) => {
     };
   }
 
-  !s && instance?.floating?.wrapper.close?.();
+  !s && instance[FLOATING]?.wrapper.close?.();
 
   const promise = transition.run(s, animated, transitionParams);
 
+  if (opts.outsideHide && s) {
+    instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
+      !closest(event.target, [toggler ?? base, target]) &&
+        instance.hide({ event });
+    });
+  } else {
+    instance.off(doc, EVENT_ACTION_OUTSIDE);
+  }
+
   if (s) {
-    opts.outsideHide && addOutsideHide(instance, s, [toggler ?? base, target]);
     opts.escapeHide && addEscapeHide(instance, s, doc);
     opts.autofocus && callAutofocus(instance);
   } else {
@@ -63,10 +75,10 @@ export default (instance, { s, animated, silent, eventParams }) => {
       await promise;
     }
     if (transition.placeholder) {
-      instance.floating.wrapper.replaceWith(transition.placeholder);
+      instance[FLOATING].wrapper.replaceWith(transition.placeholder);
     }
-    instance.floating?.destroy();
-    instance.floating = null;
+    instance[FLOATING]?.destroy();
+    instance[FLOATING] = null;
   })();
 
   return promise;

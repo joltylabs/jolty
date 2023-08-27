@@ -38,7 +38,7 @@ export default class FocusGuards {
               globalReturnElems.findIndex((el) => el === returnElem) + 1
             ];
         }
-
+        opts.onFocusOut?.();
         return focus(returnElem);
       }
 

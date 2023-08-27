@@ -25,6 +25,8 @@ import {
   CLASS_ACTIVE_SUFFIX,
   doc,
   HIDE_MODE,
+  DEFAULT_TOP_LAYER_OPTIONS,
+  OPTION_TOP_LAYER,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -55,6 +57,9 @@ import {
 } from "./helpers/modules";
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
+  static DefaultTopLayer = {
+    ...DEFAULT_TOP_LAYER_OPTIONS,
+  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -102,6 +107,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callInitShow(this, dropdown);
   }
   _update() {
+    updateModule(this, OPTION_TOP_LAYER);
     const { base, opts, transition, on, off, hide } = this;
 
     this.transition = Transition.createOrUpdate(

@@ -21,6 +21,8 @@ import {
   TOOLTIP,
   CLASS_ACTIVE_SUFFIX,
   HIDE_MODE,
+  DEFAULT_TOP_LAYER_OPTIONS,
+  OPTION_TOP_LAYER,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -38,6 +40,7 @@ import {
   normalizeToggleParameters,
   getEventsPrefix,
   getClassActive,
+  updateModule,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -50,6 +53,9 @@ import {
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
 class Tooltip extends ToggleMixin(Base, TOOLTIP) {
+  static DefaultTopLayer = {
+    ...DEFAULT_TOP_LAYER_OPTIONS,
+  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -72,6 +78,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     super(elem, opts);
   }
   _update() {
+    updateModule(this, OPTION_TOP_LAYER);
     const { tooltip, opts, transition } = this;
 
     this.transition = Transition.createOrUpdate(

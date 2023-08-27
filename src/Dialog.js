@@ -47,6 +47,7 @@ import {
   OPTION_PREVENT_SCROLL,
   POPOVER,
   POPOVER_API_MODE_MANUAL,
+  DEFAULT_TOP_LAYER_OPTIONS,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -111,6 +112,9 @@ const DIALOG_DATA_OPTIONS = [
 ];
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
+  static DefaultTopLayer = {
+    ...DEFAULT_TOP_LAYER_OPTIONS,
+  };
   static DefaultGroup = {
     name: "",
     awaitPrevious: true,
@@ -143,8 +147,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     modal: true,
     topLayer: true,
-    moveIfModal: true,
-    moveIfPopover: true,
 
     popoverApi: true,
     safeModal: true,
@@ -163,6 +165,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       DIALOG_DATA_OPTIONS,
     );
 
+    updateModule(this, OPTION_TOP_LAYER);
     updateModule(this, OPTION_GROUP, NAME);
 
     this.transitions ||= {};
@@ -171,10 +174,17 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     const isDialogElem = isDialog(base);
 
+    const moveToBody =
+      (opts.topLayer &&
+        (!opts.modal || opts.topLayer.moveModal) &&
+        (!opts.popoverApi ||
+          (opts.topLayer.movePopover && POPOVER_API_SUPPORTED))) ||
+      _fromHTML;
+
     this.teleport = Teleport.createOrUpdate(
       teleport,
       base,
-      opts.topLayer === true || _fromHTML ? body : false,
+      moveToBody ? body : false,
       {
         disableAttributes: true,
       },

@@ -241,6 +241,10 @@ export const DEFAULT_OPTIONS = {
   shown: null,
   a11y: true,
 };
+export const DEFAULT_TOP_LAYER_OPTIONS = {
+  moveModal: true,
+  movePopover: true,
+};
 export const DEFAULT_FLOATING_OPTIONS = {
   awaitAnimation: false,
   placement: BOTTOM,
@@ -256,8 +260,6 @@ export const DEFAULT_FLOATING_OPTIONS = {
   mode: POPOVER,
   focusTrap: false,
   topLayer: true,
-  moveIfModal: true,
-  moveIfPopover: true,
   popoverApi: true,
   safeModal: true,
   arrow: {

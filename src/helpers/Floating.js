@@ -38,6 +38,7 @@ import {
   KEY_TAB,
   POPOVER_API_MODE_MANUAL,
   UI_EVENT_PREFIX,
+  FALSE,
 } from "./constants";
 import {
   createElement,
@@ -63,7 +64,17 @@ import { isDialog } from "./is/index.js";
 ResetFloatingCssVariables();
 
 export default class Floating {
-  constructor({ target, anchor, arrow, opts, name = "", base, onTopLayer }) {
+  constructor({
+    target,
+    anchor,
+    arrow,
+    opts,
+    name = "",
+    base,
+    onTopLayer,
+    defaultTopLayerOpts,
+    hide,
+  }) {
     const { on, off } = new EventHandler();
     Object.assign(this, {
       target,
@@ -75,10 +86,13 @@ export default class Floating {
       off,
       base,
       onTopLayer,
+      defaultTopLayerOpts,
+      hide,
     });
   }
   init() {
-    const { target, anchor, arrow, opts, name, base, on } = this;
+    const { target, anchor, arrow, opts, name, base, on, defaultTopLayerOpts } =
+      this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
 
     const anchorScrollParents = parents(anchor, isOverflowElement);
@@ -105,7 +119,11 @@ export default class Floating {
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
-    this.topLayer = topLayer = topLayer ? topLayer === TRUE : opts.topLayer;
+    if (topLayer !== FALSE) {
+      this.topLayer = topLayer = opts[TOP_LAYER] || defaultTopLayerOpts;
+    } else {
+      this.topLayer = topLayer = false;
+    }
 
     this[PLACEMENT] = placement =
       base.getAttribute(DATA_UI_PREFIX + name + "-" + PLACEMENT) ||
@@ -127,8 +145,8 @@ export default class Floating {
 
     const moveToRoot =
       topLayer &&
-      (!modeIsModal || opts.moveIfModal) &&
-      (!usePopoverApi || opts.moveIfPopover);
+      (!modeIsModal || topLayer.moveModal) &&
+      (!usePopoverApi || topLayer.movePopover);
 
     const useFocusGuards =
       (opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot);
@@ -317,6 +335,11 @@ export default class Floating {
         anchor,
         topLayer,
         strategy: ABSOLUTE,
+        onFocusOut: () => {
+          if (wrapperIsDialog) {
+            this.hide?.();
+          }
+        },
       });
     }
   }
