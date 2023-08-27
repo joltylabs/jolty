@@ -1,19 +1,30 @@
 import {
   FOCUSABLE_ELEMENTS_SELECTOR,
   doc,
-  OPTION_PREVENT_SCROLL,
+  AUTOFOCUS,
+  DATA_UI_PREFIX,
 } from "../constants";
 import { getOptionElem } from "../utils/index.js";
 import { isDialog } from "../is/index.js";
+import { focus } from "../dom/index.js";
 
 export default (instance, elem = instance.base) => {
   const autofocus = instance.opts.autofocus;
-  if (elem.contains(doc.activeElement)) return;
-  let focusElem = getOptionElem(instance, autofocus.elem, elem);
+  const optionsAutofocus = getOptionElem(
+    instance,
+    autofocus === true
+      ? `[${AUTOFOCUS}],[${DATA_UI_PREFIX + AUTOFOCUS}=""],[${
+          DATA_UI_PREFIX + AUTOFOCUS
+        }="${instance.NAME}"]`
+      : autofocus,
+    elem,
+  );
+
+  let focusElem =
+    optionsAutofocus || (elem.contains(doc.activeElement) && doc.activeElement);
+
   if (!focusElem && instance.opts.focusTrap && !isDialog(elem)) {
     focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR) ?? elem;
   }
-  focusElem?.focus({
-    [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,
-  });
+  focus(focusElem);
 };

@@ -1,27 +1,20 @@
 import {
   EVENT_BEFORE_DESTROY,
   EVENT_BEFORE_SHOW,
-  EVENT_SHOWN,
   EVENT_BEFORE_HIDE,
-  EVENT_HIDDEN,
   CLASS_ACTIVE,
   ARIA_CONTROLS,
   ARIA_EXPANDED,
   ACTION_REMOVE,
   POPOVER,
   CLICK,
-  DEFAULT_AUTOFOCUS,
   DEFAULT_FLOATING_OPTIONS,
   DEFAULT_OPTIONS,
-  AUTOFOCUS,
-  DATA_UI_PREFIX,
-  MODE,
-  body,
-  doc,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
   HIDE_MODE,
-  ABSOLUTE,
+  MODAL,
+  DIALOG,
 } from "./helpers/constants";
 
 import {
@@ -33,7 +26,6 @@ import {
 import {
   normalizeToggleParameters,
   getDefaultToggleSelector,
-  updateModule,
   getOptionElem,
 } from "./helpers/utils";
 import {
@@ -42,7 +34,6 @@ import {
   toggleOnInterection,
   floatingTransition,
   callInitShow,
-  awaitPromise,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -51,12 +42,10 @@ import Transition from "./helpers/Transition.js";
 // modes POPOVER, DIALOG, FIXED, ABSOLUTE
 
 class Popover extends ToggleMixin(Base, POPOVER) {
-  static DefaultAutofocus = {
-    elem: DEFAULT_AUTOFOCUS,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
+    mode: DIALOG + "-" + POPOVER,
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
@@ -73,17 +62,13 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     const { toggler, popover } = this;
 
-    toggleOnInterection({ anchor: toggler, target: popover, instance: this });
+    toggleOnInterection({ toggler, target: popover, instance: this });
     addDismiss(this, popover);
-
-    // body.appendChild(popover);
 
     return callInitShow(this);
   }
   _update() {
     const { base, opts, transition } = this;
-
-    updateModule(this, AUTOFOCUS);
 
     this.transition = Transition.createOrUpdate(
       transition,
@@ -93,9 +78,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     );
 
     this.updateToggler();
-
-    // opts[MODE] =
-    //   base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
   }
   updateToggler() {
     const { opts, id } = this;

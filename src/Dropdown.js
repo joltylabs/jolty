@@ -1,9 +1,7 @@
 import {
   EVENT_BEFORE_DESTROY,
   EVENT_BEFORE_SHOW,
-  EVENT_SHOWN,
   EVENT_BEFORE_HIDE,
-  EVENT_HIDDEN,
   EVENT_CLICK,
   EVENT_KEYDOWN,
   CLASS_ACTIVE,
@@ -19,17 +17,14 @@ import {
   KEY_ARROW_UP,
   KEY_ARROW_RIGHT,
   KEY_ARROW_DOWN,
-  DEFAULT_AUTOFOCUS,
   DEFAULT_FLOATING_OPTIONS,
   DEFAULT_OPTIONS,
   ARIA_EXPANDED,
   KEY_TAB,
-  body,
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   doc,
   HIDE_MODE,
-  AUTOFOCUS,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -54,17 +49,12 @@ import {
 import {
   addDismiss,
   baseDestroy,
-  callAutofocus,
   toggleOnInterection,
   floatingTransition,
   callInitShow,
-  awaitPromise,
 } from "./helpers/modules";
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
-  static DefaultAutofocus = {
-    elem: DEFAULT_AUTOFOCUS,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -86,9 +76,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     const { toggler, dropdown, show, on } = this;
 
-    toggleOnInterection({ anchor: toggler, target: dropdown, instance: this });
+    toggleOnInterection({ toggler, target: dropdown, instance: this });
     addDismiss(this, dropdown);
-    updateModule(this, AUTOFOCUS);
 
     on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
@@ -121,9 +110,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       opts.transition,
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
-
-    // opts[MODE] =
-    //   base.getAttribute(DATA_UI_PREFIX + DROPDOWN + "-" + MODE) ?? opts[MODE];
 
     this.updateToggler();
 
@@ -180,12 +166,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       (elem) => elem === doc.activeElement,
     );
 
-    // if (currentIndex === 0 && shiftKey && keyCode === KEY_TAB) {
-    //   event.preventDefault();
-    //   toggler.focus();
-    //   return;
-    // }
-
     const nextIndex = currentIndex + 1 > lastIndex ? 0 : currentIndex + 1;
     const prevIndex = currentIndex ? currentIndex - 1 : lastIndex;
 
@@ -227,8 +207,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 
   async toggle(s, params) {
-    const { toggler, base, opts, emit, transition, isShown, isAnimating } =
-      this;
+    const { toggler, opts, emit, transition, isShown, isAnimating } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -242,10 +221,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();
-    }
-
-    if (s) {
-      body.appendChild(base);
     }
 
     const eventParams = { event, trigger };

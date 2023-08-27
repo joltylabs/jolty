@@ -629,6 +629,7 @@ Tablist.data(UI_PREFIX + TABS, {
   alwaysExpanded: true,
   horizontal: true,
   arrowActivation: true,
+  awaitPrevious: true,
   a11y: TABS,
 });
 

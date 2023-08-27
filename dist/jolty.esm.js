@@ -104,6 +104,7 @@ const CLIP_PATH = "clip-path";
 const ARROW_OFFSET = ARROW + "-" + OFFSET;
 const ARROW_PADDING = ARROW + "-" + PADDING;
 const TRUE = "true";
+const FALSE = "false";
 const TOP_LAYER = "top-layer";
 
 const doc = document;
@@ -206,7 +207,6 @@ const KEY_ARROW_DOWN = 40;
 
 const A11Y = "a11y";
 const OPTION_GROUP = "group";
-const OPTION_APPEAR = APPEAR;
 const OPTION_KEEP_PLACE = "keepPlace";
 const OPTION_PREVENT_SCROLL = "preventScroll";
 const OPTION_POSITION = "position";
@@ -219,10 +219,9 @@ kebabToCamel(ARIA_CONTROLS);
 const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
 kebabToCamel(ARIA_LIVE);
 kebabToCamel(ARIA_ATOMIC);
+const OPTION_TOP_LAYER = "topLayer";
 const CLASS_ACTIVE_SUFFIX = "ClassActive";
 const ROLE_SUFFIX = upperFirst(ROLE);
-
-const OPTIONS_BOOLEAN = [OPTION_APPEAR, OPTION_KEEP_PLACE];
 const DEFAULT_OPTIONS = {
   [ACTION_INIT]: true,
   [ACTION_DESTROY]: false,
@@ -248,8 +247,8 @@ const DEFAULT_FLOATING_OPTIONS = {
   outsideHide: true,
   mode: POPOVER,
   topLayer: true,
-  moveModal: true,
-  movePopover: true,
+  moveIfModal: true,
+  moveIfPopover: true,
   popoverApi: true,
   focusTrap: false,
   arrow: {
@@ -259,14 +258,10 @@ const DEFAULT_FLOATING_OPTIONS = {
     padding: 0,
   },
 };
-
-const SELECTOR_AUTOFOCUS = `[${AUTOFOCUS}]`;
 const SELECTOR_DISABLED = `[${DISABLED}]`;
 const SELECTOR_INERT = `[${INERT}]`;
-const SELECTOR_DATA_AUTOFOCUS = `[${DATA_UI_PREFIX + AUTOFOCUS}]`;
 const SELECTOR_DATA_CONFIRM = `[${DATA_UI_PREFIX + CONFIRM}]`;
 const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
-const DEFAULT_AUTOFOCUS = `${SELECTOR_AUTOFOCUS},${SELECTOR_DATA_AUTOFOCUS}`;
 const SELECTOR_ROOT = ":" + ROOT;
 
 const MIRROR = {
@@ -287,7 +282,7 @@ const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
   : WEBKIT_PREFIX + CLIP_PATH;
 
 const POPOVER_API_SUPPORTED =
-  HTMLElement.prototype.hasOwnProperty("popover");
+  HTMLElement.prototype.hasOwnProperty(POPOVER);
 
 const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
 
@@ -689,6 +684,13 @@ var uuidGenerator = (prefix = "") =>
 var without = (source, ...values) =>
   returnArray(source).filter((elem) => !values.includes(elem));
 
+const OPTIONS_BOOLEAN = [
+  APPEAR,
+  OPTION_KEEP_PLACE,
+  OPTION_TOP_LAYER,
+  OPTION_PREVENT_SCROLL,
+  MODAL,
+];
 var updateOptsByData = (opts, dataset, names) => {
   names.forEach((name) => {
     let optionName = name;
@@ -701,11 +703,19 @@ var updateOptsByData = (opts, dataset, names) => {
     const hasAttribute = value !== undefined;
     if (hasAttribute) {
       if (OPTIONS_BOOLEAN.includes(optionName)) {
-        value = hasAttribute;
+        value =
+          value === "" || value === TRUE
+            ? true
+            : value === FALSE
+            ? false
+            : undefined;
       } else if (value && value[0] === "{") {
         value = JSON.parse(value);
       }
-      opts[optionName] = value;
+
+      if (value !== undefined) {
+        opts[optionName] = value;
+      }
     }
   });
   return opts;
@@ -1745,6 +1755,7 @@ class Teleport {
     [OPTION_TO]: false,
     [OPTION_POSITION]: "beforeend",
     [OPTION_KEEP_PLACE]: true,
+    enableAttributes: true,
   };
   constructor(elem, opts = {}, defaultOpts) {
     this.elem = elem;
@@ -1758,7 +1769,9 @@ class Teleport {
     }
     opts = isObject(opts) ? opts : { to: opts };
     opts = mergeDeep(defaultConfig, defaultOpts, opts);
-    this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+    if (opts.enableAttributes) {
+      this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+    }
     return this;
   }
   move(...toParameters) {
@@ -1766,6 +1779,7 @@ class Teleport {
     const { position, keepPlace } = opts;
     let to = callOrReturn(opts.to, ...toParameters);
     to = isString(to) ? doc.querySelector(to) : to;
+
     if (!to) return;
     this.placeholder ||= keepPlace
       ? doc.createComment(UI_PREFIX + TELEPORT + ":" + elem.id)
@@ -1787,7 +1801,8 @@ class Teleport {
   static createOrUpdate(teleport, elem, opts, defaultOpts) {
     return teleport
       ? teleport.update(opts, defaultOpts)
-      : opts !== false || elem.dataset[TELEPORT_DATA_ATTRIBUTE]
+      : opts !== false ||
+        (opts.enableAttributes && elem.dataset[TELEPORT_DATA_ATTRIBUTE])
       ? new Teleport(elem, opts, defaultOpts)
       : null;
   }
@@ -1839,14 +1854,23 @@ function addEscapeHide (instance, s, elem = instance.base) {
 
 var callAutofocus = (instance, elem = instance.base) => {
   const autofocus = instance.opts.autofocus;
-  if (elem.contains(doc.activeElement)) return;
-  let focusElem = getOptionElem(instance, autofocus.elem, elem);
+  const optionsAutofocus = getOptionElem(
+    instance,
+    autofocus === true
+      ? `[${AUTOFOCUS}],[${DATA_UI_PREFIX + AUTOFOCUS}=""],[${
+          DATA_UI_PREFIX + AUTOFOCUS
+        }="${instance.NAME}"]`
+      : autofocus,
+    elem,
+  );
+
+  let focusElem =
+    optionsAutofocus || (elem.contains(doc.activeElement) && doc.activeElement);
+
   if (!focusElem && instance.opts.focusTrap && !isDialog(elem)) {
     focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR) ?? elem;
   }
-  focusElem?.focus({
-    [OPTION_PREVENT_SCROLL]: autofocus[OPTION_PREVENT_SCROLL] ?? false,
-  });
+  focus(focusElem);
 };
 
 var addOutsideHide = (instance, s, activeElems) => {
@@ -1920,7 +1944,7 @@ var baseDestroy = (
 };
 
 var toggleOnInterection = ({
-  anchor,
+  toggler,
   target,
   instance,
   trigger,
@@ -1941,8 +1965,8 @@ var toggleOnInterection = ({
     delay = isArray(delay) ? delay : [delay, delay];
   }
   if (triggerClick) {
-    on(anchor, EVENT_CLICK, (event) =>
-      action(null, { event, trigger: anchor }),
+    on(toggler, EVENT_CLICK, (event) =>
+      action(null, { event, trigger: toggler }),
     );
   }
   if (triggerHover) {
@@ -1952,7 +1976,7 @@ var toggleOnInterection = ({
     events.push(EVENT_FOCUSIN, EVENT_FOCUSOUT);
   }
   if (triggerHover || triggerFocus) {
-    on([anchor, target], events, (event) => {
+    on([toggler, target], events, (event) => {
       const { type, target } = event;
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
       const entered =
@@ -1962,7 +1986,7 @@ var toggleOnInterection = ({
       clearTimeout(instance._hoverTimer);
       if (d) {
         instance._hoverTimer = setTimeout(
-          () => action(entered, { trigger: anchor, event }),
+          () => action(entered, { trigger: toggler, event }),
           d,
         );
       } else {
@@ -2039,8 +2063,8 @@ class Floating {
 
     const moveToRoot =
       topLayer &&
-      (!modeIsModal || opts.moveModal) &&
-      (!usePopoverApi || opts.movePopover);
+      (!modeIsModal || opts.moveIfModal) &&
+      (!usePopoverApi || opts.moveIfPopover);
 
     const useFocusGuards =
       (opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot);
@@ -2200,14 +2224,13 @@ class Floating {
     const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
     if (mode.startsWith(MODAL) || mode.startsWith(DIALOG)) {
       if (mode.startsWith(MODAL)) {
+        if (wrapper.open) wrapper.close();
         wrapper.showModal();
         onTopLayer?.(MODAL);
       } else {
         wrapper.show();
       }
-      if (opts.escapeHide) {
-        this.on(wrapper, CANCEL, (e) => e.preventDefault());
-      }
+      this.on(wrapper, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     } else if (topLayer && POPOVER_API_SUPPORTED && wrapper.popover) {
       wrapper.showPopover();
       onTopLayer?.(POPOVER);
@@ -2232,8 +2255,6 @@ class Floating {
       background: NONE,
       maxWidth: NONE,
       maxHeight: NONE,
-      width: "auto",
-      height: "auto",
       overflow: "unset",
       pointerEvents: "none",
       display: "flex",
@@ -2244,8 +2265,11 @@ class Floating {
     if (mode === MODAL || mode === DIALOG) {
       style.position = FIXED;
       style.inset = 0;
+      style.width = "auto";
+      style.height = "auto";
     } else {
       style.position = ABSOLUTE;
+      style.inset = "auto";
       style.left = 0;
       style.top = 0;
       style.width = "fit-content";
@@ -2612,9 +2636,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 }
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
-  static DefaultAutofocus = {
-    elem: DEFAULT_AUTOFOCUS,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -2636,9 +2657,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     const { toggler, dropdown, show, on } = this;
 
-    toggleOnInterection({ anchor: toggler, target: dropdown, instance: this });
+    toggleOnInterection({ toggler, target: dropdown, instance: this });
     addDismiss(this, dropdown);
-    updateModule(this, AUTOFOCUS);
 
     on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
@@ -2671,9 +2691,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       opts.transition,
       { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
     );
-
-    // opts[MODE] =
-    //   base.getAttribute(DATA_UI_PREFIX + DROPDOWN + "-" + MODE) ?? opts[MODE];
 
     this.updateToggler();
 
@@ -2728,12 +2745,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       (elem) => elem === doc.activeElement,
     );
 
-    // if (currentIndex === 0 && shiftKey && keyCode === KEY_TAB) {
-    //   event.preventDefault();
-    //   toggler.focus();
-    //   return;
-    // }
-
     const nextIndex = currentIndex + 1 > lastIndex ? 0 : currentIndex + 1;
     const prevIndex = currentIndex ? currentIndex - 1 : lastIndex;
 
@@ -2775,8 +2786,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 
   async toggle(s, params) {
-    const { toggler, base, opts, emit, transition, isShown, isAnimating } =
-      this;
+    const { toggler, opts, emit, transition, isShown, isAnimating } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -2790,10 +2800,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();
-    }
-
-    if (s) {
-      body.appendChild(base);
     }
 
     const eventParams = { event, trigger };
@@ -2817,9 +2823,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 }
 
-const DOM_ELEMENTS = [MODAL, BACKDROP, CONTENT];
+const DOM_ELEMENTS = [DIALOG, BACKDROP, CONTENT];
 const CLASS_PREVENT_SCROLL =
-  UI_PREFIX + MODAL + "-" + ACTION_PREVENT + "-" + SCROLL;
+  UI_PREFIX + DIALOG + "-" + ACTION_PREVENT + "-" + SCROLL;
 
 const PROPERTY_ROOT_SCROLLBAR_WIDTH =
   VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
@@ -2837,22 +2843,21 @@ const updateBodyScrollbarWidth = () => {
     );
 };
 
-class Modal extends ToggleMixin(Base, MODAL) {
+const DIALOG_DATA_OPTIONS = [
+  [MODAL, DIALOG + upperFirst(MODAL)],
+  [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
+  [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
+];
+
+class Dialog extends ToggleMixin(Base, DIALOG) {
   static DefaultGroup = {
     name: "",
     awaitPrevious: true,
     hidePrevious: true,
   };
-  static DefaultPreventScroll = {
-    class: CLASS_PREVENT_SCROLL,
-  };
-  static DefaultAutofocus = {
-    elem: DEFAULT_AUTOFOCUS,
-    required: true,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
-    eventPrefix: getEventsPrefix(MODAL),
+    eventPrefix: getEventsPrefix(DIALOG),
     escapeHide: true,
     backdropHide: true,
     hashNavigation: false,
@@ -2862,59 +2867,61 @@ class Modal extends ToggleMixin(Base, MODAL) {
     preventScroll: true,
     cancel: SELECTOR_DATA_CANCEL,
     confirm: SELECTOR_DATA_CONFIRM,
-    title: getDataSelector(MODAL, ARIA_SUFFIX[ARIA_LABELLEDBY]),
-    description: getDataSelector(MODAL, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
+    title: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_LABELLEDBY]),
+    description: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
     group: "",
-    autofocus: true,
-    focusTrap: true,
     awaitAnimation: false,
-    [CONTENT]: getDataSelector(MODAL, CONTENT),
-    [BACKDROP]: getDataSelector(MODAL, BACKDROP),
+    [CONTENT]: getDataSelector(DIALOG, CONTENT),
+    [BACKDROP]: getDataSelector(DIALOG, BACKDROP),
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    detectPopoverApi: true,
+    [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+
+    autofocus: true,
+    focusTrap: true,
+
+    modal: true,
+    topLayer: true,
+    moveIfModal: true,
+    moveIfPopover: true,
+
+    popoverApi: true,
+    safeModal: true,
   };
 
   constructor(elem, opts) {
     super(elem, opts);
   }
   get transition() {
-    return this.transitions[MODAL];
+    return this.transitions[DIALOG];
   }
   _update() {
+    this.opts = updateOptsByData(
+      this.opts,
+      this.base.dataset,
+      DIALOG_DATA_OPTIONS,
+    );
+
     updateModule(this, OPTION_GROUP, NAME);
-    updateModule(this, OPTION_PREVENT_SCROLL);
-    updateModule(this, AUTOFOCUS);
 
     this.transitions ||= {};
 
     const {
-      modal,
+      base,
       transitions,
-      opts: {
-        teleport: teleportOpts,
-        transitions: transitionsOpts,
-        toggler,
-        a11y,
-        escapeHide,
-      },
-      isDialog,
+      opts: { transitions: transitionsOpts, toggler, a11y, topLayer },
       _fromHTML,
       teleport,
       id,
       on,
-      off,
     } = this;
 
     this.teleport = Teleport.createOrUpdate(
       teleport,
-      modal,
-      (teleportOpts == null && _fromHTML) || teleportOpts === true
-        ? body
-        : teleportOpts,
+      base,
+      topLayer === true || _fromHTML ? body : false,
       {
-        keepPlace: false,
+        disableAttributes: true,
       },
     )?.move(this);
 
@@ -2931,21 +2938,19 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     this._togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
 
-    if (a11y && !isDialog) {
-      setAttribute(modal, TABINDEX, -1);
-      setAttribute(modal, ROLE, DIALOG);
+    if (a11y && !isDialog(base)) {
+      setAttribute(base, TABINDEX, -1);
+      setAttribute(base, ROLE, DIALOG);
     }
 
-    if (escapeHide) {
-      on(modal, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-    } else {
-      off(modal, CANCEL + UI_EVENT_PREFIX);
+    if (isDialog(base)) {
+      on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     }
 
     return this;
   }
   init() {
-    const { opts, isInit, modal, on, emit, hide, toggle } = this;
+    const { opts, isInit, base, on, emit, hide, toggle } = this;
     const optsBackdrop = opts[BACKDROP];
 
     if (isInit) return;
@@ -2958,21 +2963,21 @@ class Modal extends ToggleMixin(Base, MODAL) {
         backdrop = optsBackdrop(this);
       }
       if (isString(optsBackdrop)) {
-        backdrop = (optsBackdrop[0] === "#" ? doc : modal).querySelector(
+        backdrop = (optsBackdrop[0] === "#" ? doc : base).querySelector(
           optsBackdrop,
         );
       }
     }
     this[BACKDROP] = backdrop;
 
-    this[CONTENT] = getOptionElem(this, opts[CONTENT], modal);
+    this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
 
     this._update();
     this.updateAriaTargets();
     addDismiss(this);
 
     on(
-      modal,
+      base,
       [
         EVENT_CLICK,
         opts.backdropHide &&
@@ -3024,6 +3029,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
         ARIA_LABELLEDBY,
         ARIA_DESCRIBEDBY,
       ]);
+    this.focusGuards?.destroy();
+    this.focusGuards = null;
     baseDestroy(this, destroyOpts);
     return this;
   }
@@ -3046,18 +3053,25 @@ class Modal extends ToggleMixin(Base, MODAL) {
       this[suffix] = elem;
       if (!elem) return;
       const id = elem
-        ? (elem.id ||= uuidGenerator(MODAL + "-" + suffix + "-"))
+        ? (elem.id ||= uuidGenerator(DIALOG + "-" + suffix + "-"))
         : elem;
       setAttribute(base, name, id);
     }
     return this;
   }
-  _preventScroll(s) {
-    const hasPreventScrollModals = Modal.shownModals.filter(
-      ({ opts }) => opts.preventScroll,
+  preventScroll(s) {
+    const hasPreventScrollDialogs = Dialog.shownDialogs.filter(
+      ({ opts }) => opts[OPTION_PREVENT_SCROLL],
     ).length;
-    if ((s && hasPreventScrollModals) || (!s && !hasPreventScrollModals)) {
-      toggleClass(body, this.opts.preventScroll.class, s);
+
+    if ((s && hasPreventScrollDialogs) || (!s && !hasPreventScrollDialogs)) {
+      toggleClass(
+        body,
+        isString(this.opts[OPTION_PREVENT_SCROLL])
+          ? this.opts[OPTION_PREVENT_SCROLL]
+          : CLASS_PREVENT_SCROLL,
+        s,
+      );
     }
   }
   async toggle(s, params) {
@@ -3069,8 +3083,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       off,
       isAnimating,
       transitions,
-      isDialog,
-      modal,
+      base,
       content,
       backdrop,
     } = this;
@@ -3078,14 +3091,10 @@ class Modal extends ToggleMixin(Base, MODAL) {
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
-    const {
-      animated,
-      silent,
-      trigger,
-      event,
-      ignoreAutofocus,
-      ignoreConditions,
-    } = normalizeToggleParameters(params);
+    const { animated, silent, trigger, event, ignoreConditions } =
+      normalizeToggleParameters(params);
+
+    const baseIsDialog = isDialog(base);
 
     s = !!(s ?? !isOpen);
 
@@ -3114,23 +3123,23 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     this.isOpen = s;
 
-    const backdropIsOpen = Modal.shownModals.find(
-      (modal) => modal !== this && modal[BACKDROP] === backdrop,
+    const backdropIsOpen = Dialog.shownDialogs.find(
+      (instance) => instance !== this && instance[BACKDROP] === backdrop,
     );
 
-    const shownGroupModals = this.shownGroupModals;
+    const shownGroupDialogs = this.shownGroupDialogs;
     if (s) {
-      if (shownGroupModals.length > 1) {
+      if (shownGroupDialogs.length > 1) {
         const promises = Promise.allSettled(
-          shownGroupModals
+          shownGroupDialogs
             .filter((m) => m !== this)
-            .map((modal) => modal.hide() && modal.transitionPromise),
+            .map((instance) => instance.hide() && instance.transitionPromise),
         );
         if (opts.group.awaitPrevious) {
           await promises;
         }
       }
-    } else if (!s && !shownGroupModals.length) {
+    } else if (!s && !shownGroupDialogs.length) {
       optReturnFocusAwait = false;
     }
 
@@ -3140,24 +3149,25 @@ class Modal extends ToggleMixin(Base, MODAL) {
       s,
     );
 
-    toggleClass(modal, opts[MODAL + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
 
     if (s) {
-      transitions[MODAL].toggleRemove(true);
+      transitions[DIALOG].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
-      // modal.show();
-      if (isDialog) {
+      if (baseIsDialog) {
         if (
           opts.focusTrap &&
-          (!opts.detectPopoverApi || POPOVER_API_SUPPORTED)
+          (!opts.safeModal || POPOVER_API_SUPPORTED) &&
+          opts.modal
         ) {
-          modal.showModal();
-          Modal.dispatchTopLayer(MODAL);
+          if (base.open) base.close();
+          base.showModal();
+          Dialog.dispatchTopLayer(MODAL);
         } else {
-          modal.show();
+          base.show();
         }
       } else if (opts.focusTrap) {
-        this.focusGuards = new FocusGuards(modal);
+        this.focusGuards = new FocusGuards(base);
       }
       if (opts.returnFocus) {
         this.returnFocusElem = doc.activeElement;
@@ -3166,18 +3176,18 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-    for (const elemName of [MODAL, BACKDROP, CONTENT]) {
+    for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
       if (elemName === BACKDROP && backdropIsOpen) {
         continue;
       }
-      const transitionOpts = { allowRemove: elemName !== MODAL };
+      const transitionOpts = { allowRemove: elemName !== DIALOG };
 
-      if (elemName !== MODAL) {
+      if (elemName !== DIALOG) {
         transitions[elemName]?.run(s, animated, transitionOpts);
       }
     }
 
-    this._preventScroll(s);
+    this.preventScroll(s);
 
     if (!s && !optReturnFocusAwait) {
       this.returnFocus();
@@ -3186,16 +3196,15 @@ class Modal extends ToggleMixin(Base, MODAL) {
     opts.escapeHide && addEscapeHide(this, s);
 
     if (s) {
-      !ignoreAutofocus && opts.autofocus && callAutofocus(this);
-
+      opts.autofocus && callAutofocus(this);
       on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
         this._mousedownTarget = e.target;
       });
     } else {
       this._mousedownTarget = null;
       off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
-      if (isDialog && !optReturnFocusAwait) {
-        modal.close();
+      if (baseIsDialog && !optReturnFocusAwait) {
+        base.close();
       }
       this.focusGuards?.destroy();
       this.focusGuards = null;
@@ -3207,14 +3216,14 @@ class Modal extends ToggleMixin(Base, MODAL) {
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
       if (!s && optReturnFocusAwait) {
-        if (isDialog) {
-          modal.close();
+        if (baseIsDialog) {
+          base.close();
         }
         this.returnFocus();
       }
       if (!s) {
-        transitions[MODAL].toggleRemove(false);
-        if (transitions[MODAL].opts[HIDE_MODE] === ACTION_DESTROY) {
+        transitions[DIALOG].toggleRemove(false);
+        if (transitions[DIALOG].opts[HIDE_MODE] === ACTION_DESTROY) {
           this.destroy({ remove: true });
         }
       }
@@ -3226,14 +3235,11 @@ class Modal extends ToggleMixin(Base, MODAL) {
   }
 
   returnFocus() {
-    if (this.opts.returnFocus && this.modal.contains(doc.activeElement)) {
+    if (this.opts.returnFocus && this.base.contains(doc.activeElement)) {
       focus(this.returnFocusElem);
     }
   }
 
-  get isDialog() {
-    return this[MODAL].tagName === "DIALOG";
-  }
   get isAnimating() {
     return DOM_ELEMENTS.some(
       (elemName) => this.transitions[elemName]?.isAnimating,
@@ -3246,16 +3252,16 @@ class Modal extends ToggleMixin(Base, MODAL) {
     );
   }
 
-  get groupModals() {
+  get groupDialogs() {
     return arrayFrom(this.instances.values()).filter(
       ({ opts }) => opts.group?.name === this.opts.group?.name,
     );
   }
-  static get shownModals() {
+  static get shownDialogs() {
     return arrayFrom(this.instances.values()).filter(({ isOpen }) => isOpen);
   }
-  get shownGroupModals() {
-    return this.groupModals.filter(({ isOpen, opts }) => opts.group && isOpen);
+  get shownGroupDialogs() {
+    return this.groupDialogs.filter(({ isOpen, opts }) => opts.group && isOpen);
   }
   static updateBodyScrollbarWidth() {
     updateBodyScrollbarWidth();
@@ -3807,6 +3813,7 @@ Tablist.data(UI_PREFIX + TABS, {
   alwaysExpanded: true,
   horizontal: true,
   arrowActivation: true,
+  awaitPrevious: true,
   a11y: TABS,
 });
 
@@ -4265,7 +4272,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     this._update();
 
-    toggleOnInterection({ anchor, target, instance: this });
+    toggleOnInterection({ toggler: anchor, target, instance: this });
 
     addDismiss(this, target);
 
@@ -4338,12 +4345,10 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 // modes POPOVER, DIALOG, FIXED, ABSOLUTE
 
 class Popover extends ToggleMixin(Base, POPOVER) {
-  static DefaultAutofocus = {
-    elem: DEFAULT_AUTOFOCUS,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
+    mode: DIALOG + "-" + POPOVER,
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
@@ -4360,17 +4365,13 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     const { toggler, popover } = this;
 
-    toggleOnInterection({ anchor: toggler, target: popover, instance: this });
+    toggleOnInterection({ toggler, target: popover, instance: this });
     addDismiss(this, popover);
-
-    // body.appendChild(popover);
 
     return callInitShow(this);
   }
   _update() {
     const { base, opts, transition } = this;
-
-    updateModule(this, AUTOFOCUS);
 
     this.transition = Transition.createOrUpdate(
       transition,
@@ -4380,9 +4381,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     );
 
     this.updateToggler();
-
-    // opts[MODE] =
-    //   base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
   }
   updateToggler() {
     const { opts, id } = this;
@@ -4441,5 +4439,5 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 }
 
-export { Collapse, Dropdown, Modal, Popover, Tablist, Toast, Tooltip };
+export { Collapse, Dialog, Dropdown, Popover, Tablist, Toast, Tooltip };
 //# sourceMappingURL=jolty.esm.js.map

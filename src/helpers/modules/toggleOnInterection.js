@@ -11,7 +11,7 @@ import {
 import { isArray } from "../is";
 
 export default ({
-  anchor,
+  toggler,
   target,
   instance,
   trigger,
@@ -32,8 +32,8 @@ export default ({
     delay = isArray(delay) ? delay : [delay, delay];
   }
   if (triggerClick) {
-    on(anchor, EVENT_CLICK, (event) =>
-      action(null, { event, trigger: anchor }),
+    on(toggler, EVENT_CLICK, (event) =>
+      action(null, { event, trigger: toggler }),
     );
   }
   if (triggerHover) {
@@ -43,7 +43,7 @@ export default ({
     events.push(EVENT_FOCUSIN, EVENT_FOCUSOUT);
   }
   if (triggerHover || triggerFocus) {
-    on([anchor, target], events, (event) => {
+    on([toggler, target], events, (event) => {
       const { type, target } = event;
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
       const entered =
@@ -53,7 +53,7 @@ export default ({
       clearTimeout(instance._hoverTimer);
       if (d) {
         instance._hoverTimer = setTimeout(
-          () => action(entered, { trigger: anchor, event }),
+          () => action(entered, { trigger: toggler, event }),
           d,
         );
       } else {

@@ -101,6 +101,7 @@ export const CLIP_PATH = "clip-path";
 export const ARROW_OFFSET = ARROW + "-" + OFFSET;
 export const ARROW_PADDING = ARROW + "-" + PADDING;
 export const TRUE = "true";
+export const FALSE = "false";
 export const TOP_LAYER = "top-layer";
 
 export const doc = document;
@@ -212,7 +213,6 @@ export const KEY_ARROW_DOWN = 40;
 
 export const A11Y = "a11y";
 export const OPTION_GROUP = "group";
-export const OPTION_APPEAR = APPEAR;
 export const OPTION_KEEP_PLACE = "keepPlace";
 export const OPTION_PREVENT_SCROLL = "preventScroll";
 export const OPTION_POSITION = "position";
@@ -225,10 +225,9 @@ export const OPTION_ARIA_CONTROLS = kebabToCamel(ARIA_CONTROLS);
 export const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
 export const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
 export const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
+export const OPTION_TOP_LAYER = "topLayer";
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = upperFirst(ROLE);
-
-export const OPTIONS_BOOLEAN = [OPTION_APPEAR, OPTION_KEEP_PLACE];
 
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
 export const DEFAULT_OPTIONS = {
@@ -256,8 +255,8 @@ export const DEFAULT_FLOATING_OPTIONS = {
   outsideHide: true,
   mode: POPOVER,
   topLayer: true,
-  moveModal: true,
-  movePopover: true,
+  moveIfModal: true,
+  moveIfPopover: true,
   popoverApi: true,
   focusTrap: false,
   arrow: {
@@ -271,10 +270,8 @@ export const DEFAULT_FLOATING_OPTIONS = {
 export const SELECTOR_AUTOFOCUS = `[${AUTOFOCUS}]`;
 export const SELECTOR_DISABLED = `[${DISABLED}]`;
 export const SELECTOR_INERT = `[${INERT}]`;
-export const SELECTOR_DATA_AUTOFOCUS = `[${DATA_UI_PREFIX + AUTOFOCUS}]`;
 export const SELECTOR_DATA_CONFIRM = `[${DATA_UI_PREFIX + CONFIRM}]`;
 export const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
-export const DEFAULT_AUTOFOCUS = `${SELECTOR_AUTOFOCUS},${SELECTOR_DATA_AUTOFOCUS}`;
 export const SELECTOR_ROOT = ":" + ROOT;
 
 export const MIRROR = {
@@ -295,6 +292,6 @@ export const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
   : WEBKIT_PREFIX + CLIP_PATH;
 
 export const POPOVER_API_SUPPORTED =
-  HTMLElement.prototype.hasOwnProperty("popover");
+  HTMLElement.prototype.hasOwnProperty(POPOVER);
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;

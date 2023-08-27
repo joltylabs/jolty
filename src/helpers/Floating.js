@@ -37,6 +37,7 @@ import {
   FOCUSABLE_ELEMENTS_SELECTOR,
   KEY_TAB,
   POPOVER_API_MODE_MANUAL,
+  UI_EVENT_PREFIX,
 } from "./constants";
 import {
   createElement,
@@ -125,8 +126,8 @@ export default class Floating {
 
     const moveToRoot =
       topLayer &&
-      (!modeIsModal || opts.moveModal) &&
-      (!usePopoverApi || opts.movePopover);
+      (!modeIsModal || opts.moveIfModal) &&
+      (!usePopoverApi || opts.moveIfPopover);
 
     const useFocusGuards =
       (opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot);
@@ -286,14 +287,13 @@ export default class Floating {
     const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
     if (mode.startsWith(MODAL) || mode.startsWith(DIALOG)) {
       if (mode.startsWith(MODAL)) {
+        if (wrapper.open) wrapper.close();
         wrapper.showModal();
         onTopLayer?.(MODAL);
       } else {
         wrapper.show();
       }
-      if (opts.escapeHide) {
-        this.on(wrapper, CANCEL, (e) => e.preventDefault());
-      }
+      this.on(wrapper, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     } else if (topLayer && POPOVER_API_SUPPORTED && wrapper.popover) {
       wrapper.showPopover();
       onTopLayer?.(POPOVER);
@@ -318,8 +318,6 @@ export default class Floating {
       background: NONE,
       maxWidth: NONE,
       maxHeight: NONE,
-      width: "fit-content",
-      height: "fit-content",
       overflow: "unset",
       pointerEvents: "none",
       display: "flex",
@@ -330,8 +328,11 @@ export default class Floating {
     if (mode === MODAL || mode === DIALOG) {
       style.position = FIXED;
       style.inset = 0;
+      style.width = "auto";
+      style.height = "auto";
     } else {
       style.position = ABSOLUTE;
+      style.inset = "auto";
       style.left = 0;
       style.top = 0;
       style.width = "fit-content";

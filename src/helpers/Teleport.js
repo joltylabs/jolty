@@ -26,6 +26,7 @@ class Teleport {
     [OPTION_TO]: false,
     [OPTION_POSITION]: "beforeend",
     [OPTION_KEEP_PLACE]: true,
+    enableAttributes: true,
   };
   constructor(elem, opts = {}, defaultOpts) {
     this.elem = elem;
@@ -39,7 +40,9 @@ class Teleport {
     }
     opts = isObject(opts) ? opts : { to: opts };
     opts = mergeDeep(defaultConfig, defaultOpts, opts);
-    this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+    if (opts.enableAttributes) {
+      this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+    }
     return this;
   }
   move(...toParameters) {
@@ -47,6 +50,7 @@ class Teleport {
     const { position, keepPlace } = opts;
     let to = callOrReturn(opts.to, ...toParameters);
     to = isString(to) ? doc.querySelector(to) : to;
+
     if (!to) return;
     this.placeholder ||= keepPlace
       ? doc.createComment(UI_PREFIX + TELEPORT + ":" + elem.id)
@@ -68,7 +72,8 @@ class Teleport {
   static createOrUpdate(teleport, elem, opts, defaultOpts) {
     return teleport
       ? teleport.update(opts, defaultOpts)
-      : opts !== false || elem.dataset[TELEPORT_DATA_ATTRIBUTE]
+      : opts !== false ||
+        (opts.enableAttributes && elem.dataset[TELEPORT_DATA_ATTRIBUTE])
       ? new Teleport(elem, opts, defaultOpts)
       : null;
   }

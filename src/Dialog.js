@@ -5,13 +5,11 @@ import {
   UI_PREFIX,
   VAR_UI_PREFIX,
   PX,
-  MODAL,
   CONTENT,
   BACKDROP,
   SCROLL,
   WIDTH,
   ROOT,
-  DEFAULT_AUTOFOCUS,
   SELECTOR_ROOT,
   ACTION_PREVENT,
   ARIA_LABELLEDBY,
@@ -28,10 +26,8 @@ import {
   EVENT_HIDDEN,
   EVENT_SHOWN,
   OPTION_GROUP,
-  AUTOFOCUS,
   ACTION_DESTROY,
   TITLE,
-  OPTION_PREVENT_SCROLL,
   NAME,
   EVENT_BEFORE_HIDE,
   EVENT_BEFORE_SHOW,
@@ -46,8 +42,11 @@ import {
   doc,
   UI_EVENT_PREFIX,
   POPOVER_API_SUPPORTED,
+  MODAL,
+  OPTION_TOP_LAYER,
+  OPTION_PREVENT_SCROLL,
 } from "./helpers/constants";
-import { isString, isElement, isFunction } from "./helpers/is";
+import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
   getElements,
   toggleClass,
@@ -66,6 +65,8 @@ import {
   getDefaultToggleSelector,
   updateModule,
   getOptionElem,
+  updateOptsByData,
+  upperFirst,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -81,9 +82,9 @@ import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 import { FocusGuards } from "./helpers/modules/index.js";
 
-const DOM_ELEMENTS = [MODAL, BACKDROP, CONTENT];
+const DOM_ELEMENTS = [DIALOG, BACKDROP, CONTENT];
 const CLASS_PREVENT_SCROLL =
-  UI_PREFIX + MODAL + "-" + ACTION_PREVENT + "-" + SCROLL;
+  UI_PREFIX + DIALOG + "-" + ACTION_PREVENT + "-" + SCROLL;
 
 const PROPERTY_ROOT_SCROLLBAR_WIDTH =
   VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
@@ -101,22 +102,21 @@ const updateBodyScrollbarWidth = () => {
     );
 };
 
-class Modal extends ToggleMixin(Base, MODAL) {
+const DIALOG_DATA_OPTIONS = [
+  [MODAL, DIALOG + upperFirst(MODAL)],
+  [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
+  [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
+];
+
+class Dialog extends ToggleMixin(Base, DIALOG) {
   static DefaultGroup = {
     name: "",
     awaitPrevious: true,
     hidePrevious: true,
   };
-  static DefaultPreventScroll = {
-    class: CLASS_PREVENT_SCROLL,
-  };
-  static DefaultAutofocus = {
-    elem: DEFAULT_AUTOFOCUS,
-    required: true,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
-    eventPrefix: getEventsPrefix(MODAL),
+    eventPrefix: getEventsPrefix(DIALOG),
     escapeHide: true,
     backdropHide: true,
     hashNavigation: false,
@@ -126,59 +126,61 @@ class Modal extends ToggleMixin(Base, MODAL) {
     preventScroll: true,
     cancel: SELECTOR_DATA_CANCEL,
     confirm: SELECTOR_DATA_CONFIRM,
-    title: getDataSelector(MODAL, ARIA_SUFFIX[ARIA_LABELLEDBY]),
-    description: getDataSelector(MODAL, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
+    title: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_LABELLEDBY]),
+    description: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
     group: "",
-    autofocus: true,
-    focusTrap: true,
     awaitAnimation: false,
-    [CONTENT]: getDataSelector(MODAL, CONTENT),
-    [BACKDROP]: getDataSelector(MODAL, BACKDROP),
+    [CONTENT]: getDataSelector(DIALOG, CONTENT),
+    [BACKDROP]: getDataSelector(DIALOG, BACKDROP),
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    [MODAL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    detectPopoverApi: true,
+    [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+
+    autofocus: true,
+    focusTrap: true,
+
+    modal: true,
+    topLayer: true,
+    moveIfModal: true,
+    moveIfPopover: true,
+
+    popoverApi: true,
+    safeModal: true,
   };
 
   constructor(elem, opts) {
     super(elem, opts);
   }
   get transition() {
-    return this.transitions[MODAL];
+    return this.transitions[DIALOG];
   }
   _update() {
+    this.opts = updateOptsByData(
+      this.opts,
+      this.base.dataset,
+      DIALOG_DATA_OPTIONS,
+    );
+
     updateModule(this, OPTION_GROUP, NAME);
-    updateModule(this, OPTION_PREVENT_SCROLL);
-    updateModule(this, AUTOFOCUS);
 
     this.transitions ||= {};
 
     const {
-      modal,
+      base,
       transitions,
-      opts: {
-        teleport: teleportOpts,
-        transitions: transitionsOpts,
-        toggler,
-        a11y,
-        escapeHide,
-      },
-      isDialog,
+      opts: { transitions: transitionsOpts, toggler, a11y, topLayer },
       _fromHTML,
       teleport,
       id,
       on,
-      off,
     } = this;
 
     this.teleport = Teleport.createOrUpdate(
       teleport,
-      modal,
-      (teleportOpts == null && _fromHTML) || teleportOpts === true
-        ? body
-        : teleportOpts,
+      base,
+      topLayer === true || _fromHTML ? body : false,
       {
-        keepPlace: false,
+        disableAttributes: true,
       },
     )?.move(this);
 
@@ -195,21 +197,19 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     this._togglers = toggler === true ? getDefaultToggleSelector(id) : toggler;
 
-    if (a11y && !isDialog) {
-      setAttribute(modal, TABINDEX, -1);
-      setAttribute(modal, ROLE, DIALOG);
+    if (a11y && !isDialog(base)) {
+      setAttribute(base, TABINDEX, -1);
+      setAttribute(base, ROLE, DIALOG);
     }
 
-    if (escapeHide) {
-      on(modal, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-    } else {
-      off(modal, CANCEL + UI_EVENT_PREFIX);
+    if (isDialog(base)) {
+      on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     }
 
     return this;
   }
   init() {
-    const { opts, isInit, modal, on, emit, hide, toggle } = this;
+    const { opts, isInit, base, on, emit, hide, toggle } = this;
     const optsBackdrop = opts[BACKDROP];
 
     if (isInit) return;
@@ -222,21 +222,21 @@ class Modal extends ToggleMixin(Base, MODAL) {
         backdrop = optsBackdrop(this);
       }
       if (isString(optsBackdrop)) {
-        backdrop = (optsBackdrop[0] === "#" ? doc : modal).querySelector(
+        backdrop = (optsBackdrop[0] === "#" ? doc : base).querySelector(
           optsBackdrop,
         );
       }
     }
     this[BACKDROP] = backdrop;
 
-    this[CONTENT] = getOptionElem(this, opts[CONTENT], modal);
+    this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
 
     this._update();
     this.updateAriaTargets();
     addDismiss(this);
 
     on(
-      modal,
+      base,
       [
         EVENT_CLICK,
         opts.backdropHide &&
@@ -288,6 +288,8 @@ class Modal extends ToggleMixin(Base, MODAL) {
         ARIA_LABELLEDBY,
         ARIA_DESCRIBEDBY,
       ]);
+    this.focusGuards?.destroy();
+    this.focusGuards = null;
     baseDestroy(this, destroyOpts);
     return this;
   }
@@ -310,18 +312,25 @@ class Modal extends ToggleMixin(Base, MODAL) {
       this[suffix] = elem;
       if (!elem) return;
       const id = elem
-        ? (elem.id ||= uuidGenerator(MODAL + "-" + suffix + "-"))
+        ? (elem.id ||= uuidGenerator(DIALOG + "-" + suffix + "-"))
         : elem;
       setAttribute(base, name, id);
     }
     return this;
   }
-  _preventScroll(s) {
-    const hasPreventScrollModals = Modal.shownModals.filter(
-      ({ opts }) => opts.preventScroll,
+  preventScroll(s) {
+    const hasPreventScrollDialogs = Dialog.shownDialogs.filter(
+      ({ opts }) => opts[OPTION_PREVENT_SCROLL],
     ).length;
-    if ((s && hasPreventScrollModals) || (!s && !hasPreventScrollModals)) {
-      toggleClass(body, this.opts.preventScroll.class, s);
+
+    if ((s && hasPreventScrollDialogs) || (!s && !hasPreventScrollDialogs)) {
+      toggleClass(
+        body,
+        isString(this.opts[OPTION_PREVENT_SCROLL])
+          ? this.opts[OPTION_PREVENT_SCROLL]
+          : CLASS_PREVENT_SCROLL,
+        s,
+      );
     }
   }
   async toggle(s, params) {
@@ -333,8 +342,7 @@ class Modal extends ToggleMixin(Base, MODAL) {
       off,
       isAnimating,
       transitions,
-      isDialog,
-      modal,
+      base,
       content,
       backdrop,
     } = this;
@@ -342,14 +350,10 @@ class Modal extends ToggleMixin(Base, MODAL) {
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
-    const {
-      animated,
-      silent,
-      trigger,
-      event,
-      ignoreAutofocus,
-      ignoreConditions,
-    } = normalizeToggleParameters(params);
+    const { animated, silent, trigger, event, ignoreConditions } =
+      normalizeToggleParameters(params);
+
+    const baseIsDialog = isDialog(base);
 
     s = !!(s ?? !isOpen);
 
@@ -378,23 +382,23 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     this.isOpen = s;
 
-    const backdropIsOpen = Modal.shownModals.find(
-      (modal) => modal !== this && modal[BACKDROP] === backdrop,
+    const backdropIsOpen = Dialog.shownDialogs.find(
+      (instance) => instance !== this && instance[BACKDROP] === backdrop,
     );
 
-    const shownGroupModals = this.shownGroupModals;
+    const shownGroupDialogs = this.shownGroupDialogs;
     if (s) {
-      if (shownGroupModals.length > 1) {
+      if (shownGroupDialogs.length > 1) {
         const promises = Promise.allSettled(
-          shownGroupModals
+          shownGroupDialogs
             .filter((m) => m !== this)
-            .map((modal) => modal.hide() && modal.transitionPromise),
+            .map((instance) => instance.hide() && instance.transitionPromise),
         );
         if (opts.group.awaitPrevious) {
           await promises;
         }
       }
-    } else if (!s && !shownGroupModals.length) {
+    } else if (!s && !shownGroupDialogs.length) {
       optReturnFocusAwait = false;
     }
 
@@ -404,24 +408,25 @@ class Modal extends ToggleMixin(Base, MODAL) {
       s,
     );
 
-    toggleClass(modal, opts[MODAL + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
 
     if (s) {
-      transitions[MODAL].toggleRemove(true);
+      transitions[DIALOG].toggleRemove(true);
       transitions[CONTENT].toggleRemove(true);
-      // modal.show();
-      if (isDialog) {
+      if (baseIsDialog) {
         if (
           opts.focusTrap &&
-          (!opts.detectPopoverApi || POPOVER_API_SUPPORTED)
+          (!opts.safeModal || POPOVER_API_SUPPORTED) &&
+          opts.modal
         ) {
-          modal.showModal();
-          Modal.dispatchTopLayer(MODAL);
+          if (base.open) base.close();
+          base.showModal();
+          Dialog.dispatchTopLayer(MODAL);
         } else {
-          modal.show();
+          base.show();
         }
       } else if (opts.focusTrap) {
-        this.focusGuards = new FocusGuards(modal);
+        this.focusGuards = new FocusGuards(base);
       }
       if (opts.returnFocus) {
         this.returnFocusElem = doc.activeElement;
@@ -430,18 +435,18 @@ class Modal extends ToggleMixin(Base, MODAL) {
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-    for (const elemName of [MODAL, BACKDROP, CONTENT]) {
+    for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
       if (elemName === BACKDROP && backdropIsOpen) {
         continue;
       }
-      const transitionOpts = { allowRemove: elemName !== MODAL };
+      const transitionOpts = { allowRemove: elemName !== DIALOG };
 
-      if (elemName !== MODAL) {
+      if (elemName !== DIALOG) {
         transitions[elemName]?.run(s, animated, transitionOpts);
       }
     }
 
-    this._preventScroll(s);
+    this.preventScroll(s);
 
     if (!s && !optReturnFocusAwait) {
       this.returnFocus();
@@ -450,16 +455,15 @@ class Modal extends ToggleMixin(Base, MODAL) {
     opts.escapeHide && addEscapeHide(this, s);
 
     if (s) {
-      !ignoreAutofocus && opts.autofocus && callAutofocus(this);
-
+      opts.autofocus && callAutofocus(this);
       on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
         this._mousedownTarget = e.target;
       });
     } else {
       this._mousedownTarget = null;
       off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
-      if (isDialog && !optReturnFocusAwait) {
-        modal.close();
+      if (baseIsDialog && !optReturnFocusAwait) {
+        base.close();
       }
       this.focusGuards?.destroy();
       this.focusGuards = null;
@@ -471,14 +475,14 @@ class Modal extends ToggleMixin(Base, MODAL) {
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
       if (!s && optReturnFocusAwait) {
-        if (isDialog) {
-          modal.close();
+        if (baseIsDialog) {
+          base.close();
         }
         this.returnFocus();
       }
       if (!s) {
-        transitions[MODAL].toggleRemove(false);
-        if (transitions[MODAL].opts[HIDE_MODE] === ACTION_DESTROY) {
+        transitions[DIALOG].toggleRemove(false);
+        if (transitions[DIALOG].opts[HIDE_MODE] === ACTION_DESTROY) {
           this.destroy({ remove: true });
         }
       }
@@ -490,14 +494,11 @@ class Modal extends ToggleMixin(Base, MODAL) {
   }
 
   returnFocus() {
-    if (this.opts.returnFocus && this.modal.contains(doc.activeElement)) {
+    if (this.opts.returnFocus && this.base.contains(doc.activeElement)) {
       focus(this.returnFocusElem);
     }
   }
 
-  get isDialog() {
-    return this[MODAL].tagName === "DIALOG";
-  }
   get isAnimating() {
     return DOM_ELEMENTS.some(
       (elemName) => this.transitions[elemName]?.isAnimating,
@@ -510,20 +511,20 @@ class Modal extends ToggleMixin(Base, MODAL) {
     );
   }
 
-  get groupModals() {
+  get groupDialogs() {
     return arrayFrom(this.instances.values()).filter(
       ({ opts }) => opts.group?.name === this.opts.group?.name,
     );
   }
-  static get shownModals() {
+  static get shownDialogs() {
     return arrayFrom(this.instances.values()).filter(({ isOpen }) => isOpen);
   }
-  get shownGroupModals() {
-    return this.groupModals.filter(({ isOpen, opts }) => opts.group && isOpen);
+  get shownGroupDialogs() {
+    return this.groupDialogs.filter(({ isOpen, opts }) => opts.group && isOpen);
   }
   static updateBodyScrollbarWidth() {
     updateBodyScrollbarWidth();
   }
 }
 
-export default Modal;
+export default Dialog;
