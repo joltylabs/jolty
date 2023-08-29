@@ -74,8 +74,10 @@ export default class Floating {
     onTopLayer,
     defaultTopLayerOpts,
     hide,
+    teleport,
   }) {
     const { on, off } = new EventHandler();
+
     Object.assign(this, {
       target,
       anchor,
@@ -88,6 +90,7 @@ export default class Floating {
       onTopLayer,
       defaultTopLayerOpts,
       hide,
+      teleport,
     });
   }
   init() {
@@ -96,8 +99,8 @@ export default class Floating {
     const PREFIX = VAR_UI_PREFIX + name + "-";
 
     const anchorScrollParents = parents(anchor, isOverflowElement);
-    const targetStyles = getComputedStyle(target);
     const anchorStyles = getComputedStyle(anchor);
+    const targetStyles = getComputedStyle(target);
 
     let [flip, sticky, shrink, placement, mode, topLayer] = [
       STICKY,
@@ -395,8 +398,10 @@ export default class Floating {
     const wrapper = (this.wrapper = createElement(
       mode.startsWith(MODAL) || mode.startsWith(DIALOG) ? DIALOG : DIV,
       attributes,
-      target,
     ));
+
+    this.teleport.opts.to = wrapper;
+    this.teleport.move();
 
     if (moveToRoot) {
       body.append(wrapper);
@@ -415,5 +420,6 @@ export default class Floating {
     }
     this.focusGuards?.destroy();
     this.wrapper.remove();
+    this.teleport.reset();
   }
 }

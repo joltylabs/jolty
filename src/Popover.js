@@ -13,11 +13,13 @@ import {
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
   HIDE_MODE,
-  DIALOG,
   DEFAULT_TOP_LAYER_OPTIONS,
-  OPTION_GROUP,
-  NAME,
   OPTION_TOP_LAYER,
+  DATA_UI_PREFIX,
+  CANCEL,
+  CONFIRM,
+  EVENT_CLICK,
+  UI_EVENT_PREFIX,
 } from "./helpers/constants";
 
 import {
@@ -25,12 +27,15 @@ import {
   removeClass,
   setAttribute,
   removeAttribute,
+  closest,
 } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   getDefaultToggleSelector,
   getOptionElem,
   updateModule,
+  getEventsPrefix,
+  updateOptsByData,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -42,8 +47,7 @@ import {
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
-
-// modes POPOVER, DIALOG, FIXED, ABSOLUTE
+import Teleport from "./helpers/Teleport.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
   static DefaultTopLayer = {
@@ -52,12 +56,18 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    mode: DIALOG + "-" + POPOVER,
+    eventPrefix: getEventsPrefix(POPOVER),
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
+      DATA_UI_PREFIX + CANCEL
+    }="${POPOVER}"]`,
+    confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
+      DATA_UI_PREFIX + CONFIRM
+    }="${POPOVER}"]`,
   };
 
   constructor(elem, opts) {
@@ -72,12 +82,26 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     toggleOnInterection({ toggler, target: popover, instance: this });
     addDismiss(this, popover);
 
+    this.teleport = new Teleport(
+      popover,
+      {},
+      {
+        disableAttributes: true,
+      },
+    );
+
     return callInitShow(this);
   }
   _update() {
-    updateModule(this, OPTION_TOP_LAYER);
+    // eslint-disable-next-line prefer-const
+    let { base, opts, transition } = this;
 
-    const { base, opts, transition } = this;
+    this.opts = updateOptsByData(opts, base.dataset, [
+      ["trigger", "popoverTrigger"],
+    ]);
+    opts = updateModule(this, OPTION_TOP_LAYER);
+
+    console.log(opts.trigger);
 
     this.transition = Transition.createOrUpdate(
       transition,
@@ -131,6 +155,19 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+
+    if (s) {
+      this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+        [CANCEL, CONFIRM].forEach((name) => {
+          if (opts[name]) {
+            const trigger = closest(event.target, opts[name]);
+            trigger && emit(name, { event, trigger });
+          }
+        });
+      });
+    } else {
+      this.off(this.base, EVENT_CLICK + UI_EVENT_PREFIX);
+    }
 
     const promise = floatingTransition(this, {
       s,

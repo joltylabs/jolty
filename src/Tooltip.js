@@ -59,6 +59,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
+    delay: [200, 0],
     eventPrefix: getEventsPrefix(TOOLTIP),
     placement: TOP,
     template: (content) =>

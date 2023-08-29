@@ -15,7 +15,7 @@ export default (instance, elem = instance.base) => {
     autofocus === true
       ? `[${AUTOFOCUS}],[${DATA_UI_PREFIX + AUTOFOCUS}=""],[${
           DATA_UI_PREFIX + AUTOFOCUS
-        }="${instance.NAME}"]`
+        }="${instance.constructor.NAME}"]`
       : autofocus,
     elem,
   );

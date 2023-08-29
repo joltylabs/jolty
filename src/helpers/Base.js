@@ -94,7 +94,7 @@ class Base {
 
     this.baseOpts = this.opts = opts;
 
-    this.id = elem.id ||= this.uuid = uuidGenerator(NAME + "-");
+    this.id = elem.id ||= this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
     const eventHandler = new EventHandler();
     [ACTION_ON, ACTION_OFF, ACTION_ONCE].forEach((name) => {
       this[name] = (...params) => {

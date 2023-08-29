@@ -47,6 +47,7 @@ import {
   getOptionElems,
   getOptionElem,
   updateModule,
+  getEventsPrefix,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -63,6 +64,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
+    eventPrefix: getEventsPrefix(DROPDOWN),
     itemClickHide: true,
     mode: false,
     autofocus: true,

@@ -14,11 +14,12 @@ import Floating from "../Floating.js";
 import { closest, focus } from "../dom/index.js";
 
 export default (instance, { s, animated, silent, eventParams }) => {
-  const { transition, base, opts, toggler, emit, constructor } = instance;
+  const { transition, base, opts, toggler, emit, constructor, teleport } =
+    instance;
   const name = constructor.NAME;
   const target = instance[name];
   const anchor = toggler ?? base;
-  const transitionParams = { allowRemove: false };
+  const transitionParams = {};
   transition.parent = null;
 
   if (!silent && !s) {
@@ -29,6 +30,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
     transitionParams[EVENT_SHOW] = () => {
       const arrow = target.querySelector(getDataSelector(name, ARROW));
       instance[FLOATING] = new Floating({
+        teleport,
         base,
         anchor,
         target,

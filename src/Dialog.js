@@ -31,8 +31,6 @@ import {
   NAME,
   EVENT_BEFORE_HIDE,
   EVENT_BEFORE_SHOW,
-  SELECTOR_DATA_CANCEL,
-  SELECTOR_DATA_CONFIRM,
   CANCEL,
   CONFIRM,
   CLASS_ACTIVE,
@@ -48,6 +46,7 @@ import {
   POPOVER,
   POPOVER_API_MODE_MANUAL,
   DEFAULT_TOP_LAYER_OPTIONS,
+  DATA_UI_PREFIX,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -130,8 +129,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     hideable: true,
     dismiss: true,
     preventScroll: true,
-    cancel: SELECTOR_DATA_CANCEL,
-    confirm: SELECTOR_DATA_CONFIRM,
+    cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
+      DATA_UI_PREFIX + CANCEL
+    }="${DIALOG}"]`,
+    confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
+      DATA_UI_PREFIX + CONFIRM
+    }="${DIALOG}"]`,
     title: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_LABELLEDBY]),
     description: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
     group: "",

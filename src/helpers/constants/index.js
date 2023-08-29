@@ -248,9 +248,9 @@ export const DEFAULT_TOP_LAYER_OPTIONS = {
 export const DEFAULT_FLOATING_OPTIONS = {
   awaitAnimation: false,
   placement: BOTTOM,
-  offset: 10,
+  offset: 0,
   padding: 0,
-  delay: [200, 0],
+  delay: 200,
   boundaryOffset: 0,
   shrink: false,
   flip: true,
@@ -273,8 +273,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
 export const SELECTOR_AUTOFOCUS = `[${AUTOFOCUS}]`;
 export const SELECTOR_DISABLED = `[${DISABLED}]`;
 export const SELECTOR_INERT = `[${INERT}]`;
-export const SELECTOR_DATA_CONFIRM = `[${DATA_UI_PREFIX + CONFIRM}]`;
-export const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
+
 export const SELECTOR_ROOT = ":" + ROOT;
 
 export const MIRROR = {

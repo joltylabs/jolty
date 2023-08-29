@@ -7,6 +7,7 @@ import {
   EVENT_MOUSELEAVE,
   EVENT_FOCUSOUT,
   EVENT_FOCUSIN,
+  EVENT_MOUSEDOWN,
 } from "../constants";
 import { isArray } from "../is";
 
@@ -28,6 +29,7 @@ export default ({
   const triggerHover = trigger.includes(HOVER);
   const triggerFocus = trigger.includes(FOCUS);
   const events = [];
+  let isMouseDown = false;
   if (triggerHover || triggerFocus) {
     delay = isArray(delay) ? delay : [delay, delay];
   }
@@ -41,11 +43,23 @@ export default ({
   }
   if (triggerFocus) {
     events.push(EVENT_FOCUSIN, EVENT_FOCUSOUT);
+    on(toggler, EVENT_MOUSEDOWN, () => {
+      isMouseDown = true;
+      clearTimeout(instance._hoverTimer);
+      requestAnimationFrame(() => (isMouseDown = false));
+    });
   }
   if (triggerHover || triggerFocus) {
     on([toggler, target], events, (event) => {
-      const { type, target } = event;
+      const { type } = event;
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
+      if (
+        (type === EVENT_FOCUSIN && isMouseDown) ||
+        (type === EVENT_FOCUSOUT && triggerHover && target.matches(":hover"))
+      ) {
+        return;
+      }
+
       const entered =
         (triggerHover && type === EVENT_MOUSEENTER) ||
         (triggerFocus && type === EVENT_FOCUSIN);
@@ -57,7 +71,7 @@ export default ({
           d,
         );
       } else {
-        action(entered, { event, trigger: target });
+        action(entered, { event, trigger: event.target });
       }
     });
   }

@@ -246,9 +246,9 @@
   const DEFAULT_FLOATING_OPTIONS = {
     awaitAnimation: false,
     placement: BOTTOM,
-    offset: 10,
+    offset: 0,
     padding: 0,
-    delay: [200, 0],
+    delay: 200,
     boundaryOffset: 0,
     shrink: false,
     flip: true,
@@ -269,8 +269,7 @@
   };
   const SELECTOR_DISABLED = `[${DISABLED}]`;
   const SELECTOR_INERT = `[${INERT}]`;
-  const SELECTOR_DATA_CONFIRM = `[${DATA_UI_PREFIX + CONFIRM}]`;
-  const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
+
   const SELECTOR_ROOT = ":" + ROOT;
 
   const MIRROR = {
@@ -1276,7 +1275,7 @@
 
       this.baseOpts = this.opts = opts;
 
-      this.id = elem.id ||= this.uuid = uuidGenerator(NAME + "-");
+      this.id = elem.id ||= this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
       const eventHandler = new EventHandler();
       [ACTION_ON, ACTION_OFF, ACTION_ONCE].forEach((name) => {
         this[name] = (...params) => {
@@ -1778,9 +1777,13 @@
       }
       opts = isObject(opts) ? opts : { to: opts };
       opts = mergeDeep(defaultConfig, defaultOpts, opts);
+
       if (opts.enableAttributes) {
         this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+      } else {
+        this.opts = opts;
       }
+
       return this;
     }
     move(...toParameters) {
@@ -1868,7 +1871,7 @@
       autofocus === true
         ? `[${AUTOFOCUS}],[${DATA_UI_PREFIX + AUTOFOCUS}=""],[${
           DATA_UI_PREFIX + AUTOFOCUS
-        }="${instance.NAME}"]`
+        }="${instance.constructor.NAME}"]`
         : autofocus,
       elem,
     );
@@ -1960,6 +1963,7 @@
     const triggerHover = trigger.includes(HOVER);
     const triggerFocus = trigger.includes(FOCUS);
     const events = [];
+    let isMouseDown = false;
     if (triggerHover || triggerFocus) {
       delay = isArray(delay) ? delay : [delay, delay];
     }
@@ -1973,11 +1977,23 @@
     }
     if (triggerFocus) {
       events.push(EVENT_FOCUSIN, EVENT_FOCUSOUT);
+      on(toggler, EVENT_MOUSEDOWN, () => {
+        isMouseDown = true;
+        clearTimeout(instance._hoverTimer);
+        requestAnimationFrame(() => (isMouseDown = false));
+      });
     }
     if (triggerHover || triggerFocus) {
       on([toggler, target], events, (event) => {
-        const { type, target } = event;
+        const { type } = event;
         const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
+        if (
+          (type === EVENT_FOCUSIN && isMouseDown) ||
+          (type === EVENT_FOCUSOUT && triggerHover && target.matches(":hover"))
+        ) {
+          return;
+        }
+
         const entered =
           (triggerHover && type === EVENT_MOUSEENTER) ||
           (triggerFocus && type === EVENT_FOCUSIN);
@@ -1989,7 +2005,7 @@
             d,
           );
         } else {
-          action(entered, { event, trigger: target });
+          action(entered, { event, trigger: event.target });
         }
       });
     }
@@ -2008,8 +2024,10 @@
       onTopLayer,
       defaultTopLayerOpts,
       hide,
+      teleport,
     }) {
       const { on, off } = new EventHandler();
+
       Object.assign(this, {
         target,
         anchor,
@@ -2022,6 +2040,7 @@
         onTopLayer,
         defaultTopLayerOpts,
         hide,
+        teleport,
       });
     }
     init() {
@@ -2030,8 +2049,8 @@
       const PREFIX = VAR_UI_PREFIX + name + "-";
 
       const anchorScrollParents = parents(anchor, isOverflowElement);
-      const targetStyles = getComputedStyle(target);
       const anchorStyles = getComputedStyle(anchor);
+      const targetStyles = getComputedStyle(target);
 
       let [flip, sticky, shrink, placement, mode, topLayer] = [
         STICKY,
@@ -2329,8 +2348,10 @@
       const wrapper = (this.wrapper = createElement(
         mode.startsWith(MODAL) || mode.startsWith(DIALOG) ? DIALOG : DIV,
         attributes,
-        target,
       ));
+
+      this.teleport.opts.to = wrapper;
+      this.teleport.move();
 
       if (moveToRoot) {
         body.append(wrapper);
@@ -2349,15 +2370,17 @@
       }
       this.focusGuards?.destroy();
       this.wrapper.remove();
+      this.teleport.reset();
     }
   }
 
   var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
-    const { transition, base, opts, toggler, emit, constructor } = instance;
+    const { transition, base, opts, toggler, emit, constructor, teleport } =
+      instance;
     const name = constructor.NAME;
     const target = instance[name];
     const anchor = toggler ?? base;
-    const transitionParams = { allowRemove: false };
+    const transitionParams = {};
     transition.parent = null;
 
     if (!silent && !s) {
@@ -2368,6 +2391,7 @@
       transitionParams[EVENT_SHOW] = () => {
         const arrow = target.querySelector(getDataSelector(name, ARROW));
         instance[FLOATING] = new Floating({
+          teleport,
           base,
           anchor,
           target,
@@ -2683,6 +2707,7 @@
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
+      eventPrefix: getEventsPrefix(DROPDOWN),
       itemClickHide: true,
       mode: false,
       autofocus: true,
@@ -2913,8 +2938,12 @@
       hideable: true,
       dismiss: true,
       preventScroll: true,
-      cancel: SELECTOR_DATA_CANCEL,
-      confirm: SELECTOR_DATA_CONFIRM,
+      cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
+      DATA_UI_PREFIX + CANCEL
+    }="${DIALOG}"]`,
+      confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
+      DATA_UI_PREFIX + CONFIRM
+    }="${DIALOG}"]`,
       title: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_LABELLEDBY]),
       description: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
       group: "",
@@ -4277,6 +4306,7 @@
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
+      delay: [200, 0],
       eventPrefix: getEventsPrefix(TOOLTIP),
       placement: TOP,
       template: (content) =>
@@ -4423,8 +4453,6 @@
     }
   }
 
-  // modes POPOVER, DIALOG, FIXED, ABSOLUTE
-
   class Popover extends ToggleMixin(Base, POPOVER) {
     static DefaultTopLayer = {
       ...DEFAULT_TOP_LAYER_OPTIONS,
@@ -4432,12 +4460,18 @@
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
-      mode: DIALOG + "-" + POPOVER,
+      eventPrefix: getEventsPrefix(POPOVER),
       dismiss: true,
       autofocus: true,
       trigger: CLICK,
       [TOGGLER]: null,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+      cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
+      DATA_UI_PREFIX + CANCEL
+    }="${POPOVER}"]`,
+      confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
+      DATA_UI_PREFIX + CONFIRM
+    }="${POPOVER}"]`,
     };
 
     constructor(elem, opts) {
@@ -4452,12 +4486,26 @@
       toggleOnInterection({ toggler, target: popover, instance: this });
       addDismiss(this, popover);
 
+      this.teleport = new Teleport(
+        popover,
+        {},
+        {
+          disableAttributes: true,
+        },
+      );
+
       return callInitShow(this);
     }
     _update() {
-      updateModule(this, OPTION_TOP_LAYER);
+      // eslint-disable-next-line prefer-const
+      let { base, opts, transition } = this;
 
-      const { base, opts, transition } = this;
+      this.opts = updateOptsByData(opts, base.dataset, [
+        ["trigger", "popoverTrigger"],
+      ]);
+      opts = updateModule(this, OPTION_TOP_LAYER);
+
+      console.log(opts.trigger);
 
       this.transition = Transition.createOrUpdate(
         transition,
@@ -4511,6 +4559,19 @@
       a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
       toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+
+      if (s) {
+        this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+          [CANCEL, CONFIRM].forEach((name) => {
+            if (opts[name]) {
+              const trigger = closest(event.target, opts[name]);
+              trigger && emit(name, { event, trigger });
+            }
+          });
+        });
+      } else {
+        this.off(this.base, EVENT_CLICK + UI_EVENT_PREFIX);
+      }
 
       const promise = floatingTransition(this, {
         s,

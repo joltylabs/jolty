@@ -40,9 +40,13 @@ class Teleport {
     }
     opts = isObject(opts) ? opts : { to: opts };
     opts = mergeDeep(defaultConfig, defaultOpts, opts);
+
     if (opts.enableAttributes) {
       this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+    } else {
+      this.opts = opts;
     }
+
     return this;
   }
   move(...toParameters) {
