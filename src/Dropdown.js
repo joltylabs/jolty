@@ -6,7 +6,6 @@ import {
   EVENT_KEYDOWN,
   CLASS_ACTIVE,
   ARIA_CONTROLS,
-  ACTION_REMOVE,
   DROPDOWN,
   CLICK,
   KEY_ENTER,
@@ -24,9 +23,9 @@ import {
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   doc,
-  HIDE_MODE,
   DEFAULT_TOP_LAYER_OPTIONS,
   OPTION_TOP_LAYER,
+  HIDE_MODE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -48,6 +47,7 @@ import {
   getOptionElem,
   updateModule,
   getEventsPrefix,
+  updateOptsByData,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -56,6 +56,7 @@ import {
   floatingTransition,
   callInitShow,
 } from "./helpers/modules";
+import Teleport from "./helpers/Teleport.js";
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static DefaultTopLayer = {
@@ -109,8 +110,17 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callInitShow(this, dropdown);
   }
   _update() {
+    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
     updateModule(this, OPTION_TOP_LAYER);
     const { base, opts, transition, on, off, hide } = this;
+
+    this.teleport = new Teleport(
+      base,
+      {},
+      {
+        disableAttributes: true,
+      },
+    );
 
     this.transition = Transition.createOrUpdate(
       transition,
@@ -228,16 +238,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition.cancel();
+      await transition?.cancel();
     }
 
     const eventParams = { event, trigger };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
-
-    a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
-
-    toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
 
     const promise = floatingTransition(this, {
       s,
@@ -245,6 +251,10 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       silent,
       eventParams,
     });
+
+    a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
+
+    toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
 
     animated && awaitAnimation && (await promise);
 

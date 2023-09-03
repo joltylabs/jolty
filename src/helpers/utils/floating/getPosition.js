@@ -79,8 +79,6 @@ export default function ({
       [BOTTOM]: viewRect[HEIGHT] - anchorRect[TOP] - anchorRect[HEIGHT],
     };
 
-    console.log(anchorSpace.bottom);
-
     anchorSpace[m] -= offset + boundaryOffset[m];
     anchorSpace[MIRROR[m]] -= boundaryOffset[dirS] + boundaryOffset[mirrorDirS];
 

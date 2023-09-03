@@ -42,7 +42,7 @@ class Teleport {
     opts = mergeDeep(defaultConfig, defaultOpts, opts);
 
     if (opts.enableAttributes) {
-      this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+      this.opts = updateOptsByData(opts, this.elem, TELEPORT_DATA_ATTRIBUTES);
     } else {
       this.opts = opts;
     }

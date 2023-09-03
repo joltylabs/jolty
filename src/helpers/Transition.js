@@ -31,12 +31,18 @@ import {
   TRANSITION,
   NAME,
   doc,
+  HIDDEN_CLASS,
 } from "./constants";
-import { toggleClass, removeClass, inDOM } from "./dom";
+import { toggleClass, removeClass } from "./dom";
 import { isString, isFunction, isObject } from "./is";
-import { toMs, camelToKebab, updateOptsByData, upperFirst } from "./utils";
+import {
+  toMs,
+  camelToKebab,
+  updateOptsByData,
+  upperFirst,
+  isShown,
+} from "./utils";
 
-const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 // const SHOWN_CLASS = UI_PREFIX + SHOWN;
 const DATASET_DURATION = UI + upperFirst(DURATION);
 const DATASET_DURATION_ENTER = DATASET_DURATION + upperFirst(ENTER);
@@ -100,7 +106,7 @@ export default class Transition {
     opts = isString(opts) ? { name: opts } : opts;
     opts = { ...defaultConfig, ...defaultOpts, ...opts, ...datasetData };
 
-    this.opts = updateOptsByData(opts, elem.dataset, [
+    this.opts = updateOptsByData(opts, elem, [
       HIDE_MODE,
       OPTION_HIDDEN_CLASS,
       OPTION_SHOWN_CLASS,
@@ -151,16 +157,7 @@ export default class Transition {
   }
 
   get isShown() {
-    const {
-      elem,
-      opts: { hideMode },
-    } = this;
-
-    return hideMode === ACTION_REMOVE
-      ? inDOM(elem)
-      : hideMode === CLASS
-      ? !elem.classList.contains(HIDDEN_CLASS)
-      : !elem.hasAttribute(hideMode);
+    return isShown(this.elem, this.opts[HIDE_MODE]);
   }
   setClasses(animations) {
     const { elem, opts } = this;
@@ -247,7 +244,7 @@ export default class Transition {
   }
   cancel() {
     this.animations?.forEach((animation) => animation.cancel());
-    return this.getAwaitPromise();
+    return Promise.allSettled([this.getAwaitPromise()]);
   }
   getAwaitPromise() {
     return Promise.allSettled(this.promises);
@@ -286,6 +283,8 @@ export default class Transition {
   }
   setFinishClass(s = this.isShown) {
     const { elem, opts } = this;
+
+    s ??= isShown(elem);
 
     if (opts[HIDE_MODE] === CLASS) {
       toggleClass(elem, HIDDEN_CLASS, !s);

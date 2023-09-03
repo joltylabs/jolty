@@ -180,12 +180,19 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition.cancel();
+      await transition?.cancel();
     }
 
     const eventParams = { event, trigger };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+
+    const promise = floatingTransition(this, {
+      s,
+      animated,
+      silent,
+      eventParams,
+    });
 
     if (opts.a11y) {
       setAttribute(
@@ -201,13 +208,6 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     }
 
     toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
-
-    const promise = floatingTransition(this, {
-      s,
-      animated,
-      silent,
-      eventParams,
-    });
 
     animated && awaitAnimation && (await promise);
 

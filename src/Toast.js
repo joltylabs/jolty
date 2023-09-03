@@ -22,6 +22,7 @@ import {
   getEventsPrefix,
   callOrReturn,
   getOptionElem,
+  isShown,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -72,9 +73,13 @@ class Toast extends ToggleMixin(Base, TOAST) {
     } else {
       this.root = opts.root ? getOptionElem(this, opts.root) : body;
     }
-    this.transition = new Transition(base, opts.transition, {
-      [HIDE_MODE]: ACTION_DESTROY,
-    });
+    this.transition = new Transition(
+      base,
+      { hideMode: opts.hideMode, ...opts.transition },
+      {
+        [HIDE_MODE]: ACTION_DESTROY,
+      },
+    );
     this.autohide = Autoaction.createOrUpdate(
       autohide,
       base,
@@ -110,6 +115,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
         popoverApi,
         topLayer,
         keepTopLayer,
+        hideMode,
       },
       autohide,
       base,
@@ -124,7 +130,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     if (animated && transition.isAnimating) return;
 
-    s ??= !transition.isShown;
+    s ??= !isShown(base, hideMode);
 
     let preventAnimation;
 

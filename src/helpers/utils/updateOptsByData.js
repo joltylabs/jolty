@@ -17,7 +17,7 @@ export const OPTIONS_BOOLEAN = [
   OPTION_PREVENT_SCROLL,
   MODAL,
 ];
-export default (opts, dataset, names) => {
+export default (opts, { dataset }, names) => {
   names.forEach((name) => {
     let optionName = name;
     let attributeName = name;

@@ -17,6 +17,7 @@ import {
   CLASS_ACTIVE,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
+  HIDE_MODE,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -31,6 +32,7 @@ import {
   getEventsPrefix,
   getOptionElems,
   getDefaultToggleSelector,
+  updateOptsByData,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -56,6 +58,8 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     super(elem, opts);
   }
   _update() {
+    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
+
     const { base, opts, transition, teleport } = this;
 
     addDismiss(this);
@@ -69,7 +73,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     this.transition = Transition.createOrUpdate(
       transition,
       base,
-      opts.transition,
+      { hideMode: opts.hideMode, ...opts.transition },
       { cssVariables: true },
     );
 
@@ -162,16 +166,12 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition.cancel();
+      await transition?.cancel();
     }
 
     const eventParams = { trigger, event };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
-
-    a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
-    toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
-    toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
     const promise = transition.run(s, animated, {
       [s ? EVENT_SHOW : EVENT_HIDE]: () =>
@@ -179,6 +179,10 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       [EVENT_DESTROY]: () =>
         this.destroy({ remove: true, destroyTransition: false }),
     });
+
+    a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
+    toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
     awaitPromise(promise, () =>
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),

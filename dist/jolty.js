@@ -91,6 +91,8 @@
   const POPOVER = "popover";
   const TOOLTIP = "tooltip";
   const TOGGLER = "toggler";
+  const TRIGGER = "trigger";
+  const DELAY = "delay";
   const DROPDOWN = "dropdown";
   const ARROW = "arrow";
   const PROGRESS = "progress";
@@ -228,6 +230,8 @@
   const OPTION_TOP_LAYER = "topLayer";
   const CLASS_ACTIVE_SUFFIX = "ClassActive";
   const ROLE_SUFFIX = upperFirst(ROLE);
+
+  const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
   const DEFAULT_OPTIONS = {
     [ACTION_INIT]: true,
     [ACTION_DESTROY]: false,
@@ -238,6 +242,7 @@
     eventBubble: true,
     shown: null,
     a11y: true,
+    hideMode: HIDDEN,
   };
   const DEFAULT_TOP_LAYER_OPTIONS = {
     moveModal: true,
@@ -261,6 +266,7 @@
     popoverApi: true,
     safeModal: true,
     floatingClass: "",
+    shown: false,
     arrow: {
       height: null,
       width: null,
@@ -464,8 +470,8 @@
       const anchorSpace = {
         [TOP]: anchorRect[TOP],
         [LEFT]: anchorRect[LEFT],
-        [RIGHT]: viewRect[WIDTH] - anchorRect[RIGHT],
-        [BOTTOM]: viewRect[HEIGHT] - anchorRect[BOTTOM],
+        [RIGHT]: viewRect[WIDTH] - anchorRect[LEFT] - anchorRect[WIDTH],
+        [BOTTOM]: viewRect[HEIGHT] - anchorRect[TOP] - anchorRect[HEIGHT],
       };
 
       anchorSpace[m] -= offset + boundaryOffset[m];
@@ -702,7 +708,7 @@
     OPTION_PREVENT_SCROLL,
     MODAL,
   ];
-  var updateOptsByData = (opts, dataset, names) => {
+  var updateOptsByData = (opts, { dataset }, names) => {
     names.forEach((name) => {
       let optionName = name;
       let attributeName = name;
@@ -858,6 +864,14 @@
   };
 
   var valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
+
+  var isShown = (elem, hideMode) => {
+    return hideMode === ACTION_REMOVE
+      ? inDOM(elem)
+      : hideMode === CLASS
+      ? !elem.classList.contains(HIDDEN_CLASS)
+      : !elem.hasAttribute(hideMode);
+  };
 
   function addStyle(elem, name, value) {
     if (isIterable(elem)) {
@@ -1440,7 +1454,6 @@
       }
     };
 
-  const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
   // const SHOWN_CLASS = UI_PREFIX + SHOWN;
   const DATASET_DURATION = UI + upperFirst(DURATION);
   const DATASET_DURATION_ENTER = DATASET_DURATION + upperFirst(ENTER);
@@ -1452,7 +1465,7 @@
     static Default = {
       name: UI,
       css: true,
-      cssVariables: true,
+      cssVariables: false,
       cssVariablesPrefix: VAR_UI_PREFIX + TRANSITION + "-",
       [HIDE_MODE]: HIDDEN,
       [OPTION_HIDDEN_CLASS]: "",
@@ -1504,7 +1517,7 @@
       opts = isString(opts) ? { name: opts } : opts;
       opts = { ...defaultConfig, ...defaultOpts, ...opts, ...datasetData };
 
-      this.opts = updateOptsByData(opts, elem.dataset, [
+      this.opts = updateOptsByData(opts, elem, [
         HIDE_MODE,
         OPTION_HIDDEN_CLASS,
         OPTION_SHOWN_CLASS,
@@ -1555,16 +1568,7 @@
     }
 
     get isShown() {
-      const {
-        elem,
-        opts: { hideMode },
-      } = this;
-
-      return hideMode === ACTION_REMOVE
-        ? inDOM(elem)
-        : hideMode === CLASS
-        ? !elem.classList.contains(HIDDEN_CLASS)
-        : !elem.hasAttribute(hideMode);
+      return isShown(this.elem, this.opts[HIDE_MODE]);
     }
     setClasses(animations) {
       const { elem, opts } = this;
@@ -1617,6 +1621,7 @@
       const { elem, promises, opts } = this;
       const state = s ? ENTER : LEAVE;
       const duration = opts.duration?.[state] ?? opts.duration;
+
       promises.length = 0;
       let promisesEvent, promisesAnimation;
       if (isFunction(opts[state])) {
@@ -1689,6 +1694,8 @@
     }
     setFinishClass(s = this.isShown) {
       const { elem, opts } = this;
+
+      s ??= isShown(elem);
 
       if (opts[HIDE_MODE] === CLASS) {
         toggleClass(elem, HIDDEN_CLASS, !s);
@@ -1789,7 +1796,7 @@
       opts = mergeDeep(defaultConfig, defaultOpts, opts);
 
       if (opts.enableAttributes) {
-        this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+        this.opts = updateOptsByData(opts, this.elem, TELEPORT_DATA_ATTRIBUTES);
       } else {
         this.opts = opts;
       }
@@ -2143,8 +2150,8 @@
         padding,
         offset = opts.offset,
         boundaryOffset = opts.boundaryOffset,
-        arrowPadding = opts[ARROW]?.padding ?? 0,
-        arrowOffset = opts[ARROW]?.offset ?? 0,
+        arrowPadding,
+        arrowOffset,
         wrapperComputedStyle,
       } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
 
@@ -2162,9 +2169,9 @@
 
       let arrowData;
       if (arrow) {
-        arrowData = getBoundingClientRect(arrow);
-        arrowData[PADDING] = arrowPadding;
-        arrowData[OFFSET] = arrowOffset;
+        arrowData = { [WIDTH]: arrow.offsetWidth, [HEIGHT]: arrow.offsetHeight };
+        arrowData[PADDING] = arrowPadding ?? opts[ARROW]?.padding ?? 0;
+        arrowData[OFFSET] = arrowOffset ?? opts[ARROW]?.offset ?? 0;
       }
 
       const params = {
@@ -2365,8 +2372,10 @@
         attributes,
       ));
 
-      this.teleport.opts.to = wrapper;
-      this.teleport.move();
+      if (this.teleport) {
+        this.teleport.opts.to = wrapper;
+        this.teleport.move();
+      }
 
       if (moveToRoot) {
         body.append(wrapper);
@@ -2463,8 +2472,8 @@
     return promise;
   };
 
-  var callInitShow = (instance, elem = instance.base) => {
-    const { opts, transition, show, id } = instance;
+  var callInitShow = (instance, elem = instance.base, stateElem = elem) => {
+    const { opts, show, id } = instance;
 
     instance.instances.set(id, instance);
     instance.isInit = true;
@@ -2474,12 +2483,13 @@
       callOrReturn(
         (opts.hashNavigation && checkHash(id)) || opts.shown,
         instance,
-      ) ?? transition.isShown;
+      ) ?? isShown(stateElem, opts.hideMode);
 
     shown &&
       show({
         animated: opts.appear ?? elem.hasAttribute(DATA_APPEAR),
         ignoreConditions: true,
+        ignoreAutofocus: true,
       });
 
     return instance;
@@ -2583,6 +2593,8 @@
       super(elem, opts);
     }
     _update() {
+      this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
+
       const { base, opts, transition, teleport } = this;
 
       addDismiss(this);
@@ -2596,7 +2608,8 @@
       this.transition = Transition.createOrUpdate(
         transition,
         base,
-        opts.transition,
+        { hideMode: opts.hideMode, ...opts.transition },
+        { cssVariables: true },
       );
 
       this.updateTriggers();
@@ -2688,16 +2701,12 @@
       this.isShown = s;
 
       if (isAnimating && !awaitAnimation) {
-        await transition.cancel();
+        await transition?.cancel();
       }
 
       const eventParams = { trigger, event };
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
-
-      a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
-      toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
-      toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
       const promise = transition.run(s, animated, {
         [s ? EVENT_SHOW : EVENT_HIDE]: () =>
@@ -2705,6 +2714,10 @@
         [EVENT_DESTROY]: () =>
           this.destroy({ remove: true, destroyTransition: false }),
       });
+
+      a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
+      toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+      toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
       awaitPromise(promise, () =>
         emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
@@ -2768,14 +2781,23 @@
       return callInitShow(this, dropdown);
     }
     _update() {
+      this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
       updateModule(this, OPTION_TOP_LAYER);
       const { base, opts, transition, on, off, hide } = this;
+
+      this.teleport = new Teleport(
+        base,
+        {},
+        {
+          disableAttributes: true,
+        },
+      );
 
       this.transition = Transition.createOrUpdate(
         transition,
         base,
         opts.transition,
-        { keepPlace: false, cssVariables: false },
+        { keepPlace: false },
       );
 
       this.updateToggler();
@@ -2885,16 +2907,12 @@
       this.isShown = s;
 
       if (isAnimating && !awaitAnimation) {
-        await transition.cancel();
+        await transition?.cancel();
       }
 
       const eventParams = { event, trigger };
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
-
-      a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
-
-      toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
 
       const promise = floatingTransition(this, {
         s,
@@ -2903,13 +2921,17 @@
         eventParams,
       });
 
+      a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
+
+      toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+
       animated && awaitAnimation && (await promise);
 
       return this;
     }
   }
 
-  const DOM_ELEMENTS = [DIALOG, BACKDROP, CONTENT];
+  // const DOM_ELEMENTS = [DIALOG, BACKDROP, CONTENT];
   const CLASS_PREVENT_SCROLL =
     UI_PREFIX + DIALOG + "-" + ACTION_PREVENT + "-" + SCROLL;
 
@@ -2931,8 +2953,10 @@
 
   const DIALOG_DATA_OPTIONS = [
     [MODAL, DIALOG + upperFirst(MODAL)],
+    [BACKDROP, DIALOG + upperFirst(BACKDROP)],
     [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
     [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
+    HIDE_MODE,
   ];
 
   class Dialog extends ToggleMixin(Base, DIALOG) {
@@ -2951,7 +2975,7 @@
       backdropHide: true,
       hashNavigation: false,
       returnFocus: true,
-      hideable: true,
+      preventHide: false,
       dismiss: true,
       preventScroll: true,
       cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
@@ -2969,6 +2993,7 @@
       [TOGGLER]: true,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+      [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
 
       autofocus: true,
       focusTrap: true,
@@ -2983,22 +3008,34 @@
     constructor(elem, opts) {
       super(elem, opts);
     }
-    get transition() {
-      return this.transitions[DIALOG];
-    }
+    // get transition() {
+    //   return this.transitions[DIALOG];
+    // }
     _update() {
-      this.opts = updateOptsByData(
-        this.opts,
-        this.base.dataset,
-        DIALOG_DATA_OPTIONS,
-      );
+      this.opts = updateOptsByData(this.opts, this.base, DIALOG_DATA_OPTIONS);
 
       updateModule(this, OPTION_TOP_LAYER);
       updateModule(this, OPTION_GROUP, NAME);
 
-      this.transitions ||= {};
+      // this.transitions ||= {};
 
-      const { base, transitions, opts, _fromHTML, teleport, id, on } = this;
+      const { base, _fromHTML, opts, teleport, id, on } = this;
+
+      let backdrop;
+      if (opts[BACKDROP]) {
+        if (isFunction(opts[BACKDROP])) {
+          backdrop = opts[BACKDROP](this);
+        }
+        if (isString(opts[BACKDROP])) {
+          backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
+            opts[BACKDROP],
+          );
+        }
+      }
+
+      this[BACKDROP] = backdrop;
+
+      this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
 
       const isDialogElem = isDialog(base);
 
@@ -3018,16 +3055,23 @@
         },
       )?.move(this);
 
-      for (const elemName of DOM_ELEMENTS) {
-        if (this[elemName]) {
-          transitions[elemName] = Transition.createOrUpdate(
-            transitions[elemName],
-            this[elemName],
-            opts.transitions?.[elemName],
-            { keepPlace: elemName === CONTENT },
-          );
-        }
-      }
+      this.transition = Transition.createOrUpdate(
+        this.transition,
+        this[CONTENT],
+        { hideMode: opts.hideMode, ...opts.transition },
+        { keepPlace: true },
+      );
+
+      // for (const elemName of DOM_ELEMENTS) {
+      //   if (this[elemName]) {
+      //     transitions[elemName] = Transition.createOrUpdate(
+      //       transitions[elemName],
+      //       this[elemName],
+      //       opts.transitions?.[elemName],
+      //       { keepPlace: elemName === CONTENT },
+      //     );
+      //   }
+      // }
 
       this._togglers =
         opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
@@ -3053,26 +3097,10 @@
     }
     init() {
       const { opts, isInit, base, on, emit, hide, toggle } = this;
-      const optsBackdrop = opts[BACKDROP];
 
       if (isInit) return;
 
       emit(EVENT_BEFORE_INIT);
-
-      let backdrop;
-      if (optsBackdrop) {
-        if (isFunction(optsBackdrop)) {
-          backdrop = optsBackdrop(this);
-        }
-        if (isString(optsBackdrop)) {
-          backdrop = (optsBackdrop[0] === "#" ? doc : base).querySelector(
-            optsBackdrop,
-          );
-        }
-      }
-      this[BACKDROP] = backdrop;
-
-      this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
 
       this._update();
       this.updateAriaTargets();
@@ -3136,11 +3164,11 @@
       baseDestroy(this, destroyOpts);
       return this;
     }
-    cancelAnimations() {
-      return Promise.allSettled(
-        DOM_ELEMENTS.map((elemName) => this.transitions[elemName]?.cancel()),
-      );
-    }
+    // cancelAnimations() {
+    //   return Promise.allSettled(
+    //     DOM_ELEMENTS.map((elemName) => this.transitions[elemName]?.cancel()),
+    //   );
+    // }
     updateAriaTargets() {
       const { base, opts } = this;
       for (const name of [ARIA_LABELLEDBY, ARIA_DESCRIBEDBY]) {
@@ -3184,7 +3212,7 @@
         on,
         off,
         isAnimating,
-        transitions,
+        transition,
         base,
         content,
         backdrop,
@@ -3193,8 +3221,14 @@
       let optReturnFocusAwait =
         opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
-      const { animated, silent, trigger, event, ignoreConditions } =
-        normalizeToggleParameters(params);
+      const {
+        animated,
+        silent,
+        trigger,
+        event,
+        ignoreConditions,
+        ignoreAutofocus,
+      } = normalizeToggleParameters(params);
 
       s = !!(s ?? !isOpen);
 
@@ -3205,7 +3239,7 @@
         return;
 
       if (isAnimating && !opts.awaitAnimation) {
-        await this.cancelAnimations();
+        await transition?.cancel();
       }
 
       const eventParams = { trigger, event };
@@ -3214,9 +3248,10 @@
 
       if (
         !s &&
-        !(isFunction(opts.hideable)
-          ? await opts.hideable(this, eventParams)
-          : opts.hideable)
+        opts.preventHide &&
+        (isFunction(opts.preventHide)
+          ? !(await opts.preventHide(this, eventParams))
+          : opts.preventHide)
       ) {
         return emit(EVENT_HIDE_PREVENTED);
       }
@@ -3233,7 +3268,10 @@
           const promises = Promise.allSettled(
             shownGroupDialogs
               .filter((m) => m !== this)
-              .map((instance) => instance.hide() && instance.transitionPromise),
+              .map(
+                (instance) =>
+                  instance.hide() && instance.transition?.getAwaitPromise(),
+              ),
           );
           if (opts.group.awaitPrevious) {
             await promises;
@@ -3243,58 +3281,64 @@
         optReturnFocusAwait = false;
       }
 
+      if (s) {
+        base.hidden = false;
+        // transition.toggleRemove(true)
+        // for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
+        //   transitions[elemName]?.toggleRemove(true);
+        // }
+        if (opts.returnFocus) {
+          this.returnFocusElem ||= doc.activeElement;
+        }
+        this._toggleApi(true);
+      }
+
+      !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+      const promise = this.transition?.run(s, animated, { allowRemove: false });
+
       toggleClass(
         getElements(this._togglers),
         opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
         s,
       );
-
       toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
-
-      if (s) {
-        transitions[DIALOG].toggleRemove(true);
-        transitions[CONTENT].toggleRemove(true);
-        this._toggleApi(true);
-        if (opts.returnFocus) {
-          this.returnFocusElem = doc.activeElement;
-        }
+      if (!backdropIsOpen) {
+        toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
       }
 
-      !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
-
-      for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
-        if (elemName === BACKDROP && backdropIsOpen) {
-          continue;
-        }
-        const transitionOpts = { allowRemove: elemName !== DIALOG };
-
-        if (elemName !== DIALOG) {
-          transitions[elemName]?.run(s, animated, transitionOpts);
-        }
-      }
+      // for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
+      //   if (elemName === BACKDROP) {
+      //     if (backdropIsOpen) {
+      //       continue;
+      //     }
+      //   }
+      //   const transitionOpts = { allowRemove: elemName !== DIALOG };
+      //
+      //   if (elemName !== DIALOG) {
+      //     transitions[elemName]?.run(s, animated, transitionOpts);
+      //   }
+      // }
 
       this.preventScroll(s);
 
       if (!s && !optReturnFocusAwait) {
+        this._toggleApi(false);
         this.returnFocus();
       }
 
       opts.escapeHide && addEscapeHide(this, s);
 
       if (s) {
-        opts.autofocus && callAutofocus(this);
+        !ignoreAutofocus && opts.autofocus && callAutofocus(this);
         on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
           this._mousedownTarget = e.target;
         });
       } else {
         this._mousedownTarget = null;
         off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
-        if (!optReturnFocusAwait) {
-          this._toggleApi(false);
-        }
+        this.returnFocusElem = null;
       }
-
-      const promise = this.transitionPromise;
 
       awaitPromise(promise, () => {
         emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
@@ -3304,8 +3348,8 @@
           this.returnFocus();
         }
         if (!s) {
-          transitions[DIALOG].toggleRemove(false);
-          if (transitions[DIALOG].opts[HIDE_MODE] === ACTION_DESTROY) {
+          this.base.hidden = true;
+          if (this.hideMode === ACTION_DESTROY) {
             this.destroy({ remove: true });
           }
         }
@@ -3357,22 +3401,22 @@
       }
     }
     returnFocus() {
-      if (this.opts.returnFocus && this.base.contains(doc.activeElement)) {
+      if (this.opts.returnFocus) {
         focus(this.returnFocusElem);
       }
     }
 
-    get isAnimating() {
-      return DOM_ELEMENTS.some(
-        (elemName) => this.transitions[elemName]?.isAnimating,
-      );
-    }
+    // get isAnimating() {
+    //   return DOM_ELEMENTS.some(
+    //     (elemName) => this.transitions[elemName]?.isAnimating,
+    //   );
+    // }
 
-    get transitionPromise() {
-      return Promise.allSettled(
-        Object.values(this.transitions).flatMap(({ promises }) => promises),
-      );
-    }
+    // get transitionPromise() {
+    //   return Promise.allSettled(
+    //     Object.values(this.transitions).flatMap(({ promises }) => promises),
+    //   );
+    // }
 
     get groupDialogs() {
       return arrayFrom(this.instances.values()).filter(
@@ -3460,6 +3504,7 @@
       super(elem, opts);
     }
     _update() {
+      this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
       const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
       const { tablist, tabs, lastShownTab, opts } = this;
 
@@ -3476,7 +3521,7 @@
       const shown = lastShownTab?.index ?? opts.shown;
 
       const tabWithState = tabs.map((tabObj, i) => {
-        const { tab, tabpanel, teleport, transition } = tabObj;
+        const { tab, tabpanel, teleport } = tabObj;
 
         if (a11y) {
           removeAttribute(tab, [ARIA_SELECTED, ARIA_EXPANDED]);
@@ -3492,25 +3537,28 @@
           opts.teleport,
         )?.move(this, tabObj);
 
-        let isShown;
+        let isShownTabpanel;
         if (isFunction(shown)) {
-          isShown = shown(tabObj);
+          isShownTabpanel = shown(tabObj);
         } else if (isArray(shown)) {
-          isShown = shown.some((val) => val === i || val === tabpanel.id);
+          isShownTabpanel = shown.some((val) => val === i || val === tabpanel.id);
         } else if (shown !== null) {
-          isShown = tabpanel.id === shown || i === shown;
+          isShownTabpanel = tabpanel.id === shown || i === shown;
         } else {
-          isShown = transition.isShown;
+          isShownTabpanel = isShown(tabpanel, opts.hideMode);
         }
 
-        return [isShown, tabObj];
+        return [isShownTabpanel, tabObj];
       });
       const hasSelected = tabWithState.find(([isShown]) => isShown);
       if (opts.alwaysExpanded && !hasSelected) {
         tabWithState[0][0] = true;
       }
       tabWithState.forEach(([isShown, tab]) => {
-        tab.transition.updateConfig(opts.transition);
+        tab.transition.updateConfig(
+          { hideMode: opts.hideMode, ...opts.transition },
+          { cssVariables: true },
+        );
         tab.toggle(isShown, {
           animated: opts.appear ?? tab.tabpanel.hasAttribute(DATA_APPEAR),
           silent: !isShown,
@@ -3855,7 +3903,7 @@
         return;
 
       if (transition.isAnimating && !awaitAnimation) {
-        await transition.cancel();
+        await transition?.cancel();
       }
 
       const eventParams = { event, trigger };
@@ -3876,6 +3924,13 @@
 
       if (s && !tabInstance.isShown) return;
 
+      const promise = transition.run(s, animated, {
+        [s ? EVENT_SHOW : EVENT_HIDE]: () =>
+          !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams),
+        [EVENT_DESTROY]: () =>
+          tabInstance.destroy({ remove: true, destroyTransition: false }),
+      });
+
       ELEMS.forEach((elemName) =>
         toggleClass(
           tabInstance[elemName],
@@ -3888,13 +3943,6 @@
         a11y[OPTION_STATE_ATTRIBUTE] &&
           setAttribute(tab, a11y[OPTION_STATE_ATTRIBUTE], s);
       }
-
-      const promise = transition.run(s, animated, {
-        [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-          !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams),
-        [EVENT_DESTROY]: () =>
-          tabInstance.destroy({ remove: true, destroyTransition: false }),
-      });
 
       if (s) {
         this.lastShownTab = tabInstance;
@@ -4107,9 +4155,13 @@
       } else {
         this.root = opts.root ? getOptionElem(this, opts.root) : body;
       }
-      this.transition = new Transition(base, opts.transition, {
-        [HIDE_MODE]: ACTION_DESTROY,
-      });
+      this.transition = new Transition(
+        base,
+        { hideMode: opts.hideMode, ...opts.transition },
+        {
+          [HIDE_MODE]: ACTION_DESTROY,
+        },
+      );
       this.autohide = Autoaction.createOrUpdate(
         autohide,
         base,
@@ -4145,6 +4197,7 @@
           popoverApi,
           topLayer,
           keepTopLayer,
+          hideMode,
         },
         autohide,
         base,
@@ -4159,7 +4212,7 @@
 
       if (animated && transition.isAnimating) return;
 
-      s ??= !transition.isShown;
+      s ??= !isShown(base, hideMode);
 
       let preventAnimation;
 
@@ -4349,7 +4402,7 @@
         transition,
         tooltip,
         opts.transition,
-        { keepPlace: false, cssVariables: false },
+        { keepPlace: false },
       );
 
       opts.a11y && setAttribute(tooltip, TOOLTIP);
@@ -4399,6 +4452,14 @@
 
       this._update();
 
+      this.teleport = new Teleport(
+        target,
+        {},
+        {
+          disableAttributes: true,
+        },
+      );
+
       toggleOnInterection({ toggler: anchor, target, instance: this });
 
       addDismiss(this, target);
@@ -4434,12 +4495,19 @@
       this.isShown = s;
 
       if (isAnimating && !awaitAnimation) {
-        await transition.cancel();
+        await transition?.cancel();
       }
 
       const eventParams = { event, trigger };
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+
+      const promise = floatingTransition(this, {
+        s,
+        animated,
+        silent,
+        eventParams,
+      });
 
       if (opts.a11y) {
         setAttribute(
@@ -4456,19 +4524,17 @@
 
       toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
 
-      const promise = floatingTransition(this, {
-        s,
-        animated,
-        silent,
-        eventParams,
-      });
-
       animated && awaitAnimation && (await promise);
 
       return this;
     }
   }
 
+  const POPOVER_DATA_ATTRIBUTES = [
+    [TRIGGER, POPOVER + upperFirst(TRIGGER)],
+    [DELAY, POPOVER + upperFirst(DELAY)],
+    HIDE_MODE,
+  ];
   class Popover extends ToggleMixin(Base, POPOVER) {
     static DefaultTopLayer = {
       ...DEFAULT_TOP_LAYER_OPTIONS,
@@ -4498,13 +4564,13 @@
       if (this.isInit) return;
       this._update();
 
-      const { toggler, popover } = this;
+      const { toggler, base } = this;
 
-      toggleOnInterection({ toggler, target: popover, instance: this });
-      addDismiss(this, popover);
+      toggleOnInterection({ toggler, target: base, instance: this });
+      addDismiss(this, base);
 
       this.teleport = new Teleport(
-        popover,
+        base,
         {},
         {
           disableAttributes: true,
@@ -4514,19 +4580,17 @@
       return callInitShow(this);
     }
     _update() {
-      // eslint-disable-next-line prefer-const
-      let { base, opts, transition } = this;
+      this.opts = updateOptsByData(this.opts, this.base, POPOVER_DATA_ATTRIBUTES);
 
-      this.opts = updateOptsByData(opts, base.dataset, [
-        ["trigger", "popoverTrigger"],
-      ]);
-      opts = updateModule(this, OPTION_TOP_LAYER);
+      updateModule(this, OPTION_TOP_LAYER);
+
+      const { base, opts, transition } = this;
 
       this.transition = Transition.createOrUpdate(
         transition,
         base,
         opts.transition,
-        { keepPlace: false, cssVariables: false },
+        { keepPlace: false },
       );
 
       this.updateToggler();
@@ -4565,7 +4629,7 @@
       this.isShown = s;
 
       if (isAnimating && !awaitAnimation) {
-        await transition.cancel();
+        await transition?.cancel();
       }
 
       const eventParams = { event };
@@ -4573,9 +4637,6 @@
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
       a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
-
-      toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
-      toggleClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX], s);
 
       if (s) {
         this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
@@ -4596,6 +4657,9 @@
         silent,
         eventParams,
       });
+
+      toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+      toggleClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX], s);
 
       animated && awaitAnimation && (await promise);
 

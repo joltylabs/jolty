@@ -48,6 +48,7 @@ import {
   ROLE_SUFFIX,
   doc,
   UI_PREFIX,
+  HIDE_MODE,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -70,6 +71,8 @@ import {
   updateModule,
   upperFirst,
   getOptionElems,
+  isShown,
+  updateOptsByData,
 } from "./helpers/utils";
 import {
   toggleClass,
@@ -154,6 +157,7 @@ class Tablist extends Base {
     super(elem, opts);
   }
   _update() {
+    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
     const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
     const { tablist, tabs, lastShownTab, opts } = this;
 
@@ -170,7 +174,7 @@ class Tablist extends Base {
     const shown = lastShownTab?.index ?? opts.shown;
 
     const tabWithState = tabs.map((tabObj, i) => {
-      const { tab, tabpanel, teleport, transition } = tabObj;
+      const { tab, tabpanel, teleport } = tabObj;
 
       if (a11y) {
         removeAttribute(tab, [ARIA_SELECTED, ARIA_EXPANDED]);
@@ -186,25 +190,28 @@ class Tablist extends Base {
         opts.teleport,
       )?.move(this, tabObj);
 
-      let isShown;
+      let isShownTabpanel;
       if (isFunction(shown)) {
-        isShown = shown(tabObj);
+        isShownTabpanel = shown(tabObj);
       } else if (isArray(shown)) {
-        isShown = shown.some((val) => val === i || val === tabpanel.id);
+        isShownTabpanel = shown.some((val) => val === i || val === tabpanel.id);
       } else if (shown !== null) {
-        isShown = tabpanel.id === shown || i === shown;
+        isShownTabpanel = tabpanel.id === shown || i === shown;
       } else {
-        isShown = transition.isShown;
+        isShownTabpanel = isShown(tabpanel, opts.hideMode);
       }
 
-      return [isShown, tabObj];
+      return [isShownTabpanel, tabObj];
     });
     const hasSelected = tabWithState.find(([isShown]) => isShown);
     if (opts.alwaysExpanded && !hasSelected) {
       tabWithState[0][0] = true;
     }
     tabWithState.forEach(([isShown, tab]) => {
-      tab.transition.updateConfig(opts.transition, { cssVariables: true });
+      tab.transition.updateConfig(
+        { hideMode: opts.hideMode, ...opts.transition },
+        { cssVariables: true },
+      );
       tab.toggle(isShown, {
         animated: opts.appear ?? tab.tabpanel.hasAttribute(DATA_APPEAR),
         silent: !isShown,
@@ -549,7 +556,7 @@ class Tablist extends Base {
       return;
 
     if (transition.isAnimating && !awaitAnimation) {
-      await transition.cancel();
+      await transition?.cancel();
     }
 
     const eventParams = { event, trigger };
@@ -570,6 +577,13 @@ class Tablist extends Base {
 
     if (s && !tabInstance.isShown) return;
 
+    const promise = transition.run(s, animated, {
+      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
+        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams),
+      [EVENT_DESTROY]: () =>
+        tabInstance.destroy({ remove: true, destroyTransition: false }),
+    });
+
     ELEMS.forEach((elemName) =>
       toggleClass(
         tabInstance[elemName],
@@ -582,13 +596,6 @@ class Tablist extends Base {
       a11y[OPTION_STATE_ATTRIBUTE] &&
         setAttribute(tab, a11y[OPTION_STATE_ATTRIBUTE], s);
     }
-
-    const promise = transition.run(s, animated, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams),
-      [EVENT_DESTROY]: () =>
-        tabInstance.destroy({ remove: true, destroyTransition: false }),
-    });
 
     if (s) {
       this.lastShownTab = tabInstance;

@@ -84,7 +84,7 @@ import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 import { FocusGuards } from "./helpers/modules/index.js";
 
-const DOM_ELEMENTS = [DIALOG, BACKDROP, CONTENT];
+// const DOM_ELEMENTS = [DIALOG, BACKDROP, CONTENT];
 const CLASS_PREVENT_SCROLL =
   UI_PREFIX + DIALOG + "-" + ACTION_PREVENT + "-" + SCROLL;
 
@@ -109,9 +109,8 @@ const DIALOG_DATA_OPTIONS = [
   [BACKDROP, DIALOG + upperFirst(BACKDROP)],
   [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
   [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
+  HIDE_MODE,
 ];
-
-const backdropOwner = new WeakMap();
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
   static DefaultTopLayer = {
@@ -147,6 +146,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
 
     autofocus: true,
     focusTrap: true,
@@ -161,22 +161,18 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   constructor(elem, opts) {
     super(elem, opts);
   }
-  get transition() {
-    return this.transitions[DIALOG];
-  }
+  // get transition() {
+  //   return this.transitions[DIALOG];
+  // }
   _update() {
-    this.opts = updateOptsByData(
-      this.opts,
-      this.base.dataset,
-      DIALOG_DATA_OPTIONS,
-    );
+    this.opts = updateOptsByData(this.opts, this.base, DIALOG_DATA_OPTIONS);
 
     updateModule(this, OPTION_TOP_LAYER);
     updateModule(this, OPTION_GROUP, NAME);
 
-    this.transitions ||= {};
+    // this.transitions ||= {};
 
-    const { base, transitions, _fromHTML, opts, teleport, id, on } = this;
+    const { base, _fromHTML, opts, teleport, id, on } = this;
 
     let backdrop;
     if (opts[BACKDROP]) {
@@ -212,16 +208,23 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       },
     )?.move(this);
 
-    for (const elemName of DOM_ELEMENTS) {
-      if (this[elemName]) {
-        transitions[elemName] = Transition.createOrUpdate(
-          transitions[elemName],
-          this[elemName],
-          opts.transitions?.[elemName],
-          { keepPlace: elemName === CONTENT },
-        );
-      }
-    }
+    this.transition = Transition.createOrUpdate(
+      this.transition,
+      this[CONTENT],
+      { hideMode: opts.hideMode, ...opts.transition },
+      { keepPlace: true },
+    );
+
+    // for (const elemName of DOM_ELEMENTS) {
+    //   if (this[elemName]) {
+    //     transitions[elemName] = Transition.createOrUpdate(
+    //       transitions[elemName],
+    //       this[elemName],
+    //       opts.transitions?.[elemName],
+    //       { keepPlace: elemName === CONTENT },
+    //     );
+    //   }
+    // }
 
     this._togglers =
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
@@ -314,11 +317,11 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     baseDestroy(this, destroyOpts);
     return this;
   }
-  cancelAnimations() {
-    return Promise.allSettled(
-      DOM_ELEMENTS.map((elemName) => this.transitions[elemName]?.cancel()),
-    );
-  }
+  // cancelAnimations() {
+  //   return Promise.allSettled(
+  //     DOM_ELEMENTS.map((elemName) => this.transitions[elemName]?.cancel()),
+  //   );
+  // }
   updateAriaTargets() {
     const { base, opts } = this;
     for (const name of [ARIA_LABELLEDBY, ARIA_DESCRIBEDBY]) {
@@ -362,7 +365,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       on,
       off,
       isAnimating,
-      transitions,
+      transition,
       base,
       content,
       backdrop,
@@ -389,7 +392,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       return;
 
     if (isAnimating && !opts.awaitAnimation) {
-      await this.cancelAnimations();
+      await transition?.cancel();
     }
 
     const eventParams = { trigger, event };
@@ -418,7 +421,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         const promises = Promise.allSettled(
           shownGroupDialogs
             .filter((m) => m !== this)
-            .map((instance) => instance.hide() && instance.transitionPromise),
+            .map(
+              (instance) =>
+                instance.hide() && instance.transition?.getAwaitPromise(),
+            ),
         );
         if (opts.group.awaitPrevious) {
           await promises;
@@ -428,22 +434,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       optReturnFocusAwait = false;
     }
 
-    toggleClass(
-      getElements(this._togglers),
-      opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-      s,
-    );
-
-    toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
-
-    if (backdrop) {
-      backdropOwner.set(backdrop, this.id);
-    }
-
     if (s) {
-      for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
-        transitions[elemName]?.toggleRemove(true);
-      }
+      base.hidden = false;
+      // transition.toggleRemove(true)
+      // for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
+      //   transitions[elemName]?.toggleRemove(true);
+      // }
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
@@ -452,19 +448,30 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-    for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
-      if (elemName === BACKDROP) {
-        console.log(backdropOwner);
-        if (backdropIsOpen) {
-          continue;
-        }
-      }
-      const transitionOpts = { allowRemove: elemName !== DIALOG };
+    const promise = this.transition?.run(s, animated, { allowRemove: false });
 
-      if (elemName !== DIALOG) {
-        transitions[elemName]?.run(s, animated, transitionOpts);
-      }
+    toggleClass(
+      getElements(this._togglers),
+      opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
+      s,
+    );
+    toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
+    if (!backdropIsOpen) {
+      toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
     }
+
+    // for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
+    //   if (elemName === BACKDROP) {
+    //     if (backdropIsOpen) {
+    //       continue;
+    //     }
+    //   }
+    //   const transitionOpts = { allowRemove: elemName !== DIALOG };
+    //
+    //   if (elemName !== DIALOG) {
+    //     transitions[elemName]?.run(s, animated, transitionOpts);
+    //   }
+    // }
 
     this.preventScroll(s);
 
@@ -486,8 +493,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       this.returnFocusElem = null;
     }
 
-    const promise = this.transitionPromise;
-
     awaitPromise(promise, () => {
       emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
@@ -496,8 +501,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         this.returnFocus();
       }
       if (!s) {
-        transitions[DIALOG].toggleRemove(false);
-        if (transitions[DIALOG].opts[HIDE_MODE] === ACTION_DESTROY) {
+        this.base.hidden = true;
+        if (this.hideMode === ACTION_DESTROY) {
           this.destroy({ remove: true });
         }
       }
@@ -554,17 +559,17 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
   }
 
-  get isAnimating() {
-    return DOM_ELEMENTS.some(
-      (elemName) => this.transitions[elemName]?.isAnimating,
-    );
-  }
+  // get isAnimating() {
+  //   return DOM_ELEMENTS.some(
+  //     (elemName) => this.transitions[elemName]?.isAnimating,
+  //   );
+  // }
 
-  get transitionPromise() {
-    return Promise.allSettled(
-      Object.values(this.transitions).flatMap(({ promises }) => promises),
-    );
-  }
+  // get transitionPromise() {
+  //   return Promise.allSettled(
+  //     Object.values(this.transitions).flatMap(({ promises }) => promises),
+  //   );
+  // }
 
   get groupDialogs() {
     return arrayFrom(this.instances.values()).filter(

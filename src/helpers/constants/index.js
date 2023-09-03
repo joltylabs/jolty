@@ -231,6 +231,8 @@ export const OPTION_TOP_LAYER = "topLayer";
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = upperFirst(ROLE);
 
+export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
+
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
 export const DEFAULT_OPTIONS = {
   [ACTION_INIT]: true,
@@ -242,6 +244,7 @@ export const DEFAULT_OPTIONS = {
   eventBubble: true,
   shown: null,
   a11y: true,
+  hideMode: HIDDEN,
 };
 export const DEFAULT_TOP_LAYER_OPTIONS = {
   moveModal: true,
