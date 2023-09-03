@@ -6,7 +6,6 @@ import {
   CLASS,
   HOVER,
   FOCUS,
-  ACTION_REMOVE,
   TOP,
   ANCHOR,
   TARGET,
@@ -20,7 +19,6 @@ import {
   CONTENT,
   TOOLTIP,
   CLASS_ACTIVE_SUFFIX,
-  HIDE_MODE,
   DEFAULT_TOP_LAYER_OPTIONS,
   OPTION_TOP_LAYER,
 } from "./helpers/constants";
@@ -43,11 +41,11 @@ import {
   updateModule,
 } from "./helpers/utils";
 import {
-  addDismiss,
   baseDestroy,
-  toggleOnInterection,
   floatingTransition,
-  callInitShow,
+  callShowInit,
+  toggleOnInterection,
+  addDismiss,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 
@@ -137,6 +135,14 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     this._update();
 
+    toggleOnInterection({
+      toggler: anchor,
+      target,
+      instance: this,
+    });
+
+    addDismiss(this, target);
+
     this.teleport = new Teleport(
       target,
       {},
@@ -145,11 +151,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       },
     );
 
-    toggleOnInterection({ toggler: anchor, target, instance: this });
-
-    addDismiss(this, target);
-
-    return callInitShow(this, target);
+    return callShowInit(this, target);
   }
 
   async toggle(s, params) {

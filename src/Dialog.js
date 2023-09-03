@@ -47,6 +47,9 @@ import {
   POPOVER_API_MODE_MANUAL,
   DEFAULT_TOP_LAYER_OPTIONS,
   DATA_UI_PREFIX,
+  OPTION_KEEP_PLACE,
+  ACTION_REMOVE,
+  HIDDEN,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -69,13 +72,14 @@ import {
   getOptionElem,
   updateOptsByData,
   upperFirst,
+  toggleHideModeState,
 } from "./helpers/utils";
 import {
   addDismiss,
   baseDestroy,
   callAutofocus,
   addEscapeHide,
-  callInitShow,
+  callShowInit,
   awaitPromise,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
@@ -110,6 +114,7 @@ const DIALOG_DATA_OPTIONS = [
   [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
   [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
   HIDE_MODE,
+  OPTION_KEEP_PLACE,
 ];
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
@@ -161,16 +166,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   constructor(elem, opts) {
     super(elem, opts);
   }
-  // get transition() {
-  //   return this.transitions[DIALOG];
-  // }
+
   _update() {
     this.opts = updateOptsByData(this.opts, this.base, DIALOG_DATA_OPTIONS);
 
     updateModule(this, OPTION_TOP_LAYER);
     updateModule(this, OPTION_GROUP, NAME);
-
-    // this.transitions ||= {};
 
     const { base, _fromHTML, opts, teleport, id, on } = this;
 
@@ -215,27 +216,14 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       { keepPlace: true },
     );
 
-    // for (const elemName of DOM_ELEMENTS) {
-    //   if (this[elemName]) {
-    //     transitions[elemName] = Transition.createOrUpdate(
-    //       transitions[elemName],
-    //       this[elemName],
-    //       opts.transitions?.[elemName],
-    //       { keepPlace: elemName === CONTENT },
-    //     );
-    //   }
-    // }
-
     this._togglers =
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
 
-    if (opts.a11y && !isDialogElem) {
-      setAttribute(base, TABINDEX, -1);
-      setAttribute(base, ROLE, DIALOG);
-    }
-
     if (isDialogElem) {
       on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
+    } else if (opts.a11y) {
+      setAttribute(base, TABINDEX, -1);
+      setAttribute(base, ROLE, DIALOG);
     }
 
     base.popover =
@@ -299,7 +287,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       }
     });
 
-    return callInitShow(this);
+    return callShowInit(this);
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
@@ -317,11 +305,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     baseDestroy(this, destroyOpts);
     return this;
   }
-  // cancelAnimations() {
-  //   return Promise.allSettled(
-  //     DOM_ELEMENTS.map((elemName) => this.transitions[elemName]?.cancel()),
-  //   );
-  // }
+
   updateAriaTargets() {
     const { base, opts } = this;
     for (const name of [ARIA_LABELLEDBY, ARIA_DESCRIBEDBY]) {
@@ -435,11 +419,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     if (s) {
-      base.hidden = false;
-      // transition.toggleRemove(true)
-      // for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
-      //   transitions[elemName]?.toggleRemove(true);
-      // }
+      toggleHideModeState(true, this, opts);
+
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
@@ -459,19 +440,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     if (!backdropIsOpen) {
       toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
     }
-
-    // for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
-    //   if (elemName === BACKDROP) {
-    //     if (backdropIsOpen) {
-    //       continue;
-    //     }
-    //   }
-    //   const transitionOpts = { allowRemove: elemName !== DIALOG };
-    //
-    //   if (elemName !== DIALOG) {
-    //     transitions[elemName]?.run(s, animated, transitionOpts);
-    //   }
-    // }
 
     this.preventScroll(s);
 
@@ -501,7 +469,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         this.returnFocus();
       }
       if (!s) {
-        this.base.hidden = true;
+        toggleHideModeState(false, this, opts);
         if (this.hideMode === ACTION_DESTROY) {
           this.destroy({ remove: true });
         }

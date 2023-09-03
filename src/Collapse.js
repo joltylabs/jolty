@@ -18,6 +18,7 @@ import {
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
   HIDE_MODE,
+  OPTION_KEEP_PLACE,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -37,7 +38,7 @@ import {
 import {
   addDismiss,
   baseDestroy,
-  callInitShow,
+  callShowInit,
   awaitPromise,
 } from "./helpers/modules";
 
@@ -58,7 +59,10 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     super(elem, opts);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
+    this.opts = updateOptsByData(this.opts, this.base, [
+      HIDE_MODE,
+      OPTION_KEEP_PLACE,
+    ]);
 
     const { base, opts, transition, teleport } = this;
 
@@ -121,7 +125,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     this._update();
 
-    return callInitShow(this);
+    return callShowInit(this);
   }
   updateTriggers() {
     const { opts, id } = this;

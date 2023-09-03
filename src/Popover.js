@@ -44,7 +44,7 @@ import {
   baseDestroy,
   toggleOnInterection,
   floatingTransition,
-  callInitShow,
+  callShowInit,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -87,7 +87,12 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     const { toggler, base } = this;
 
-    toggleOnInterection({ toggler, target: base, instance: this });
+    toggleOnInterection({
+      toggler,
+      target: base,
+      instance: this,
+    });
+
     addDismiss(this, base);
 
     this.teleport = new Teleport(
@@ -98,7 +103,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       },
     );
 
-    return callInitShow(this);
+    return callShowInit(this);
   }
   _update() {
     this.opts = updateOptsByData(this.opts, this.base, POPOVER_DATA_ATTRIBUTES);

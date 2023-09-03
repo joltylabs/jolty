@@ -147,11 +147,14 @@ export const INERT = "inert";
 export const AUTOFOCUS = "autofocus";
 export const TABINDEX = "tabindex";
 export const DISABLED = "disabled";
+export const AUTO = "auto";
 export const POPOVER_DATA_ATTRIBUTE = DATA_UI_PREFIX + POPOVER + "-wrapper";
 export const FLOATING_DATA_ATTRIBUTE = DATA_UI_PREFIX + FLOATING;
 export const DATA_PREVENT_INERT = DATA_UI_PREFIX + ACTION_PREVENT + "-" + INERT;
 export const DATA_APPEAR = DATA_UI_PREFIX + APPEAR;
 export const POPOVER_API_MODE_MANUAL = "manual";
+
+export const PLACEHOLDER = "placeholder";
 
 export const EVENT_INIT = ACTION_INIT;
 export const EVENT_BEFORE_INIT = BEFORE + upperFirst(EVENT_INIT);
@@ -245,6 +248,7 @@ export const DEFAULT_OPTIONS = {
   shown: null,
   a11y: true,
   hideMode: HIDDEN,
+  [OPTION_KEEP_PLACE]: true,
 };
 export const DEFAULT_TOP_LAYER_OPTIONS = {
   moveModal: true,

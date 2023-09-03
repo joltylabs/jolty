@@ -33,3 +33,4 @@ export { default as ResetFloatingCssVariables } from "./floating/ResetFloatingCs
 export { default as collectCssVariables } from "./floating/collectCssVariables";
 export { default as valuesToArray } from "./valuesToArray";
 export { default as isShown } from "./isShown";
+export { default as toggleHideModeState } from "./toggleHideModeState";

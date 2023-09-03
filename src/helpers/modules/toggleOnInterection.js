@@ -55,7 +55,7 @@ export default ({
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
       if (
         (type === EVENT_FOCUSIN && isMouseDown) ||
-        (type === EVENT_FOCUSOUT && triggerHover && target.matches(":hover"))
+        (type === EVENT_FOCUSOUT && triggerHover && target.matches(":" + HOVER))
       ) {
         return;
       }

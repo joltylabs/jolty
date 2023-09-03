@@ -28,7 +28,7 @@ import {
   addDismiss,
   awaitPromise,
   baseDestroy,
-  callInitShow,
+  callShowInit,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -101,7 +101,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     addDismiss(this);
 
-    return callInitShow(this);
+    return callShowInit(this);
   }
   async toggle(s, params) {
     const {

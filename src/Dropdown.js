@@ -54,7 +54,7 @@ import {
   baseDestroy,
   toggleOnInterection,
   floatingTransition,
-  callInitShow,
+  callShowInit,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 
@@ -73,6 +73,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     trigger: CLICK,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [DROPDOWN + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
 
   constructor(elem, opts) {
@@ -82,12 +83,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     if (this.isInit) return;
     this._update();
 
-    const { toggler, dropdown, show, on } = this;
+    const { toggler, base, show, on } = this;
 
-    toggleOnInterection({ toggler, target: dropdown, instance: this });
-    addDismiss(this, dropdown);
-
-    on(dropdown, EVENT_KEYDOWN, this._onKeydown.bind(this));
+    on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
       const { keyCode } = event;
 
@@ -107,12 +105,13 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       }
     });
 
-    return callInitShow(this, dropdown);
-  }
-  _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
-    updateModule(this, OPTION_TOP_LAYER);
-    const { base, opts, transition, on, off, hide } = this;
+    toggleOnInterection({
+      toggler,
+      target: base,
+      instance: this,
+    });
+
+    addDismiss(this, base);
 
     this.teleport = new Teleport(
       base,
@@ -121,6 +120,13 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
         disableAttributes: true,
       },
     );
+
+    return callShowInit(this, base);
+  }
+  _update() {
+    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
+    updateModule(this, OPTION_TOP_LAYER);
+    const { base, opts, transition, on, off, hide } = this;
 
     this.transition = Transition.createOrUpdate(
       transition,
@@ -255,6 +261,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(toggler, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX], s);
 
     animated && awaitAnimation && (await promise);
 

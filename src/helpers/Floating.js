@@ -41,6 +41,9 @@ import {
   FALSE,
   FLOATING,
   CLASS,
+  CENTER,
+  AUTO,
+  CONTENT,
 } from "./constants";
 import {
   createElement,
@@ -258,7 +261,7 @@ export default class Floating {
 
       setAttribute(
         wrapper,
-        `${DATA_UI_PREFIX}current-placement`,
+        DATA_UI_PREFIX + "current-" + PLACEMENT,
         position[PLACEMENT],
       );
 
@@ -364,24 +367,24 @@ export default class Floating {
       maxWidth: NONE,
       maxHeight: NONE,
       overflow: "unset",
-      pointerEvents: "none",
+      pointerEvents: NONE,
       display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: CENTER,
+      alignItems: CENTER,
     };
 
     if (mode === MODAL || mode === DIALOG) {
       style.position = FIXED;
       style.inset = 0;
-      style.height = style.width = "auto";
+      style.height = style.width = AUTO;
     } else {
       style.position = ABSOLUTE;
-      style.inset = "auto";
+      style.inset = AUTO;
       style.left = 0;
       style.top = 0;
-      style.height = style.width = "fit-content";
+      style.height = style.width = "fit-" + CONTENT;
       style.willChange = "transform";
-      style.minWidth = "max-content";
+      style.minWidth = "max-" + CONTENT;
     }
 
     const attributes = {
@@ -399,7 +402,7 @@ export default class Floating {
       attributes[INERT] = "";
       attributes.style.pointerEvents = NONE;
     } else {
-      target.style.pointerEvents = "auto";
+      target.style.pointerEvents = AUTO;
     }
 
     const wrapper = (this.wrapper = createElement(
