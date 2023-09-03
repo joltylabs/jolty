@@ -29,6 +29,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
   if (s) {
     transitionParams[EVENT_SHOW] = () => {
       const arrow = target.querySelector(getDataSelector(name, ARROW));
+
       instance[FLOATING] = new Floating({
         teleport,
         base,

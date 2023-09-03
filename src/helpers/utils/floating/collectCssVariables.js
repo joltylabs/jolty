@@ -3,12 +3,8 @@ import {
   ARROW_PADDING,
   BOUNDARY_OFFSET,
   CLIP_PATH_PROPERTY,
-  FLIP,
   OFFSET,
   PADDING,
-  PLACEMENT,
-  SHRINK,
-  STICKY,
 } from "../../constants/index.js";
 import { createInset, kebabToCamel, valuesToArray } from "../index.js";
 import { getPropertyValue } from "../../dom/index.js";

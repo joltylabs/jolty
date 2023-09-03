@@ -254,6 +254,7 @@ const DEFAULT_FLOATING_OPTIONS = {
   topLayer: true,
   popoverApi: true,
   safeModal: true,
+  floatingClass: "",
   arrow: {
     height: null,
     width: null,
@@ -567,6 +568,7 @@ function getPosition ({
 
     let arrowPosition = {};
     if (arrow) {
+      // eslint-disable-next-line prefer-const
       let { padding = 0, offset = 0 } = arrow;
       padding = isArray(padding) ? padding : [padding];
       padding[1] ??= padding[0];
@@ -581,7 +583,8 @@ function getPosition ({
       }
 
       so += shift + max(0, -currentSize[mirrorSize] / 2);
-      let mo = -arrow[mirrorSize] / 2 + offset;
+
+      let mo = -arrow[mirrorSize] / 2 + (isMainDir ? -offset : offset);
       if (isMainDir) {
         mo += currentSize[size];
       }
@@ -1443,7 +1446,8 @@ class Transition {
   static Default = {
     name: UI,
     css: true,
-    variablePrefix: VAR_UI_PREFIX + TRANSITION + "-",
+    cssVariables: true,
+    cssVariablesPrefix: VAR_UI_PREFIX + TRANSITION + "-",
     [HIDE_MODE]: HIDDEN,
     [OPTION_HIDDEN_CLASS]: "",
     [OPTION_SHOWN_CLASS]: "",
@@ -1519,14 +1523,13 @@ class Transition {
     const { offsetWidth, offsetHeight, style } = this.elem;
     const rect = [offsetWidth, offsetHeight];
     [WIDTH, HEIGHT].forEach((name, i) => {
-      const prop = this.opts.variablePrefix + name;
+      const prop = this.opts.cssVariablesPrefix + name;
       if (s) {
         style.setProperty(prop, rect[i] + PX);
       } else {
         style.removeProperty(prop);
       }
     });
-    return this;
   }
 
   toggleAnimationClasses(s) {
@@ -1715,12 +1718,19 @@ class Transition {
     }
 
     if (animated) {
-      opts.css && this.toggleVariables(true).toggleAnimationClasses(s);
+      if (opts.css) {
+        opts.cssVariables && this.toggleVariables(true);
+        this.toggleAnimationClasses(s);
+      }
+
       this.collectPromises(s);
       if (this.promises.length) {
         await this.getAwaitPromise();
       }
-      opts.css && this.toggleVariables(false).setFinishClasses(s);
+      if (opts.css) {
+        opts.cssVariables && this.toggleVariables(false);
+        this.setFinishClasses(s);
+      }
     }
 
     if (s) {
@@ -2077,6 +2087,10 @@ class Floating {
       placement ||
       opts[PLACEMENT];
 
+    this[CLASS] =
+      base.getAttribute(DATA_UI_PREFIX + name + "-" + FLOATING + "-" + CLASS) ??
+      opts.floatingClass;
+
     this[MODE] = mode =
       base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) ||
       mode ||
@@ -2324,6 +2338,7 @@ class Floating {
 
     const attributes = {
       style,
+      class: this.class,
       [FLOATING_DATA_ATTRIBUTE]: name,
       [DATA_UI_PREFIX + "current-mode"]: mode,
     };
@@ -2384,6 +2399,7 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
   if (s) {
     transitionParams[EVENT_SHOW] = () => {
       const arrow = target.querySelector(getDataSelector(name, ARROW));
+
       instance[FLOATING] = new Floating({
         teleport,
         base,
@@ -2753,7 +2769,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       transition,
       base,
       opts.transition,
-      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
+      { keepPlace: false, cssVariables: false },
     );
 
     this.updateToggler();
@@ -4327,7 +4343,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       transition,
       tooltip,
       opts.transition,
-      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
+      { keepPlace: false, cssVariables: false },
     );
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
@@ -4460,6 +4476,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     trigger: CLICK,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
       DATA_UI_PREFIX + CANCEL
     }="${POPOVER}"]`,
@@ -4499,13 +4516,11 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     ]);
     opts = updateModule(this, OPTION_TOP_LAYER);
 
-    console.log(opts.trigger);
-
     this.transition = Transition.createOrUpdate(
       transition,
       base,
       opts.transition,
-      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
+      { keepPlace: false, cssVariables: false },
     );
 
     this.updateToggler();
@@ -4530,7 +4545,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const { transition, isShown, isAnimating, toggler, opts, emit } = this;
+    const { transition, isShown, isAnimating, toggler, base, opts, emit } =
+      this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -4553,6 +4569,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX], s);
 
     if (s) {
       this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {

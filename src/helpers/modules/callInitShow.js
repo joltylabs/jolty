@@ -18,6 +18,7 @@ export default (instance, elem = instance.base) => {
     show({
       animated: opts.appear ?? elem.hasAttribute(DATA_APPEAR),
       ignoreConditions: true,
+      ignoreAutofocus: true,
     });
 
   return instance;

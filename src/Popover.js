@@ -5,14 +5,12 @@ import {
   CLASS_ACTIVE,
   ARIA_CONTROLS,
   ARIA_EXPANDED,
-  ACTION_REMOVE,
   POPOVER,
   CLICK,
   DEFAULT_FLOATING_OPTIONS,
   DEFAULT_OPTIONS,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
-  HIDE_MODE,
   DEFAULT_TOP_LAYER_OPTIONS,
   OPTION_TOP_LAYER,
   DATA_UI_PREFIX,
@@ -20,6 +18,8 @@ import {
   CONFIRM,
   EVENT_CLICK,
   UI_EVENT_PREFIX,
+  TRIGGER,
+  DELAY,
 } from "./helpers/constants";
 
 import {
@@ -36,6 +36,7 @@ import {
   updateModule,
   getEventsPrefix,
   updateOptsByData,
+  upperFirst,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -49,6 +50,10 @@ import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 
+const POPOVER_DATA_ATTRIBUTES = [
+  [TRIGGER, POPOVER + upperFirst(TRIGGER)],
+  [DELAY, POPOVER + upperFirst(DELAY)],
+];
 class Popover extends ToggleMixin(Base, POPOVER) {
   static DefaultTopLayer = {
     ...DEFAULT_TOP_LAYER_OPTIONS,
@@ -62,6 +67,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     trigger: CLICK,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
       DATA_UI_PREFIX + CANCEL
     }="${POPOVER}"]`,
@@ -96,18 +102,14 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     // eslint-disable-next-line prefer-const
     let { base, opts, transition } = this;
 
-    this.opts = updateOptsByData(opts, base.dataset, [
-      ["trigger", "popoverTrigger"],
-    ]);
+    this.opts = updateOptsByData(opts, base.dataset, POPOVER_DATA_ATTRIBUTES);
     opts = updateModule(this, OPTION_TOP_LAYER);
-
-    console.log(opts.trigger);
 
     this.transition = Transition.createOrUpdate(
       transition,
       base,
       opts.transition,
-      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
+      { keepPlace: false },
     );
 
     this.updateToggler();
@@ -132,7 +134,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const { transition, isShown, isAnimating, toggler, opts, emit } = this;
+    const { transition, isShown, isAnimating, toggler, base, opts, emit } =
+      this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -155,6 +158,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX], s);
 
     if (s) {
       this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {

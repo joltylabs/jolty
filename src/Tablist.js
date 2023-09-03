@@ -204,7 +204,7 @@ class Tablist extends Base {
       tabWithState[0][0] = true;
     }
     tabWithState.forEach(([isShown, tab]) => {
-      tab.transition.updateConfig(opts.transition);
+      tab.transition.updateConfig(opts.transition, { cssVariables: true });
       tab.toggle(isShown, {
         animated: opts.appear ?? tab.tabpanel.hasAttribute(DATA_APPEAR),
         silent: !isShown,

@@ -49,6 +49,7 @@ import {
   floatingTransition,
   callInitShow,
 } from "./helpers/modules";
+import Teleport from "./helpers/Teleport.js";
 
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
@@ -86,7 +87,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       transition,
       tooltip,
       opts.transition,
-      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
+      { keepPlace: false },
     );
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
@@ -135,6 +136,14 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     );
 
     this._update();
+
+    this.teleport = new Teleport(
+      target,
+      {},
+      {
+        disableAttributes: true,
+      },
+    );
 
     toggleOnInterection({ toggler: anchor, target, instance: this });
 

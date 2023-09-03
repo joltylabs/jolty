@@ -116,7 +116,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       transition,
       base,
       opts.transition,
-      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
+      { keepPlace: false },
     );
 
     this.updateToggler();

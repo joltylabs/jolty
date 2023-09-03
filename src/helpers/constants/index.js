@@ -82,6 +82,8 @@ export const BACKDROP = "backdrop";
 export const POPOVER = "popover";
 export const TOOLTIP = "tooltip";
 export const TOGGLER = "toggler";
+export const TRIGGER = "trigger";
+export const DELAY = "delay";
 export const DROPDOWN = "dropdown";
 export const ARROW = "arrow";
 export const PROGRESS = "progress";
@@ -262,6 +264,8 @@ export const DEFAULT_FLOATING_OPTIONS = {
   topLayer: true,
   popoverApi: true,
   safeModal: true,
+  floatingClass: "",
+  shown: false,
   arrow: {
     height: null,
     width: null,

@@ -11,9 +11,9 @@ import {
   CENTER,
   END,
   MIRROR,
-} from "../constants";
-import { isArray } from "../is";
-import { createInset } from "./index.js";
+} from "../../constants/index.js";
+import { isArray } from "../../is/index.js";
+import { createInset } from "../index.js";
 
 const { min, max } = Math;
 
@@ -75,9 +75,11 @@ export default function ({
     const anchorSpace = {
       [TOP]: anchorRect[TOP],
       [LEFT]: anchorRect[LEFT],
-      [RIGHT]: viewRect[WIDTH] - anchorRect[RIGHT],
-      [BOTTOM]: viewRect[HEIGHT] - anchorRect[BOTTOM],
+      [RIGHT]: viewRect[WIDTH] - anchorRect[LEFT] - anchorRect[WIDTH],
+      [BOTTOM]: viewRect[HEIGHT] - anchorRect[TOP] - anchorRect[HEIGHT],
     };
+
+    console.log(anchorSpace.bottom);
 
     anchorSpace[m] -= offset + boundaryOffset[m];
     anchorSpace[MIRROR[m]] -= boundaryOffset[dirS] + boundaryOffset[mirrorDirS];
@@ -185,6 +187,7 @@ export default function ({
 
     let arrowPosition = {};
     if (arrow) {
+      // eslint-disable-next-line prefer-const
       let { padding = 0, offset = 0 } = arrow;
       padding = isArray(padding) ? padding : [padding];
       padding[1] ??= padding[0];
@@ -199,7 +202,8 @@ export default function ({
       }
 
       so += shift + max(0, -currentSize[mirrorSize] / 2);
-      let mo = -arrow[mirrorSize] / 2 + offset;
+
+      let mo = -arrow[mirrorSize] / 2 + (isMainDir ? -offset : offset);
       if (isMainDir) {
         mo += currentSize[size];
       }

@@ -48,7 +48,8 @@ export default class Transition {
   static Default = {
     name: UI,
     css: true,
-    variablePrefix: VAR_UI_PREFIX + TRANSITION + "-",
+    cssVariables: false,
+    cssVariablesPrefix: VAR_UI_PREFIX + TRANSITION + "-",
     [HIDE_MODE]: HIDDEN,
     [OPTION_HIDDEN_CLASS]: "",
     [OPTION_SHOWN_CLASS]: "",
@@ -124,14 +125,13 @@ export default class Transition {
     const { offsetWidth, offsetHeight, style } = this.elem;
     const rect = [offsetWidth, offsetHeight];
     [WIDTH, HEIGHT].forEach((name, i) => {
-      const prop = this.opts.variablePrefix + name;
+      const prop = this.opts.cssVariablesPrefix + name;
       if (s) {
         style.setProperty(prop, rect[i] + PX);
       } else {
         style.removeProperty(prop);
       }
     });
-    return this;
   }
 
   toggleAnimationClasses(s) {
@@ -213,6 +213,7 @@ export default class Transition {
     const { elem, promises, opts } = this;
     const state = s ? ENTER : LEAVE;
     const duration = opts.duration?.[state] ?? opts.duration;
+
     promises.length = 0;
     let promisesEvent, promisesAnimation;
     if (isFunction(opts[state])) {
@@ -246,7 +247,7 @@ export default class Transition {
   }
   cancel() {
     this.animations?.forEach((animation) => animation.cancel());
-    return Promise.allSettled([this.getAwaitPromise()]);
+    return this.getAwaitPromise();
   }
   getAwaitPromise() {
     return Promise.allSettled(this.promises);
@@ -320,12 +321,19 @@ export default class Transition {
     }
 
     if (animated) {
-      opts.css && this.toggleVariables(true).toggleAnimationClasses(s);
+      if (opts.css) {
+        opts.cssVariables && this.toggleVariables(true);
+        this.toggleAnimationClasses(s);
+      }
+
       this.collectPromises(s);
       if (this.promises.length) {
         await this.getAwaitPromise();
       }
-      opts.css && this.toggleVariables(false).setFinishClasses(s);
+      if (opts.css) {
+        opts.cssVariables && this.toggleVariables(false);
+        this.setFinishClasses(s);
+      }
     }
 
     if (s) {

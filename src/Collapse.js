@@ -70,6 +70,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       transition,
       base,
       opts.transition,
+      { cssVariables: true },
     );
 
     this.updateTriggers();

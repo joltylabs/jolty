@@ -106,9 +106,12 @@ const updateBodyScrollbarWidth = () => {
 
 const DIALOG_DATA_OPTIONS = [
   [MODAL, DIALOG + upperFirst(MODAL)],
+  [BACKDROP, DIALOG + upperFirst(BACKDROP)],
   [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
   [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
 ];
+
+const backdropOwner = new WeakMap();
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
   static DefaultTopLayer = {
@@ -126,7 +129,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     backdropHide: true,
     hashNavigation: false,
     returnFocus: true,
-    hideable: true,
+    preventHide: false,
     dismiss: true,
     preventScroll: true,
     cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
@@ -173,7 +176,23 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this.transitions ||= {};
 
-    const { base, transitions, opts, _fromHTML, teleport, id, on } = this;
+    const { base, transitions, _fromHTML, opts, teleport, id, on } = this;
+
+    let backdrop;
+    if (opts[BACKDROP]) {
+      if (isFunction(opts[BACKDROP])) {
+        backdrop = opts[BACKDROP](this);
+      }
+      if (isString(opts[BACKDROP])) {
+        backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
+          opts[BACKDROP],
+        );
+      }
+    }
+
+    this[BACKDROP] = backdrop;
+
+    this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
 
     const isDialogElem = isDialog(base);
 
@@ -228,26 +247,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
   init() {
     const { opts, isInit, base, on, emit, hide, toggle } = this;
-    const optsBackdrop = opts[BACKDROP];
 
     if (isInit) return;
 
     emit(EVENT_BEFORE_INIT);
-
-    let backdrop;
-    if (optsBackdrop) {
-      if (isFunction(optsBackdrop)) {
-        backdrop = optsBackdrop(this);
-      }
-      if (isString(optsBackdrop)) {
-        backdrop = (optsBackdrop[0] === "#" ? doc : base).querySelector(
-          optsBackdrop,
-        );
-      }
-    }
-    this[BACKDROP] = backdrop;
-
-    this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
 
     this._update();
     this.updateAriaTargets();
@@ -368,8 +371,14 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
-    const { animated, silent, trigger, event, ignoreConditions } =
-      normalizeToggleParameters(params);
+    const {
+      animated,
+      silent,
+      trigger,
+      event,
+      ignoreConditions,
+      ignoreAutofocus,
+    } = normalizeToggleParameters(params);
 
     s = !!(s ?? !isOpen);
 
@@ -389,9 +398,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     if (
       !s &&
-      !(isFunction(opts.hideable)
-        ? await opts.hideable(this, eventParams)
-        : opts.hideable)
+      opts.preventHide &&
+      (isFunction(opts.preventHide)
+        ? !(await opts.preventHide(this, eventParams))
+        : opts.preventHide)
     ) {
       return emit(EVENT_HIDE_PREVENTED);
     }
@@ -426,20 +436,28 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
 
+    if (backdrop) {
+      backdropOwner.set(backdrop, this.id);
+    }
+
     if (s) {
-      transitions[DIALOG].toggleRemove(true);
-      transitions[CONTENT].toggleRemove(true);
-      this._toggleApi(true);
-      if (opts.returnFocus) {
-        this.returnFocusElem = doc.activeElement;
+      for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
+        transitions[elemName]?.toggleRemove(true);
       }
+      if (opts.returnFocus) {
+        this.returnFocusElem ||= doc.activeElement;
+      }
+      this._toggleApi(true);
     }
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
     for (const elemName of [DIALOG, BACKDROP, CONTENT]) {
-      if (elemName === BACKDROP && backdropIsOpen) {
-        continue;
+      if (elemName === BACKDROP) {
+        console.log(backdropOwner);
+        if (backdropIsOpen) {
+          continue;
+        }
       }
       const transitionOpts = { allowRemove: elemName !== DIALOG };
 
@@ -451,22 +469,21 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this.preventScroll(s);
 
     if (!s && !optReturnFocusAwait) {
+      this._toggleApi(false);
       this.returnFocus();
     }
 
     opts.escapeHide && addEscapeHide(this, s);
 
     if (s) {
-      opts.autofocus && callAutofocus(this);
+      !ignoreAutofocus && opts.autofocus && callAutofocus(this);
       on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
         this._mousedownTarget = e.target;
       });
     } else {
       this._mousedownTarget = null;
       off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
-      if (!optReturnFocusAwait) {
-        this._toggleApi(false);
-      }
+      this.returnFocusElem = null;
     }
 
     const promise = this.transitionPromise;
@@ -532,7 +549,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
   }
   returnFocus() {
-    if (this.opts.returnFocus && this.base.contains(doc.activeElement)) {
+    if (this.opts.returnFocus) {
       focus(this.returnFocusElem);
     }
   }

@@ -39,6 +39,8 @@ import {
   POPOVER_API_MODE_MANUAL,
   UI_EVENT_PREFIX,
   FALSE,
+  FLOATING,
+  CLASS,
 } from "./constants";
 import {
   createElement,
@@ -133,6 +135,10 @@ export default class Floating {
       placement ||
       opts[PLACEMENT];
 
+    this[CLASS] =
+      base.getAttribute(DATA_UI_PREFIX + name + "-" + FLOATING + "-" + CLASS) ??
+      opts.floatingClass;
+
     this[MODE] = mode =
       base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) ||
       mode ||
@@ -179,8 +185,8 @@ export default class Floating {
       padding,
       offset = opts.offset,
       boundaryOffset = opts.boundaryOffset,
-      arrowPadding = opts[ARROW]?.padding ?? 0,
-      arrowOffset = opts[ARROW]?.offset ?? 0,
+      arrowPadding,
+      arrowOffset,
       wrapperComputedStyle,
     } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
 
@@ -198,9 +204,9 @@ export default class Floating {
 
     let arrowData;
     if (arrow) {
-      arrowData = getBoundingClientRect(arrow);
-      arrowData[PADDING] = arrowPadding;
-      arrowData[OFFSET] = arrowOffset;
+      arrowData = { [WIDTH]: arrow.offsetWidth, [HEIGHT]: arrow.offsetHeight };
+      arrowData[PADDING] = arrowPadding ?? opts[ARROW]?.padding ?? 0;
+      arrowData[OFFSET] = arrowOffset ?? opts[ARROW]?.offset ?? 0;
     }
 
     const params = {
@@ -380,6 +386,7 @@ export default class Floating {
 
     const attributes = {
       style,
+      class: this.class,
       [FLOATING_DATA_ATTRIBUTE]: name,
       [DATA_UI_PREFIX + "current-mode"]: mode,
     };
@@ -400,8 +407,10 @@ export default class Floating {
       attributes,
     ));
 
-    this.teleport.opts.to = wrapper;
-    this.teleport.move();
+    if (this.teleport) {
+      this.teleport.opts.to = wrapper;
+      this.teleport.move();
+    }
 
     if (moveToRoot) {
       body.append(wrapper);
