@@ -21,6 +21,7 @@ import {
   CLASS_ACTIVE_SUFFIX,
   DEFAULT_TOP_LAYER_OPTIONS,
   OPTION_TOP_LAYER,
+  TRANSITION,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -81,10 +82,12 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     updateModule(this, OPTION_TOP_LAYER);
     const { tooltip, opts } = this;
 
-    this.transition = Transition.createOrUpdate(this, {
-      base: tooltip,
-      defaultOpts: { keepPlace: false },
-    });
+    this.transition = Transition.createOrUpdate(
+      this[TRANSITION],
+      tooltip,
+      opts[TRANSITION],
+      { keepPlace: false },
+    );
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
@@ -147,17 +150,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   }
 
   async toggle(s, params) {
-    const {
-      transition,
-      anchor,
-      tooltip,
-      id,
-      opts,
-      emit,
-      _cache,
-      isShown,
-      isAnimating,
-    } = this;
+    const { anchor, tooltip, id, opts, emit, _cache, isShown, isAnimating } =
+      this;
     const awaitAnimation = opts.awaitAnimation;
     const { animated, trigger, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -174,7 +168,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition?.cancel();
+      await this[TRANSITION].cancel();
     }
 
     const eventParams = { event, trigger };

@@ -1,4 +1,3 @@
-import { toggleHideModeState } from "./utils";
 export default (Base, NAME) =>
   class extends Base {
     static _data = {};
@@ -10,9 +9,7 @@ export default (Base, NAME) =>
       return this.transition?.isAnimating;
     }
     get initialPlaceNode() {
-      return (
-        this.teleport?.placeholder ?? this.transition?.placeholder ?? this.base
-      );
+      return this.teleport?.placeholder ?? this.placeholder ?? this.base;
     }
     hide(opts) {
       return this.toggle(false, opts);
@@ -20,9 +17,6 @@ export default (Base, NAME) =>
     show(opts) {
       return this.toggle(true, opts);
     }
-    // toggleHideModeState(s) {
-    //   toggleHideModeState(s, this);
-    // }
     static toggle(id, s, opts) {
       return this.instances.get(id)?.toggle(s, opts);
     }

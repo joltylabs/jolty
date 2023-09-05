@@ -19,6 +19,8 @@ import {
   HIDE_MODE,
   ACTION_REMOVE,
   HIDDEN,
+  TRANSITION,
+  TELEPORT,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -62,24 +64,27 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   _update() {
     this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
 
-    const { base, opts, teleport } = this;
+    const { base, opts } = this;
 
     addDismiss(this);
 
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
+    this[TELEPORT] = Teleport.createOrUpdate(
+      this[TELEPORT],
       base,
-      opts.teleport,
+      opts[TELEPORT],
     )?.move(this);
 
     if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
       toggleHideModeState(false, this);
     }
 
-    this.transition = Transition.createOrUpdate(
-      this,
-      {},
-      { cssVariables: true },
+    this[TRANSITION] = Transition.createOrUpdate(
+      this[TRANSITION],
+      base,
+      opts[TRANSITION],
+      {
+        cssVariables: true,
+      },
     );
 
     this.updateTriggers();
@@ -155,8 +160,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     ));
   }
   async toggle(s, params) {
-    const { base, transition, togglers, opts, emit, isShown, isAnimating } =
-      this;
+    const { base, togglers, opts, emit, isShown, isAnimating } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -169,7 +173,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition?.cancel();
+      await this[TRANSITION].cancel();
     }
 
     const eventParams = { trigger, event };
@@ -180,15 +184,15 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-    const promise = transition?.run(s, animated);
+    const promise = this[TRANSITION]?.run(s, animated);
 
     a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
     toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
     toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
     awaitPromise(promise, () => {
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
       !s && toggleHideModeState(false, this);
+      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
     });
 
     animated && awaitAnimation && (await promise);

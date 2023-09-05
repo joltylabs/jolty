@@ -39,6 +39,7 @@ export const VERTICAL = "vertical";
 export const ABSOLUTE = "absolute";
 export const FIXED = "fixed";
 export const TRANSITION = "transition";
+export const TELEPORT = "teleport";
 
 export const DIV = "div";
 export const BUTTON = "button";

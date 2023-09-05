@@ -43,28 +43,17 @@ export default class Transition {
     [DURATION]: null,
   };
 
-  constructor(
-    instance,
-    {
-      base = instance.base,
-      target = base,
-      opts = instance.opts.transition,
-    } = {},
-    defaultOpts,
-  ) {
-    this.instance = instance;
+  constructor(base, opts, defaultOpts) {
     this.base = base;
-    this.target = target;
-
     this.update(opts, defaultOpts);
     this.promises = [];
 
     this.isInit = true;
   }
   update(opts, defaultOpts = {}) {
-    const target = this.target;
+    const base = this.base;
     const defaultConfig = Transition.Default;
-    const dataset = target.dataset;
+    const dataset = base.dataset;
 
     const datasetData = {};
 
@@ -90,7 +79,7 @@ export default class Transition {
       ...datasetData,
     };
 
-    this.opts = updateOptsByData(opts, target, [
+    this.opts = updateOptsByData(opts, base, [
       ENTER_ACTIVE,
       ENTER_FROM,
       ENTER_TO,
@@ -103,7 +92,7 @@ export default class Transition {
     return this;
   }
   toggleVariables(s) {
-    const { offsetWidth, offsetHeight, style } = this.target;
+    const { offsetWidth, offsetHeight, style } = this.base;
     const rect = [offsetWidth, offsetHeight];
     [WIDTH, HEIGHT].forEach((name, i) => {
       const prop = VAR_UI_PREFIX + TRANSITION + "-" + name;
@@ -116,16 +105,16 @@ export default class Transition {
   }
 
   toggleAnimationClasses(s) {
-    this.target.style.transition = NONE;
+    this.base.style.transition = NONE;
     this.setClasses([s ? ENTER_FROM : LEAVE_FROM]);
-    this.target.offsetWidth;
-    this.target.style.transition = "";
+    this.base.offsetWidth;
+    this.base.style.transition = "";
     this.setClasses([s ? ENTER_ACTIVE : LEAVE_ACTIVE, s ? ENTER_TO : LEAVE_TO]);
     return this;
   }
 
   setClasses(animations) {
-    const { target, opts } = this;
+    const { base, opts } = this;
     const classes = ["", ""];
     const styles = [{}, {}];
     let hasStyle = false;
@@ -151,7 +140,7 @@ export default class Transition {
     });
     if (hasClass) {
       classes.forEach((classes, s) =>
-        target.classList[s ? ACTION_ADD : ACTION_REMOVE](
+        base.classList[s ? ACTION_ADD : ACTION_REMOVE](
           ...classes.split(" ").filter(Boolean),
         ),
       );
@@ -163,27 +152,27 @@ export default class Transition {
             name = camelToKebab(name);
           }
           if (s) {
-            target.style.setProperty(name, value);
+            base.style.setProperty(name, value);
           } else {
-            target.style.removeProperty(name);
+            base.style.removeProperty(name);
           }
         });
       });
     }
   }
   collectPromises(s) {
-    const { target, promises, opts } = this;
+    const { base, promises, opts } = this;
     const state = s ? ENTER : LEAVE;
     const duration = opts.duration?.[state] ?? opts.duration;
 
     promises.length = 0;
     let promisesEvent, promisesAnimation;
     if (isFunction(opts[state])) {
-      promisesEvent = new Promise((resolve) => opts[state](target, resolve));
+      promisesEvent = new Promise((resolve) => opts[state](base, resolve));
     }
     let animations;
     if (opts.css) {
-      animations = target.getAnimations();
+      animations = base.getAnimations();
       promisesAnimation =
         animations.length &&
         Promise.allSettled(animations.map(({ finished }) => finished));
@@ -216,8 +205,8 @@ export default class Transition {
   }
 
   async run(s, animated = true) {
-    const { target, opts } = this;
-    if (!target) return;
+    const { base, opts } = this;
+    if (!base) return;
 
     if (animated) {
       if (opts.css) {
@@ -241,10 +230,9 @@ export default class Transition {
     this.setClasses(null);
     this.isInit = false;
   }
-  static createOrUpdate(instance, params = {}, defaultOpts) {
-    const transition = params.transition ?? instance.transition;
+  static createOrUpdate(transition, base, opts, defaultOpts) {
     return transition
-      ? transition.update(params.opts, defaultOpts)
-      : new Transition(instance, params, defaultOpts);
+      ? transition.update(opts, defaultOpts)
+      : new Transition(base, opts, defaultOpts);
   }
 }

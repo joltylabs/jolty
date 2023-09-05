@@ -26,6 +26,8 @@ import {
   DEFAULT_TOP_LAYER_OPTIONS,
   OPTION_TOP_LAYER,
   HIDE_MODE,
+  TELEPORT,
+  TRANSITION,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -113,16 +115,23 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     addDismiss(this, base);
 
-    this.teleport = new Teleport(base, { disableAttributes: true });
+    this[TELEPORT] = new Teleport(base, { disableAttributes: true });
 
-    return callShowInit(this, base);
+    return callShowInit(this);
   }
   _update() {
     this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
     updateModule(this, OPTION_TOP_LAYER);
     const { base, opts, on, off, hide } = this;
 
-    this.transition = Transition.createOrUpdate(this, {}, { keepPlace: false });
+    this[TRANSITION] = Transition.createOrUpdate(
+      this[TRANSITION],
+      base,
+      opts[TRANSITION],
+      {
+        keepPlace: false,
+      },
+    );
 
     this.updateToggler();
 
@@ -233,7 +242,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition?.cancel();
+      await transition.cancel();
     }
 
     const eventParams = { event, trigger };

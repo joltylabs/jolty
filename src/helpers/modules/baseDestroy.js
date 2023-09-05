@@ -1,11 +1,18 @@
-import { EVENT_DESTROY, FLOATING, ID, PLACEHOLDER } from "../constants";
+import {
+  EVENT_DESTROY,
+  FLOATING,
+  ID,
+  PLACEHOLDER,
+  TELEPORT,
+  TRANSITION,
+} from "../constants";
 
 export default (instance, { remove = false, keepInstance = false } = {}) => {
   const { base, off, emit, id, uuid, instances, breakpoints } = instance;
 
   instance[PLACEHOLDER]?.replaceWith(base);
 
-  ["autohide", FLOATING, "transition", "teleport"].forEach((key) => {
+  ["autohide", FLOATING, TRANSITION, TELEPORT].forEach((key) => {
     if (instance[key]) {
       instance[key].destroy();
       instance[key] = null;

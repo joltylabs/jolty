@@ -21,6 +21,7 @@ import {
   TRIGGER,
   DELAY,
   HIDE_MODE,
+  TRANSITION,
 } from "./helpers/constants";
 
 import {
@@ -100,11 +101,19 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     return callShowInit(this);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, POPOVER_DATA_ATTRIBUTES);
+    const { base, opts } = this;
+    this.opts = updateOptsByData(opts, base, POPOVER_DATA_ATTRIBUTES);
 
     updateModule(this, OPTION_TOP_LAYER);
 
-    this.transition = Transition.createOrUpdate(this, {}, { keepPlace: false });
+    this[TRANSITION] = Transition.createOrUpdate(
+      this[TRANSITION],
+      base,
+      opts[TRANSITION],
+      {
+        keepPlace: false,
+      },
+    );
 
     this.updateToggler();
   }
@@ -128,8 +137,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const { transition, isShown, isAnimating, toggler, base, opts, emit } =
-      this;
+    const { isShown, isAnimating, toggler, base, opts, emit } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -142,7 +150,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition?.cancel();
+      await this[TRANSITION].cancel();
     }
 
     const eventParams = { event };

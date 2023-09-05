@@ -26,7 +26,6 @@ import {
   EVENT_HIDDEN,
   EVENT_SHOWN,
   OPTION_GROUP,
-  ACTION_DESTROY,
   TITLE,
   NAME,
   EVENT_BEFORE_HIDE,
@@ -47,9 +46,10 @@ import {
   POPOVER_API_MODE_MANUAL,
   DEFAULT_TOP_LAYER_OPTIONS,
   DATA_UI_PREFIX,
-  OPTION_KEEP_PLACE,
   ACTION_REMOVE,
   HIDDEN,
+  TELEPORT,
+  TRANSITION,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -174,7 +174,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     updateModule(this, OPTION_TOP_LAYER);
     updateModule(this, OPTION_GROUP, NAME);
 
-    const { base, _fromHTML, opts, teleport, id, on } = this;
+    const { base, _fromHTML, opts, id, on } = this;
 
     let backdrop;
     if (opts[BACKDROP]) {
@@ -201,8 +201,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           (opts.topLayer.movePopover && POPOVER_API_SUPPORTED))) ||
       _fromHTML;
 
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
+    this[TELEPORT] = Teleport.createOrUpdate(
+      this[TELEPORT],
       base,
       moveToBody ? body : false,
       {
@@ -214,9 +214,11 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       toggleHideModeState(false, this);
     }
 
-    this.transition = Transition.createOrUpdate(this, {
-      target: this[CONTENT],
-    });
+    this[TRANSITION] = Transition.createOrUpdate(
+      this[TRANSITION],
+      this[CONTENT],
+      opts[TRANSITION],
+    );
 
     this._togglers =
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
@@ -350,7 +352,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       on,
       off,
       isAnimating,
-      transition,
       base,
       content,
       backdrop,
@@ -377,7 +378,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       return;
 
     if (isAnimating && !opts.awaitAnimation) {
-      await transition?.cancel();
+      await this[TRANSITION]?.cancel();
     }
 
     const eventParams = { trigger, event };
@@ -408,7 +409,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
             .filter((m) => m !== this)
             .map(
               (instance) =>
-                instance.hide() && instance.transition?.getAwaitPromise(),
+                instance.hide() && instance[TRANSITION]?.getAwaitPromise(),
             ),
         );
         if (opts.group.awaitPrevious) {
@@ -423,7 +424,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-    const promise = this.transition?.run(s, animated);
+    const promise = this[TRANSITION]?.run(s, animated);
 
     if (s) {
       if (opts.returnFocus) {
@@ -463,14 +464,17 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     awaitPromise(promise, () => {
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
-
-      if (!s && optReturnFocusAwait) {
-        this._toggleApi(false);
-        this.returnFocus();
-      }
       if (!s) {
+        if (optReturnFocusAwait) {
+          this._toggleApi(false);
+          this.returnFocus();
+        }
         toggleHideModeState(false, this);
+      }
+
+      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+
+      if (!s) {
         opts.autodestroy && this.destroy({ remove: true });
       }
     });

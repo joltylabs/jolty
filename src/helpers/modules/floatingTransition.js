@@ -8,7 +8,7 @@ import {
   FLOATING,
   EVENT_ACTION_OUTSIDE,
 } from "../constants";
-import { getDataSelector } from "../utils";
+import { getDataSelector, toggleHideModeState } from "../utils";
 import { addEscapeHide, callAutofocus } from "../modules";
 import Floating from "../Floating.js";
 import { closest, focus } from "../dom/index.js";
@@ -19,9 +19,10 @@ export default (instance, { s, animated, silent, eventParams }) => {
   const name = constructor.NAME;
   const target = instance[name];
   const anchor = toggler ?? base;
-  const transitionParams = {};
 
   transition && (transition.parent = null);
+
+  s && toggleHideModeState(true, instance, target);
 
   if (s) {
     const arrow = target.querySelector(getDataSelector(name, ARROW));
@@ -46,7 +47,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   !s && instance[FLOATING]?.wrapper.close?.();
 
-  const promise = transition?.run(s, animated, transitionParams);
+  const promise = transition?.run(s, animated);
 
   if (opts.outsideHide && s) {
     instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
@@ -65,18 +66,18 @@ export default (instance, { s, animated, silent, eventParams }) => {
   }
 
   (async () => {
+    if (!s) {
+      if (animated) {
+        await promise;
+      }
+      if (instance.placeholder) {
+        instance[FLOATING].wrapper.replaceWith(instance.placeholder);
+      }
+      instance[FLOATING]?.destroy();
+      instance[FLOATING] = null;
+      toggleHideModeState(false, instance, target);
+    }
     emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
-
-    if (s) return;
-
-    if (animated) {
-      await promise;
-    }
-    if (transition?.placeholder) {
-      instance[FLOATING].wrapper.replaceWith(transition.placeholder);
-    }
-    instance[FLOATING]?.destroy();
-    instance[FLOATING] = null;
   })();
 
   return promise;

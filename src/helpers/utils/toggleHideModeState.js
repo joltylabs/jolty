@@ -13,49 +13,55 @@ import {
   UI_PREFIX,
 } from "../constants/index.js";
 import { isShown } from "./index.js";
-import { removeClass, toggleClass } from "../dom/index.js";
+import { toggleClass } from "../dom/index.js";
 
-export default (s, instance) => {
-  const { base, opts } = instance;
+export default (
+  s,
+  instance,
+  target = instance.base,
+  subInstance = instance,
+) => {
+  const opts = instance.opts;
   const mode = opts[HIDE_MODE];
   if (mode === ACTION_REMOVE) {
     if (s) {
       if (opts[OPTION_KEEP_PLACE]) {
-        instance[PLACEHOLDER]?.replaceWith(base);
-        instance[PLACEHOLDER] = null;
+        subInstance[PLACEHOLDER]?.replaceWith(target);
+        subInstance[PLACEHOLDER] = null;
       } else {
-        instance._parent?.append(base);
+        subInstance._parent?.append(target);
       }
     } else {
       if (opts[OPTION_KEEP_PLACE]) {
-        base.replaceWith(
-          (instance[PLACEHOLDER] ||= doc.createComment(
-            UI_PREFIX + PLACEHOLDER + ":" + base.id,
+        target.replaceWith(
+          (subInstance[PLACEHOLDER] ||= doc.createComment(
+            UI_PREFIX + PLACEHOLDER + ":" + target.id,
           )),
         );
       } else {
-        const parent = base.parentElement;
+        const parent = target.parentElement;
         if (parent) {
-          instance._parent = parent.hasAttribute(FLOATING_DATA_ATTRIBUTE)
+          subInstance._parent = parent.hasAttribute(FLOATING_DATA_ATTRIBUTE)
             ? parent.parentElement
             : parent;
-          base.remove();
+          target.remove();
         }
       }
     }
   } else if (mode === CLASS) {
-    s ??= !isShown(base);
+    s ??= !isShown(target);
 
     if (opts[HIDE_MODE] === CLASS) {
-      toggleClass(base, HIDDEN_CLASS, !s);
+      toggleClass(target, HIDDEN_CLASS, !s);
     }
     opts[OPTION_HIDDEN_CLASS] &&
-      toggleClass(base, opts[OPTION_HIDDEN_CLASS], !s);
-    opts[OPTION_SHOWN_CLASS] && toggleClass(base, opts[OPTION_SHOWN_CLASS], s);
+      toggleClass(target, opts[OPTION_HIDDEN_CLASS], !s);
+    opts[OPTION_SHOWN_CLASS] &&
+      toggleClass(target, opts[OPTION_SHOWN_CLASS], s);
   } else {
-    base.toggleAttribute(mode, !s);
+    target.toggleAttribute(mode, !s);
   }
   if (s) {
-    base[HIDDEN] = false;
+    target[HIDDEN] = false;
   }
 };
