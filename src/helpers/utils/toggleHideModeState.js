@@ -1,17 +1,22 @@
 import {
-  ACTION_DESTROY,
   ACTION_REMOVE,
   CLASS,
   doc,
   FLOATING_DATA_ATTRIBUTE,
+  HIDDEN,
+  HIDDEN_CLASS,
   HIDE_MODE,
+  OPTION_HIDDEN_CLASS,
   OPTION_KEEP_PLACE,
+  OPTION_SHOWN_CLASS,
   PLACEHOLDER,
   UI_PREFIX,
 } from "../constants/index.js";
+import { isShown } from "./index.js";
+import { removeClass, toggleClass } from "../dom/index.js";
 
-export default (s, instance, opts = instance.opts) => {
-  const base = instance.base;
+export default (s, instance) => {
+  const { base, opts } = instance;
   const mode = opts[HIDE_MODE];
   if (mode === ACTION_REMOVE) {
     if (s) {
@@ -38,7 +43,19 @@ export default (s, instance, opts = instance.opts) => {
         }
       }
     }
-  } else if (mode !== ACTION_DESTROY && mode !== CLASS) {
+  } else if (mode === CLASS) {
+    s ??= !isShown(base);
+
+    if (opts[HIDE_MODE] === CLASS) {
+      toggleClass(base, HIDDEN_CLASS, !s);
+    }
+    opts[OPTION_HIDDEN_CLASS] &&
+      toggleClass(base, opts[OPTION_HIDDEN_CLASS], !s);
+    opts[OPTION_SHOWN_CLASS] && toggleClass(base, opts[OPTION_SHOWN_CLASS], s);
+  } else {
     base.toggleAttribute(mode, !s);
+  }
+  if (s) {
+    base[HIDDEN] = false;
   }
 };

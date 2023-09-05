@@ -1,91 +1,70 @@
 import {
   UI,
-  UI_PREFIX,
   VAR_UI_PREFIX,
-  HIDDEN,
-  SHOWN,
   WIDTH,
   HEIGHT,
-  CLASS,
   PX,
-  ACTION_DESTROY,
   ACTION_ADD,
   ACTION_REMOVE,
   NONE,
-  FLOATING_DATA_ATTRIBUTE,
-  OPTION_KEEP_PLACE,
-  BEFORE_ENTER,
   ENTER,
   ENTER_ACTIVE,
   ENTER_FROM,
   ENTER_TO,
-  AFTER_ENTER,
-  BEFORE_LEAVE,
   LEAVE,
   LEAVE_ACTIVE,
   LEAVE_FROM,
   LEAVE_TO,
-  AFTER_LEAVE,
-  HIDE_MODE,
   DURATION,
   TRANSITION,
   NAME,
-  HIDDEN_CLASS,
 } from "./constants";
-import { toggleClass, removeClass } from "./dom";
-import { isString, isFunction, isObject } from "./is";
-import {
-  toMs,
-  camelToKebab,
-  updateOptsByData,
-  upperFirst,
-  isShown,
-  toggleHideModeState,
-} from "./utils";
 
-// const SHOWN_CLASS = UI_PREFIX + SHOWN;
+import { isString, isFunction, isObject } from "./is";
+import { toMs, camelToKebab, updateOptsByData, upperFirst } from "./utils";
+
 const DATASET_DURATION = UI + upperFirst(DURATION);
 const DATASET_DURATION_ENTER = DATASET_DURATION + upperFirst(ENTER);
 const DATASET_DURATION_LEAVE = DATASET_DURATION + upperFirst(LEAVE);
-const OPTION_SHOWN_CLASS = SHOWN + upperFirst(CLASS);
-const OPTION_HIDDEN_CLASS = HIDDEN + upperFirst(CLASS);
 
 export default class Transition {
   static Default = {
     name: UI,
     css: true,
     cssVariables: false,
-    [HIDE_MODE]: HIDDEN,
-    [OPTION_HIDDEN_CLASS]: "",
-    [OPTION_SHOWN_CLASS]: "",
     [ENTER]: null,
-    [BEFORE_ENTER]: null,
     [ENTER_ACTIVE]: null,
     [ENTER_FROM]: null,
     [ENTER_TO]: null,
-    [AFTER_ENTER]: null,
-    [BEFORE_LEAVE]: null,
+    [LEAVE]: null,
+    [LEAVE_FROM]: null,
     [LEAVE_ACTIVE]: null,
-    [AFTER_LEAVE]: null,
+    [LEAVE_TO]: null,
     [DURATION]: null,
-    [OPTION_KEEP_PLACE]: true,
   };
-  constructor(base, opts = {}, defaultOpts) {
+
+  constructor(
+    instance,
+    {
+      base = instance.base,
+      target = base,
+      opts = instance.opts.transition,
+    } = {},
+    defaultOpts,
+  ) {
+    this.instance = instance;
     this.base = base;
-    this.updateConfig(opts, defaultOpts);
+    this.target = target;
+
+    this.update(opts, defaultOpts);
     this.promises = [];
-    if (this.opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-      toggleHideModeState(false, this, this.opts);
-      base[HIDDEN] = false;
-    } else {
-      this.setFinishClass();
-    }
+
     this.isInit = true;
   }
-  updateConfig(opts, defaultOpts = {}) {
-    const base = this.base;
+  update(opts, defaultOpts = {}) {
+    const target = this.target;
     const defaultConfig = Transition.Default;
-    const dataset = base.dataset;
+    const dataset = target.dataset;
 
     const datasetData = {};
 
@@ -103,12 +82,15 @@ export default class Transition {
     }
 
     opts = isString(opts) ? { name: opts } : opts;
-    opts = { ...defaultConfig, ...defaultOpts, ...opts, ...datasetData };
 
-    this.opts = updateOptsByData(opts, base, [
-      HIDE_MODE,
-      OPTION_HIDDEN_CLASS,
-      OPTION_SHOWN_CLASS,
+    opts = {
+      ...defaultConfig,
+      ...defaultOpts,
+      ...opts,
+      ...datasetData,
+    };
+
+    this.opts = updateOptsByData(opts, target, [
       ENTER_ACTIVE,
       ENTER_FROM,
       ENTER_TO,
@@ -118,16 +100,10 @@ export default class Transition {
       [NAME, TRANSITION + "Name"],
     ]);
 
-    this.teleport = opts.teleport;
-
-    if (opts[HIDE_MODE] !== CLASS) {
-      removeClass(base, HIDDEN_CLASS);
-    }
-
     return this;
   }
   toggleVariables(s) {
-    const { offsetWidth, offsetHeight, style } = this.base;
+    const { offsetWidth, offsetHeight, style } = this.target;
     const rect = [offsetWidth, offsetHeight];
     [WIDTH, HEIGHT].forEach((name, i) => {
       const prop = VAR_UI_PREFIX + TRANSITION + "-" + name;
@@ -140,23 +116,16 @@ export default class Transition {
   }
 
   toggleAnimationClasses(s) {
-    this.base.style.transition = NONE;
+    this.target.style.transition = NONE;
     this.setClasses([s ? ENTER_FROM : LEAVE_FROM]);
-    this.base.offsetWidth;
-    this.base.style.transition = "";
+    this.target.offsetWidth;
+    this.target.style.transition = "";
     this.setClasses([s ? ENTER_ACTIVE : LEAVE_ACTIVE, s ? ENTER_TO : LEAVE_TO]);
     return this;
   }
-  setFinishClasses(s) {
-    this.removeClasses(s);
-    this.promises.length = 0;
-  }
-  removeClasses() {
-    this.setClasses(null);
-  }
 
   setClasses(animations) {
-    const { base, opts } = this;
+    const { target, opts } = this;
     const classes = ["", ""];
     const styles = [{}, {}];
     let hasStyle = false;
@@ -182,7 +151,7 @@ export default class Transition {
     });
     if (hasClass) {
       classes.forEach((classes, s) =>
-        base.classList[s ? ACTION_ADD : ACTION_REMOVE](
+        target.classList[s ? ACTION_ADD : ACTION_REMOVE](
           ...classes.split(" ").filter(Boolean),
         ),
       );
@@ -194,27 +163,27 @@ export default class Transition {
             name = camelToKebab(name);
           }
           if (s) {
-            base.style.setProperty(name, value);
+            target.style.setProperty(name, value);
           } else {
-            base.style.removeProperty(name);
+            target.style.removeProperty(name);
           }
         });
       });
     }
   }
   collectPromises(s) {
-    const { base, promises, opts } = this;
+    const { target, promises, opts } = this;
     const state = s ? ENTER : LEAVE;
     const duration = opts.duration?.[state] ?? opts.duration;
 
     promises.length = 0;
     let promisesEvent, promisesAnimation;
     if (isFunction(opts[state])) {
-      promisesEvent = new Promise((resolve) => opts[state](base, resolve));
+      promisesEvent = new Promise((resolve) => opts[state](target, resolve));
     }
     let animations;
     if (opts.css) {
-      animations = base.getAnimations();
+      animations = target.getAnimations();
       promisesAnimation =
         animations.length &&
         Promise.allSettled(animations.map(({ finished }) => finished));
@@ -246,43 +215,9 @@ export default class Transition {
     return Promise.allSettled(this.promises);
   }
 
-  setFinishClass(s) {
-    const { base, opts } = this;
-
-    s ??= isShown(base);
-
-    if (opts[HIDE_MODE] === CLASS) {
-      toggleClass(base, HIDDEN_CLASS, !s);
-    }
-    opts[OPTION_HIDDEN_CLASS] &&
-      toggleClass(base, opts[OPTION_HIDDEN_CLASS], !s);
-    opts[OPTION_SHOWN_CLASS] && toggleClass(base, opts[OPTION_SHOWN_CLASS], s);
-  }
-  async run(
-    s,
-    animated = true,
-    { show, hide, shown, hidden, destroy, allowRemove = true } = {},
-  ) {
-    const { base, opts } = this;
-    if (!base) return;
-
-    opts[s ? BEFORE_ENTER : BEFORE_LEAVE]?.(base);
-
-    const toggle = (s) => {
-      allowRemove && toggleHideModeState(s, this, opts);
-      this.setFinishClass(s);
-      if (!s && opts[HIDE_MODE] === ACTION_DESTROY) {
-        this.destroy();
-        destroy?.(base);
-      }
-    };
-
-    if (s) {
-      toggle(s);
-      show?.(base);
-    } else {
-      hide?.(base);
-    }
+  async run(s, animated = true) {
+    const { target, opts } = this;
+    if (!target) return;
 
     if (animated) {
       if (opts.css) {
@@ -296,27 +231,20 @@ export default class Transition {
       }
       if (opts.css) {
         opts.cssVariables && this.toggleVariables(false);
-        this.setFinishClasses(s);
       }
     }
 
-    if (s) {
-      shown?.(base);
-    } else {
-      hidden?.(base);
-      toggle(s);
-    }
-
-    opts[s ? AFTER_ENTER : AFTER_LEAVE]?.(base);
+    this.setClasses(null);
+    this.promises.length = 0;
   }
   destroy() {
-    this.removeClasses();
-    this.placeholder?.replaceWith(this.base);
+    this.setClasses(null);
     this.isInit = false;
   }
-  static createOrUpdate(transition, base, opts, defaultOpts) {
+  static createOrUpdate(instance, params = {}, defaultOpts) {
+    const transition = params.transition ?? instance.transition;
     return transition
-      ? transition.update(opts, defaultOpts)
-      : new Transition(base, opts, defaultOpts);
+      ? transition.update(params.opts, defaultOpts)
+      : new Transition(instance, params, defaultOpts);
   }
 }

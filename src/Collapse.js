@@ -6,7 +6,6 @@ import {
   DEFAULT_OPTIONS,
   EVENT_BEFORE_INIT,
   EVENT_BEFORE_DESTROY,
-  EVENT_DESTROY,
   EVENT_BEFORE_SHOW,
   EVENT_SHOW,
   EVENT_SHOWN,
@@ -18,7 +17,8 @@ import {
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
   HIDE_MODE,
-  OPTION_KEEP_PLACE,
+  ACTION_REMOVE,
+  HIDDEN,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -34,6 +34,7 @@ import {
   getOptionElems,
   getDefaultToggleSelector,
   updateOptsByData,
+  toggleHideModeState,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -59,12 +60,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     super(elem, opts);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [
-      HIDE_MODE,
-      OPTION_KEEP_PLACE,
-    ]);
+    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
 
-    const { base, opts, transition, teleport } = this;
+    const { base, opts, teleport } = this;
 
     addDismiss(this);
 
@@ -74,16 +72,17 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       opts.teleport,
     )?.move(this);
 
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+
     this.transition = Transition.createOrUpdate(
-      transition,
-      base,
-      { hideMode: opts.hideMode, ...opts.transition },
+      this,
+      {},
       { cssVariables: true },
     );
 
     this.updateTriggers();
-
-    return this;
   }
   destroy(destroyOpts) {
     // eslint-disable-next-line prefer-const
@@ -177,20 +176,20 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-    const promise = transition.run(s, animated, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams),
-      [EVENT_DESTROY]: () =>
-        this.destroy({ remove: true, destroyTransition: false }),
-    });
+    s && toggleHideModeState(true, this);
+
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+    const promise = transition?.run(s, animated);
 
     a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
     toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
     toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
+    awaitPromise(promise, () => {
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      !s && toggleHideModeState(false, this);
+    });
 
     animated && awaitAnimation && (await promise);
 

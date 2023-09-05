@@ -114,7 +114,6 @@ const DIALOG_DATA_OPTIONS = [
   [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
   [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
   HIDE_MODE,
-  OPTION_KEEP_PLACE,
 ];
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
@@ -152,6 +151,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+
+    autodestroy: false,
 
     autofocus: true,
     focusTrap: true,
@@ -209,12 +210,13 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       },
     )?.move(this);
 
-    this.transition = Transition.createOrUpdate(
-      this.transition,
-      this[CONTENT],
-      { hideMode: opts.hideMode, ...opts.transition },
-      { keepPlace: true },
-    );
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+
+    this.transition = Transition.createOrUpdate(this, {
+      target: this[CONTENT],
+    });
 
     this._togglers =
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
@@ -233,8 +235,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       opts.popoverApi
         ? POPOVER_API_MODE_MANUAL
         : null;
-
-    return this;
   }
   init() {
     const { opts, isInit, base, on, emit, hide, toggle } = this;
@@ -302,6 +302,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       ]);
     this.focusGuards?.destroy();
     this.focusGuards = null;
+    this.placeholder?.replaceWith(this.base);
     baseDestroy(this, destroyOpts);
     return this;
   }
@@ -418,18 +419,18 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       optReturnFocusAwait = false;
     }
 
-    if (s) {
-      toggleHideModeState(true, this, opts);
+    s && toggleHideModeState(true, this);
 
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+    const promise = this.transition?.run(s, animated);
+
+    if (s) {
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
       this._toggleApi(true);
     }
-
-    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
-
-    const promise = this.transition?.run(s, animated, { allowRemove: false });
 
     toggleClass(
       getElements(this._togglers),
@@ -469,10 +470,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         this.returnFocus();
       }
       if (!s) {
-        toggleHideModeState(false, this, opts);
-        if (this.hideMode === ACTION_DESTROY) {
-          this.destroy({ remove: true });
-        }
+        toggleHideModeState(false, this);
+        opts.autodestroy && this.destroy({ remove: true });
       }
     });
 
@@ -526,18 +525,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       focus(this.returnFocusElem);
     }
   }
-
-  // get isAnimating() {
-  //   return DOM_ELEMENTS.some(
-  //     (elemName) => this.transitions[elemName]?.isAnimating,
-  //   );
-  // }
-
-  // get transitionPromise() {
-  //   return Promise.allSettled(
-  //     Object.values(this.transitions).flatMap(({ promises }) => promises),
-  //   );
-  // }
 
   get groupDialogs() {
     return arrayFrom(this.instances.values()).filter(

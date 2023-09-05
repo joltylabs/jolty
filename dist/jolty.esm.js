@@ -114,16 +114,16 @@ const body = doc.body;
 
 const ENTER = "enter";
 const LEAVE = "leave";
-const BEFORE_ENTER = BEFORE + upperFirst(ENTER);
+BEFORE + upperFirst(ENTER);
 const ENTER_ACTIVE = ENTER + upperFirst(ACTIVE);
 const ENTER_FROM = ENTER + "From";
 const ENTER_TO = ENTER + "To";
-const AFTER_ENTER = AFTER + upperFirst(ENTER);
-const BEFORE_LEAVE = BEFORE + upperFirst(LEAVE);
+AFTER + upperFirst(ENTER);
+BEFORE + upperFirst(LEAVE);
 const LEAVE_ACTIVE = LEAVE + upperFirst(ACTIVE);
 const LEAVE_FROM = LEAVE + "From";
 const LEAVE_TO = LEAVE + "To";
-const AFTER_LEAVE = AFTER + upperFirst(LEAVE);
+AFTER + upperFirst(LEAVE);
 const HIDE_MODE = HIDE + upperFirst(MODE);
 const DURATION = "duration";
 DURATION + upperFirst(ENTER);
@@ -227,6 +227,9 @@ kebabToCamel(ARIA_ATOMIC);
 const OPTION_TOP_LAYER = "topLayer";
 const CLASS_ACTIVE_SUFFIX = "ClassActive";
 const ROLE_SUFFIX = upperFirst(ROLE);
+
+const OPTION_SHOWN_CLASS = SHOWN + upperFirst(CLASS);
+const OPTION_HIDDEN_CLASS = HIDDEN + upperFirst(CLASS);
 
 const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 const DEFAULT_OPTIONS = {
@@ -871,8 +874,8 @@ var isShown = (elem, hideMode) => {
     : !elem.hasAttribute(hideMode);
 };
 
-var toggleHideModeState = (s, instance, opts = instance.opts) => {
-  const base = instance.base;
+var toggleHideModeState = (s, instance) => {
+  const { base, opts } = instance;
   const mode = opts[HIDE_MODE];
   if (mode === ACTION_REMOVE) {
     if (s) {
@@ -899,8 +902,20 @@ var toggleHideModeState = (s, instance, opts = instance.opts) => {
         }
       }
     }
-  } else if (mode !== ACTION_DESTROY && mode !== CLASS) {
+  } else if (mode === CLASS) {
+    s ??= !isShown(base);
+
+    if (opts[HIDE_MODE] === CLASS) {
+      toggleClass(base, HIDDEN_CLASS, !s);
+    }
+    opts[OPTION_HIDDEN_CLASS] &&
+      toggleClass(base, opts[OPTION_HIDDEN_CLASS], !s);
+    opts[OPTION_SHOWN_CLASS] && toggleClass(base, opts[OPTION_SHOWN_CLASS], s);
+  } else {
     base.toggleAttribute(mode, !s);
+  }
+  if (s) {
+    base[HIDDEN] = false;
   }
 };
 
@@ -1461,7 +1476,7 @@ var ToggleMixin = (Base, NAME) =>
       return NAME;
     }
     get isAnimating() {
-      return this.transition.isAnimating;
+      return this.transition?.isAnimating;
     }
     get initialPlaceNode() {
       return (
@@ -1474,6 +1489,9 @@ var ToggleMixin = (Base, NAME) =>
     show(opts) {
       return this.toggle(true, opts);
     }
+    // toggleHideModeState(s) {
+    //   toggleHideModeState(s, this);
+    // }
     static toggle(id, s, opts) {
       return this.instances.get(id)?.toggle(s, opts);
     }
@@ -1485,49 +1503,48 @@ var ToggleMixin = (Base, NAME) =>
     }
   };
 
-// const SHOWN_CLASS = UI_PREFIX + SHOWN;
 const DATASET_DURATION = UI + upperFirst(DURATION);
 const DATASET_DURATION_ENTER = DATASET_DURATION + upperFirst(ENTER);
 const DATASET_DURATION_LEAVE = DATASET_DURATION + upperFirst(LEAVE);
-const OPTION_SHOWN_CLASS = SHOWN + upperFirst(CLASS);
-const OPTION_HIDDEN_CLASS = HIDDEN + upperFirst(CLASS);
 
 class Transition {
   static Default = {
     name: UI,
     css: true,
     cssVariables: false,
-    [HIDE_MODE]: HIDDEN,
-    [OPTION_HIDDEN_CLASS]: "",
-    [OPTION_SHOWN_CLASS]: "",
     [ENTER]: null,
-    [BEFORE_ENTER]: null,
     [ENTER_ACTIVE]: null,
     [ENTER_FROM]: null,
     [ENTER_TO]: null,
-    [AFTER_ENTER]: null,
-    [BEFORE_LEAVE]: null,
+    [LEAVE]: null,
+    [LEAVE_FROM]: null,
     [LEAVE_ACTIVE]: null,
-    [AFTER_LEAVE]: null,
+    [LEAVE_TO]: null,
     [DURATION]: null,
-    [OPTION_KEEP_PLACE]: true,
   };
-  constructor(base, opts = {}, defaultOpts) {
+
+  constructor(
+    instance,
+    {
+      base = instance.base,
+      target = base,
+      opts = instance.opts.transition,
+    } = {},
+    defaultOpts,
+  ) {
+    this.instance = instance;
     this.base = base;
-    this.updateConfig(opts, defaultOpts);
+    this.target = target;
+
+    this.update(opts, defaultOpts);
     this.promises = [];
-    if (this.opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-      toggleHideModeState(false, this, this.opts);
-      base[HIDDEN] = false;
-    } else {
-      this.setFinishClass();
-    }
+
     this.isInit = true;
   }
-  updateConfig(opts, defaultOpts = {}) {
-    const base = this.base;
+  update(opts, defaultOpts = {}) {
+    const target = this.target;
     const defaultConfig = Transition.Default;
-    const dataset = base.dataset;
+    const dataset = target.dataset;
 
     const datasetData = {};
 
@@ -1545,12 +1562,15 @@ class Transition {
     }
 
     opts = isString(opts) ? { name: opts } : opts;
-    opts = { ...defaultConfig, ...defaultOpts, ...opts, ...datasetData };
 
-    this.opts = updateOptsByData(opts, base, [
-      HIDE_MODE,
-      OPTION_HIDDEN_CLASS,
-      OPTION_SHOWN_CLASS,
+    opts = {
+      ...defaultConfig,
+      ...defaultOpts,
+      ...opts,
+      ...datasetData,
+    };
+
+    this.opts = updateOptsByData(opts, target, [
       ENTER_ACTIVE,
       ENTER_FROM,
       ENTER_TO,
@@ -1560,16 +1580,10 @@ class Transition {
       [NAME, TRANSITION + "Name"],
     ]);
 
-    this.teleport = opts.teleport;
-
-    if (opts[HIDE_MODE] !== CLASS) {
-      removeClass(base, HIDDEN_CLASS);
-    }
-
     return this;
   }
   toggleVariables(s) {
-    const { offsetWidth, offsetHeight, style } = this.base;
+    const { offsetWidth, offsetHeight, style } = this.target;
     const rect = [offsetWidth, offsetHeight];
     [WIDTH, HEIGHT].forEach((name, i) => {
       const prop = VAR_UI_PREFIX + TRANSITION + "-" + name;
@@ -1582,23 +1596,16 @@ class Transition {
   }
 
   toggleAnimationClasses(s) {
-    this.base.style.transition = NONE;
+    this.target.style.transition = NONE;
     this.setClasses([s ? ENTER_FROM : LEAVE_FROM]);
-    this.base.offsetWidth;
-    this.base.style.transition = "";
+    this.target.offsetWidth;
+    this.target.style.transition = "";
     this.setClasses([s ? ENTER_ACTIVE : LEAVE_ACTIVE, s ? ENTER_TO : LEAVE_TO]);
     return this;
   }
-  setFinishClasses(s) {
-    this.removeClasses(s);
-    this.promises.length = 0;
-  }
-  removeClasses() {
-    this.setClasses(null);
-  }
 
   setClasses(animations) {
-    const { base, opts } = this;
+    const { target, opts } = this;
     const classes = ["", ""];
     const styles = [{}, {}];
     let hasStyle = false;
@@ -1624,7 +1631,7 @@ class Transition {
     });
     if (hasClass) {
       classes.forEach((classes, s) =>
-        base.classList[s ? ACTION_ADD : ACTION_REMOVE](
+        target.classList[s ? ACTION_ADD : ACTION_REMOVE](
           ...classes.split(" ").filter(Boolean),
         ),
       );
@@ -1636,27 +1643,27 @@ class Transition {
             name = camelToKebab(name);
           }
           if (s) {
-            base.style.setProperty(name, value);
+            target.style.setProperty(name, value);
           } else {
-            base.style.removeProperty(name);
+            target.style.removeProperty(name);
           }
         });
       });
     }
   }
   collectPromises(s) {
-    const { base, promises, opts } = this;
+    const { target, promises, opts } = this;
     const state = s ? ENTER : LEAVE;
     const duration = opts.duration?.[state] ?? opts.duration;
 
     promises.length = 0;
     let promisesEvent, promisesAnimation;
     if (isFunction(opts[state])) {
-      promisesEvent = new Promise((resolve) => opts[state](base, resolve));
+      promisesEvent = new Promise((resolve) => opts[state](target, resolve));
     }
     let animations;
     if (opts.css) {
-      animations = base.getAnimations();
+      animations = target.getAnimations();
       promisesAnimation =
         animations.length &&
         Promise.allSettled(animations.map(({ finished }) => finished));
@@ -1688,43 +1695,9 @@ class Transition {
     return Promise.allSettled(this.promises);
   }
 
-  setFinishClass(s) {
-    const { base, opts } = this;
-
-    s ??= isShown(base);
-
-    if (opts[HIDE_MODE] === CLASS) {
-      toggleClass(base, HIDDEN_CLASS, !s);
-    }
-    opts[OPTION_HIDDEN_CLASS] &&
-      toggleClass(base, opts[OPTION_HIDDEN_CLASS], !s);
-    opts[OPTION_SHOWN_CLASS] && toggleClass(base, opts[OPTION_SHOWN_CLASS], s);
-  }
-  async run(
-    s,
-    animated = true,
-    { show, hide, shown, hidden, destroy, allowRemove = true } = {},
-  ) {
-    const { base, opts } = this;
-    if (!base) return;
-
-    opts[s ? BEFORE_ENTER : BEFORE_LEAVE]?.(base);
-
-    const toggle = (s) => {
-      allowRemove && toggleHideModeState(s, this, opts);
-      this.setFinishClass(s);
-      if (!s && opts[HIDE_MODE] === ACTION_DESTROY) {
-        this.destroy();
-        destroy?.(base);
-      }
-    };
-
-    if (s) {
-      toggle(s);
-      show?.(base);
-    } else {
-      hide?.(base);
-    }
+  async run(s, animated = true) {
+    const { target, opts } = this;
+    if (!target) return;
 
     if (animated) {
       if (opts.css) {
@@ -1738,28 +1711,21 @@ class Transition {
       }
       if (opts.css) {
         opts.cssVariables && this.toggleVariables(false);
-        this.setFinishClasses(s);
       }
     }
 
-    if (s) {
-      shown?.(base);
-    } else {
-      hidden?.(base);
-      toggle(s);
-    }
-
-    opts[s ? AFTER_ENTER : AFTER_LEAVE]?.(base);
+    this.setClasses(null);
+    this.promises.length = 0;
   }
   destroy() {
-    this.removeClasses();
-    this.placeholder?.replaceWith(this.base);
+    this.setClasses(null);
     this.isInit = false;
   }
-  static createOrUpdate(transition, base, opts, defaultOpts) {
+  static createOrUpdate(instance, params = {}, defaultOpts) {
+    const transition = params.transition ?? instance.transition;
     return transition
-      ? transition.update(opts, defaultOpts)
-      : new Transition(base, opts, defaultOpts);
+      ? transition.update(params.opts, defaultOpts)
+      : new Transition(instance, params, defaultOpts);
   }
 }
 
@@ -1898,49 +1864,17 @@ var callAutofocus = (instance, elem = instance.base) => {
   focus(focusElem);
 };
 
-var baseDestroy = (
-  instance,
-  {
-    remove = false,
-    keepInstance = false,
-    destroyTransition = true,
-    destroyTeleport = true,
-  } = {},
-) => {
-  const {
-    base,
-    off,
-    emit,
-    autohide,
-    transition,
-    floating,
-    teleport,
-    id,
-    uuid,
-    instances,
-    breakpoints,
-  } = instance;
+var baseDestroy = (instance, { remove = false, keepInstance = false } = {}) => {
+  const { base, off, emit, id, uuid, instances, breakpoints } = instance;
 
-  if (autohide) {
-    autohide.destroy();
-    instance.autohide = null;
-  }
-  if (floating) {
-    floating.destroy();
-    instance.floating = null;
-  }
-  if (destroyTransition && transition) {
-    transition.destroy();
-    if (instance.constructor.NAME === MODAL) {
-      instance.transitions = null;
-    } else {
-      instance.transition = null;
+  instance[PLACEHOLDER]?.replaceWith(base);
+
+  ["autohide", FLOATING, "transition", "teleport"].forEach((key) => {
+    if (instance[key]) {
+      instance[key].destroy();
+      instance[key] = null;
     }
-  }
-  if (destroyTeleport && teleport) {
-    teleport.destroy();
-    instance.teleport = null;
-  }
+  });
 
   off();
 
@@ -2401,39 +2335,33 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
   const target = instance[name];
   const anchor = toggler ?? base;
   const transitionParams = {};
-  transition.parent = null;
 
-  if (!silent && !s) {
-    emit(EVENT_HIDE, eventParams);
-  }
+  transition && (transition.parent = null);
 
   if (s) {
-    transitionParams[EVENT_SHOW] = () => {
-      const arrow = target.querySelector(getDataSelector(name, ARROW));
+    const arrow = target.querySelector(getDataSelector(name, ARROW));
 
-      instance[FLOATING] = new Floating({
-        teleport,
-        base,
-        anchor,
-        target,
-        arrow,
-        opts,
-        hide: instance.hide,
-        defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
-        name,
-        onTopLayer(type) {
-          constructor.dispatchTopLayer(type);
-        },
-      }).init();
-      if (!silent) {
-        emit(EVENT_SHOW, eventParams);
-      }
-    };
+    instance[FLOATING] = new Floating({
+      teleport,
+      base,
+      anchor,
+      target,
+      arrow,
+      opts,
+      hide: instance.hide,
+      defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
+      name,
+      onTopLayer(type) {
+        constructor.dispatchTopLayer(type);
+      },
+    }).init();
   }
+
+  !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
   !s && instance[FLOATING]?.wrapper.close?.();
 
-  const promise = transition.run(s, animated, transitionParams);
+  const promise = transition?.run(s, animated, transitionParams);
 
   if (opts.outsideHide && s) {
     instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
@@ -2455,10 +2383,11 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
     emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
     if (s) return;
+
     if (animated) {
       await promise;
     }
-    if (transition.placeholder) {
+    if (transition?.placeholder) {
       instance[FLOATING].wrapper.replaceWith(transition.placeholder);
     }
     instance[FLOATING]?.destroy();
@@ -2474,11 +2403,6 @@ var callShowInit = (instance, target = instance.base, stateElem = target) => {
   instance.instances.set(id, instance);
   instance.isInit = true;
   instance.emit(EVENT_INIT);
-
-  if (opts[HIDE_MODE] === ACTION_REMOVE && target[HIDDEN]) {
-    toggleHideModeState(false, instance, opts);
-    target[HIDDEN] = false;
-  }
 
   const shown =
     callOrReturn(
@@ -2594,12 +2518,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     super(elem, opts);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [
-      HIDE_MODE,
-      OPTION_KEEP_PLACE,
-    ]);
+    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
 
-    const { base, opts, transition, teleport } = this;
+    const { base, opts, teleport } = this;
 
     addDismiss(this);
 
@@ -2609,16 +2530,17 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       opts.teleport,
     )?.move(this);
 
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+
     this.transition = Transition.createOrUpdate(
-      transition,
-      base,
-      { hideMode: opts.hideMode, ...opts.transition },
+      this,
+      {},
       { cssVariables: true },
     );
 
     this.updateTriggers();
-
-    return this;
   }
   destroy(destroyOpts) {
     // eslint-disable-next-line prefer-const
@@ -2712,20 +2634,20 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-    const promise = transition.run(s, animated, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams),
-      [EVENT_DESTROY]: () =>
-        this.destroy({ remove: true, destroyTransition: false }),
-    });
+    s && toggleHideModeState(true, this);
+
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+    const promise = transition?.run(s, animated);
 
     a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
     toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
     toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
+    awaitPromise(promise, () => {
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      !s && toggleHideModeState(false, this);
+    });
 
     animated && awaitAnimation && (await promise);
 
@@ -2788,27 +2710,16 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     addDismiss(this, base);
 
-    this.teleport = new Teleport(
-      base,
-      {},
-      {
-        disableAttributes: true,
-      },
-    );
+    this.teleport = new Teleport(base, { disableAttributes: true });
 
     return callShowInit(this, base);
   }
   _update() {
     this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
     updateModule(this, OPTION_TOP_LAYER);
-    const { base, opts, transition, on, off, hide } = this;
+    const { base, opts, on, off, hide } = this;
 
-    this.transition = Transition.createOrUpdate(
-      transition,
-      base,
-      opts.transition,
-      { keepPlace: false },
-    );
+    this.transition = Transition.createOrUpdate(this, {}, { keepPlace: false });
 
     this.updateToggler();
 
@@ -2968,7 +2879,6 @@ const DIALOG_DATA_OPTIONS = [
   [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
   [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
   HIDE_MODE,
-  OPTION_KEEP_PLACE,
 ];
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
@@ -3006,6 +2916,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+
+    autodestroy: false,
 
     autofocus: true,
     focusTrap: true,
@@ -3063,12 +2975,13 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       },
     )?.move(this);
 
-    this.transition = Transition.createOrUpdate(
-      this.transition,
-      this[CONTENT],
-      { hideMode: opts.hideMode, ...opts.transition },
-      { keepPlace: true },
-    );
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+
+    this.transition = Transition.createOrUpdate(this, {
+      target: this[CONTENT],
+    });
 
     this._togglers =
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
@@ -3087,8 +3000,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       opts.popoverApi
         ? POPOVER_API_MODE_MANUAL
         : null;
-
-    return this;
   }
   init() {
     const { opts, isInit, base, on, emit, hide, toggle } = this;
@@ -3156,6 +3067,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       ]);
     this.focusGuards?.destroy();
     this.focusGuards = null;
+    this.placeholder?.replaceWith(this.base);
     baseDestroy(this, destroyOpts);
     return this;
   }
@@ -3272,18 +3184,18 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       optReturnFocusAwait = false;
     }
 
-    if (s) {
-      toggleHideModeState(true, this, opts);
+    s && toggleHideModeState(true, this);
 
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+    const promise = this.transition?.run(s, animated);
+
+    if (s) {
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
       this._toggleApi(true);
     }
-
-    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
-
-    const promise = this.transition?.run(s, animated, { allowRemove: false });
 
     toggleClass(
       getElements(this._togglers),
@@ -3323,10 +3235,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         this.returnFocus();
       }
       if (!s) {
-        toggleHideModeState(false, this, opts);
-        if (this.hideMode === ACTION_DESTROY) {
-          this.destroy({ remove: true });
-        }
+        toggleHideModeState(false, this);
+        opts.autodestroy && this.destroy({ remove: true });
       }
     });
 
@@ -3380,18 +3290,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       focus(this.returnFocusElem);
     }
   }
-
-  // get isAnimating() {
-  //   return DOM_ELEMENTS.some(
-  //     (elemName) => this.transitions[elemName]?.isAnimating,
-  //   );
-  // }
-
-  // get transitionPromise() {
-  //   return Promise.allSettled(
-  //     Object.values(this.transitions).flatMap(({ promises }) => promises),
-  //   );
-  // }
 
   get groupDialogs() {
     return arrayFrom(this.instances.values()).filter(
@@ -3529,18 +3427,13 @@ class Tablist extends Base {
     if (opts.alwaysExpanded && !hasSelected) {
       tabWithState[0][0] = true;
     }
-    tabWithState.forEach(([isShown, tab]) => {
-      tab.transition.updateConfig(
-        { hideMode: opts.hideMode, ...opts.transition },
-        { cssVariables: true },
-      );
-      tab.toggle(isShown, {
-        animated: opts.appear ?? tab.tabpanel.hasAttribute(DATA_APPEAR),
+    tabWithState.forEach(([isShown, { transition, toggle, tabpanel }]) => {
+      transition?.update(this.opts, { cssVariables: true });
+      toggle(isShown, {
+        animated: opts.appear ?? tabpanel.hasAttribute(DATA_APPEAR),
         silent: !isShown,
       });
     });
-
-    return this;
   }
   init() {
     const { id, instances, isInit, emit } = this;
@@ -3712,7 +3605,7 @@ class Tablist extends Base {
       return !disabled;
     };
 
-    const transition = new Transition(tabpanel, opts.transition);
+    const transition = new Transition(this, { base: tabpanel });
 
     const elems = [tab, item, tabpanel];
     const tabInstance = {
@@ -3870,15 +3763,15 @@ class Tablist extends Base {
     if (
       s === isShown ||
       (awaitAnimation &&
-        transition.isAnimating &&
+        transition?.isAnimating &&
         ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
       (isShown && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
       (s && !this.focusFilter(tabInstance))
     )
       return;
 
-    if (transition.isAnimating && !awaitAnimation) {
-      await transition?.cancel();
+    if (transition?.isAnimating && !awaitAnimation) {
+      await transition.cancel();
     }
 
     const eventParams = { event, trigger };
@@ -3892,19 +3785,16 @@ class Tablist extends Base {
       for (const shownTab of shownTabs) {
         if (tabInstance !== shownTab && shownTab.isShown) {
           shownTab.hide(animated);
-          if (opts.awaitPrevious) await shownTab.transition.getAwaitPromise();
+          if (opts.awaitPrevious) await shownTab.transition?.getAwaitPromise();
         }
       }
     }
 
     if (s && !tabInstance.isShown) return;
 
-    const promise = transition.run(s, animated, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams),
-      [EVENT_DESTROY]: () =>
-        tabInstance.destroy({ remove: true, destroyTransition: false }),
-    });
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams);
+
+    const promise = transition?.run(s, animated);
 
     ELEMS.forEach((elemName) =>
       toggleClass(
@@ -4111,6 +4001,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limit: false,
     limitAnimateEnter: true,
     limitAnimateLeave: true,
+    autodestroy: true,
     autohide: false,
     topLayer: true,
     keepTopLayer: true,
@@ -4130,21 +4021,16 @@ class Toast extends ToggleMixin(Base, TOAST) {
     } else {
       this.root = opts.root ? getOptionElem(this, opts.root) : body;
     }
-    this.transition = new Transition(
-      base,
-      { hideMode: opts.hideMode, ...opts.transition },
-      {
-        [HIDE_MODE]: ACTION_DESTROY,
-      },
-    );
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+    this.transition = Transition.createOrUpdate(this);
     this.autohide = Autoaction.createOrUpdate(
       autohide,
       base,
       hide,
       opts.autohide,
     );
-
-    return this;
   }
   destroy(opts) {
     if (!this.isInit) return;
@@ -4173,6 +4059,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
         topLayer,
         keepTopLayer,
         hideMode,
+        autodestroy,
       },
       autohide,
       base,
@@ -4180,12 +4067,11 @@ class Toast extends ToggleMixin(Base, TOAST) {
       instances,
       constructor,
       emit,
-      destroy,
     } = this;
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
 
-    if (animated && transition.isAnimating) return;
+    if (animated && transition?.isAnimating) return;
 
     s ??= !isShown(base, hideMode);
 
@@ -4242,16 +4128,19 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     autohide && autohide.toggleInterections(s);
 
-    const promise = transition.run(s, animated && !preventAnimation, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams),
-      [EVENT_DESTROY]: () =>
-        destroy({ remove: true, destroyTransition: false }),
-    });
+    s && toggleHideModeState(true, this);
 
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+    const promise = transition?.run(s, animated && !preventAnimation);
+
+    awaitPromise(promise, () => {
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      if (!s) {
+        toggleHideModeState(false, this);
+        autodestroy && this.destroy({ remove: true });
+      }
+    });
 
     animated && (await promise);
 
@@ -4371,14 +4260,12 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   }
   _update() {
     updateModule(this, OPTION_TOP_LAYER);
-    const { tooltip, opts, transition } = this;
+    const { tooltip, opts } = this;
 
-    this.transition = Transition.createOrUpdate(
-      transition,
-      tooltip,
-      opts.transition,
-      { keepPlace: false },
-    );
+    this.transition = Transition.createOrUpdate(this, {
+      base: tooltip,
+      defaultOpts: { keepPlace: false },
+    });
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
@@ -4435,13 +4322,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     addDismiss(this, target);
 
-    this.teleport = new Teleport(
-      target,
-      {},
-      {
-        disableAttributes: true,
-      },
-    );
+    this.teleport = new Teleport(target, { disableAttributes: true });
 
     return callShowInit(this, target);
   }
@@ -4553,13 +4434,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     addDismiss(this, base);
 
-    this.teleport = new Teleport(
-      base,
-      {},
-      {
-        disableAttributes: true,
-      },
-    );
+    this.teleport = new Teleport(base, { disableAttributes: true });
 
     return callShowInit(this);
   }
@@ -4568,14 +4443,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     updateModule(this, OPTION_TOP_LAYER);
 
-    const { base, opts, transition } = this;
-
-    this.transition = Transition.createOrUpdate(
-      transition,
-      base,
-      opts.transition,
-      { keepPlace: false },
-    );
+    this.transition = Transition.createOrUpdate(this, {}, { keepPlace: false });
 
     this.updateToggler();
   }

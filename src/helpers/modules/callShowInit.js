@@ -1,16 +1,5 @@
-import {
-  ACTION_REMOVE,
-  DATA_APPEAR,
-  EVENT_INIT,
-  HIDDEN,
-  HIDE_MODE,
-} from "../constants";
-import {
-  callOrReturn,
-  checkHash,
-  isShown,
-  toggleHideModeState,
-} from "../utils";
+import { DATA_APPEAR, EVENT_INIT } from "../constants";
+import { callOrReturn, checkHash, isShown } from "../utils";
 
 export default (instance, target = instance.base, stateElem = target) => {
   const { opts, show, id } = instance;
@@ -18,11 +7,6 @@ export default (instance, target = instance.base, stateElem = target) => {
   instance.instances.set(id, instance);
   instance.isInit = true;
   instance.emit(EVENT_INIT);
-
-  if (opts[HIDE_MODE] === ACTION_REMOVE && target[HIDDEN]) {
-    toggleHideModeState(false, instance, opts);
-    target[HIDDEN] = false;
-  }
 
   const shown =
     callOrReturn(

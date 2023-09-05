@@ -79,14 +79,12 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   }
   _update() {
     updateModule(this, OPTION_TOP_LAYER);
-    const { tooltip, opts, transition } = this;
+    const { tooltip, opts } = this;
 
-    this.transition = Transition.createOrUpdate(
-      transition,
-      tooltip,
-      opts.transition,
-      { keepPlace: false },
-    );
+    this.transition = Transition.createOrUpdate(this, {
+      base: tooltip,
+      defaultOpts: { keepPlace: false },
+    });
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
@@ -143,13 +141,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     addDismiss(this, target);
 
-    this.teleport = new Teleport(
-      target,
-      {},
-      {
-        disableAttributes: true,
-      },
-    );
+    this.teleport = new Teleport(target, { disableAttributes: true });
 
     return callShowInit(this, target);
   }

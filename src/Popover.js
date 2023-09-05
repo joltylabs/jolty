@@ -95,13 +95,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     addDismiss(this, base);
 
-    this.teleport = new Teleport(
-      base,
-      {},
-      {
-        disableAttributes: true,
-      },
-    );
+    this.teleport = new Teleport(base, { disableAttributes: true });
 
     return callShowInit(this);
   }
@@ -110,14 +104,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     updateModule(this, OPTION_TOP_LAYER);
 
-    const { base, opts, transition } = this;
-
-    this.transition = Transition.createOrUpdate(
-      transition,
-      base,
-      opts.transition,
-      { keepPlace: false },
-    );
+    this.transition = Transition.createOrUpdate(this, {}, { keepPlace: false });
 
     this.updateToggler();
   }

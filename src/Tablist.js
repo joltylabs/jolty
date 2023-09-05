@@ -207,18 +207,13 @@ class Tablist extends Base {
     if (opts.alwaysExpanded && !hasSelected) {
       tabWithState[0][0] = true;
     }
-    tabWithState.forEach(([isShown, tab]) => {
-      tab.transition.updateConfig(
-        { hideMode: opts.hideMode, ...opts.transition },
-        { cssVariables: true },
-      );
-      tab.toggle(isShown, {
-        animated: opts.appear ?? tab.tabpanel.hasAttribute(DATA_APPEAR),
+    tabWithState.forEach(([isShown, { transition, toggle, tabpanel }]) => {
+      transition?.update(this.opts, { cssVariables: true });
+      toggle(isShown, {
+        animated: opts.appear ?? tabpanel.hasAttribute(DATA_APPEAR),
         silent: !isShown,
       });
     });
-
-    return this;
   }
   init() {
     const { id, instances, isInit, emit } = this;
@@ -390,7 +385,7 @@ class Tablist extends Base {
       return !disabled;
     };
 
-    const transition = new Transition(tabpanel, opts.transition);
+    const transition = new Transition(this, { base: tabpanel });
 
     const elems = [tab, item, tabpanel];
     const tabInstance = {
@@ -548,15 +543,15 @@ class Tablist extends Base {
     if (
       s === isShown ||
       (awaitAnimation &&
-        transition.isAnimating &&
+        transition?.isAnimating &&
         ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
       (isShown && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
       (s && !this.focusFilter(tabInstance))
     )
       return;
 
-    if (transition.isAnimating && !awaitAnimation) {
-      await transition?.cancel();
+    if (transition?.isAnimating && !awaitAnimation) {
+      await transition.cancel();
     }
 
     const eventParams = { event, trigger };
@@ -570,19 +565,16 @@ class Tablist extends Base {
       for (const shownTab of shownTabs) {
         if (tabInstance !== shownTab && shownTab.isShown) {
           shownTab.hide(animated);
-          if (opts.awaitPrevious) await shownTab.transition.getAwaitPromise();
+          if (opts.awaitPrevious) await shownTab.transition?.getAwaitPromise();
         }
       }
     }
 
     if (s && !tabInstance.isShown) return;
 
-    const promise = transition.run(s, animated, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams),
-      [EVENT_DESTROY]: () =>
-        tabInstance.destroy({ remove: true, destroyTransition: false }),
-    });
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams);
+
+    const promise = transition?.run(s, animated);
 
     ELEMS.forEach((elemName) =>
       toggleClass(

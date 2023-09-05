@@ -13,6 +13,8 @@ import {
   POPOVER_API_SUPPORTED,
   POPOVER_API_MODE_MANUAL,
   POPOVER,
+  ACTION_REMOVE,
+  HIDDEN,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
 import { fragment, inDOM } from "./helpers/dom";
@@ -23,6 +25,7 @@ import {
   callOrReturn,
   getOptionElem,
   isShown,
+  toggleHideModeState,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -54,6 +57,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limit: false,
     limitAnimateEnter: true,
     limitAnimateLeave: true,
+    autodestroy: true,
     autohide: false,
     topLayer: true,
     keepTopLayer: true,
@@ -73,21 +77,16 @@ class Toast extends ToggleMixin(Base, TOAST) {
     } else {
       this.root = opts.root ? getOptionElem(this, opts.root) : body;
     }
-    this.transition = new Transition(
-      base,
-      { hideMode: opts.hideMode, ...opts.transition },
-      {
-        [HIDE_MODE]: ACTION_DESTROY,
-      },
-    );
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+    this.transition = Transition.createOrUpdate(this);
     this.autohide = Autoaction.createOrUpdate(
       autohide,
       base,
       hide,
       opts.autohide,
     );
-
-    return this;
   }
   destroy(opts) {
     if (!this.isInit) return;
@@ -116,6 +115,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
         topLayer,
         keepTopLayer,
         hideMode,
+        autodestroy,
       },
       autohide,
       base,
@@ -123,12 +123,11 @@ class Toast extends ToggleMixin(Base, TOAST) {
       instances,
       constructor,
       emit,
-      destroy,
     } = this;
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
 
-    if (animated && transition.isAnimating) return;
+    if (animated && transition?.isAnimating) return;
 
     s ??= !isShown(base, hideMode);
 
@@ -185,16 +184,19 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     autohide && autohide.toggleInterections(s);
 
-    const promise = transition.run(s, animated && !preventAnimation, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams),
-      [EVENT_DESTROY]: () =>
-        destroy({ remove: true, destroyTransition: false }),
-    });
+    s && toggleHideModeState(true, this);
 
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+    const promise = transition?.run(s, animated && !preventAnimation);
+
+    awaitPromise(promise, () => {
+      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      if (!s) {
+        toggleHideModeState(false, this);
+        autodestroy && this.destroy({ remove: true });
+      }
+    });
 
     animated && (await promise);
 

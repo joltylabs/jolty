@@ -1,48 +1,16 @@
-import { EVENT_DESTROY, ID, MODAL } from "../constants";
+import { EVENT_DESTROY, FLOATING, ID, PLACEHOLDER } from "../constants";
 
-export default (
-  instance,
-  {
-    remove = false,
-    keepInstance = false,
-    destroyTransition = true,
-    destroyTeleport = true,
-  } = {},
-) => {
-  const {
-    base,
-    off,
-    emit,
-    autohide,
-    transition,
-    floating,
-    teleport,
-    id,
-    uuid,
-    instances,
-    breakpoints,
-  } = instance;
+export default (instance, { remove = false, keepInstance = false } = {}) => {
+  const { base, off, emit, id, uuid, instances, breakpoints } = instance;
 
-  if (autohide) {
-    autohide.destroy();
-    instance.autohide = null;
-  }
-  if (floating) {
-    floating.destroy();
-    instance.floating = null;
-  }
-  if (destroyTransition && transition) {
-    transition.destroy();
-    if (instance.constructor.NAME === MODAL) {
-      instance.transitions = null;
-    } else {
-      instance.transition = null;
+  instance[PLACEHOLDER]?.replaceWith(base);
+
+  ["autohide", FLOATING, "transition", "teleport"].forEach((key) => {
+    if (instance[key]) {
+      instance[key].destroy();
+      instance[key] = null;
     }
-  }
-  if (destroyTeleport && teleport) {
-    teleport.destroy();
-    instance.teleport = null;
-  }
+  });
 
   off();
 

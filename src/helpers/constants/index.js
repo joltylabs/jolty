@@ -234,6 +234,9 @@ export const OPTION_TOP_LAYER = "topLayer";
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = upperFirst(ROLE);
 
+export const OPTION_SHOWN_CLASS = SHOWN + upperFirst(CLASS);
+export const OPTION_HIDDEN_CLASS = HIDDEN + upperFirst(CLASS);
+
 export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
