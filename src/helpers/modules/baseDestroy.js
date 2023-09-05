@@ -31,6 +31,8 @@ export default (instance, { remove = false, keepInstance = false } = {}) => {
   }
 
   emit(EVENT_DESTROY);
+
   instance.isInit = false;
+
   return instance;
 };

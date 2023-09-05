@@ -52,6 +52,7 @@ import {
   TRANSITION,
   TELEPORT,
   ACTION_REMOVE,
+  UI,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -75,7 +76,6 @@ import {
   upperFirst,
   getOptionElems,
   isShown,
-  updateOptsByData,
   toggleHideModeState,
 } from "./helpers/utils";
 import {
@@ -161,9 +161,11 @@ class Tablist extends Base {
     super(elem, opts);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
     const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
     const { tablist, tabs, lastShownTab, opts } = this;
+
+    opts[HIDE_MODE] =
+      tablist.dataset[UI + upperFirst(HIDE_MODE)] ?? opts[HIDE_MODE];
 
     if (a11y) {
       setAttribute(tablist, ROLE, a11y[ROLE]);
@@ -211,10 +213,16 @@ class Tablist extends Base {
     if (opts.alwaysExpanded && !hasSelected) {
       tabWithState[0][0] = true;
     }
-    tabWithState.forEach(([isShown, { transition, toggle, tabpanel }]) => {
-      transition?.update(this.opts[TRANSITION], { cssVariables: true });
-      toggle(isShown, {
-        animated: opts.appear ?? tabpanel.hasAttribute(DATA_APPEAR),
+    tabWithState.forEach(([isShown, tabInstance]) => {
+      tabInstance[TRANSITION] = Transition.createOrUpdate(
+        tabInstance[TRANSITION],
+        tabInstance[TABPANEL],
+        opts[TRANSITION],
+        { cssVariables: true },
+      );
+      tabInstance.toggle(isShown, {
+        animated:
+          opts.appear ?? tabInstance[TABPANEL].hasAttribute(DATA_APPEAR),
         silent: !isShown,
       });
     });
@@ -398,7 +406,9 @@ class Tablist extends Base {
       tabpanel,
       elems,
       index,
-      transition: new Transition(tabpanel, opts[TRANSITION]),
+      transition: opts[TRANSITION]
+        ? new Transition(tabpanel, opts[TRANSITION])
+        : undefined,
       destroy: destroy.bind(this),
       toggleDisabled: toggleDisabled.bind(this),
       isShown,

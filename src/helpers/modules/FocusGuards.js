@@ -3,6 +3,7 @@ import {
   AFTER,
   BEFORE,
   DATA_UI_PREFIX,
+  doc,
   FIXED,
   FOCUS,
   FOCUSABLE_ELEMENTS_SELECTOR,
@@ -31,7 +32,7 @@ export default class FocusGuards {
       if (opts.focusAfterAnchor && returnElem) {
         if (!isGuardBefore) {
           const globalReturnElems = [
-            ...document.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
+            ...doc.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
           ];
           returnElem =
             globalReturnElems[
@@ -74,15 +75,3 @@ export default class FocusGuards {
     });
   }
 }
-
-// export default function (elem) {
-//   return [BEFORE, AFTER].map((methodName) => {
-//     const focusGuard = createElement("span", {
-//       [TABINDEX]: 0,
-//       [DATA_UI_PREFIX + "focus-guard"]: "",
-//       style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
-//     });
-//     elem[methodName](focusGuard);
-//     return focusGuard;
-//   });
-// }

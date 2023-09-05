@@ -40,6 +40,7 @@ import {
   getEventsPrefix,
   getClassActive,
   updateModule,
+  updateOptsByData,
 } from "./helpers/utils";
 import {
   baseDestroy,

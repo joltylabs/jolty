@@ -80,7 +80,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
       toggleHideModeState(false, this);
     }
-    this.transition = Transition.createOrUpdate(
+
+    this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
       base,
       opts[TRANSITION],

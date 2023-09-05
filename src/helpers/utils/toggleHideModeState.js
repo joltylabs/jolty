@@ -6,9 +6,6 @@ import {
   HIDDEN,
   HIDDEN_CLASS,
   HIDE_MODE,
-  OPTION_HIDDEN_CLASS,
-  OPTION_KEEP_PLACE,
-  OPTION_SHOWN_CLASS,
   PLACEHOLDER,
   UI_PREFIX,
 } from "../constants/index.js";
@@ -25,14 +22,14 @@ export default (
   const mode = opts[HIDE_MODE];
   if (mode === ACTION_REMOVE) {
     if (s) {
-      if (opts[OPTION_KEEP_PLACE]) {
+      if (opts.keepPlace) {
         subInstance[PLACEHOLDER]?.replaceWith(target);
         subInstance[PLACEHOLDER] = null;
       } else {
         subInstance._parent?.append(target);
       }
     } else {
-      if (opts[OPTION_KEEP_PLACE]) {
+      if (opts.keepPlace) {
         target.replaceWith(
           (subInstance[PLACEHOLDER] ||= doc.createComment(
             UI_PREFIX + PLACEHOLDER + ":" + target.id,
@@ -49,15 +46,7 @@ export default (
       }
     }
   } else if (mode === CLASS) {
-    s ??= !isShown(target);
-
-    if (opts[HIDE_MODE] === CLASS) {
-      toggleClass(target, HIDDEN_CLASS, !s);
-    }
-    opts[OPTION_HIDDEN_CLASS] &&
-      toggleClass(target, opts[OPTION_HIDDEN_CLASS], !s);
-    opts[OPTION_SHOWN_CLASS] &&
-      toggleClass(target, opts[OPTION_SHOWN_CLASS], s);
+    toggleClass(target, HIDDEN_CLASS, !s);
   } else {
     target.toggleAttribute(mode, !s);
   }

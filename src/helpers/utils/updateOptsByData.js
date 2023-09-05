@@ -1,7 +1,6 @@
 import {
   UI,
   APPEAR,
-  OPTION_KEEP_PLACE,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_SCROLL,
   MODAL,
@@ -12,7 +11,6 @@ import { isArray } from "../is";
 import { upperFirst } from "../utils";
 export const OPTIONS_BOOLEAN = [
   APPEAR,
-  OPTION_KEEP_PLACE,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_SCROLL,
   MODAL,

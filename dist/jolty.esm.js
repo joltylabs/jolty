@@ -213,7 +213,7 @@ const KEY_ARROW_DOWN = 40;
 
 const A11Y = "a11y";
 const OPTION_GROUP = "group";
-const OPTION_KEEP_PLACE = "keepPlace";
+
 const OPTION_PREVENT_SCROLL = "preventScroll";
 const OPTION_POSITION = "position";
 const OPTION_TO = "to";
@@ -229,9 +229,6 @@ const OPTION_TOP_LAYER = "topLayer";
 const CLASS_ACTIVE_SUFFIX = "ClassActive";
 const ROLE_SUFFIX = upperFirst(ROLE);
 
-const OPTION_SHOWN_CLASS = SHOWN + upperFirst(CLASS);
-const OPTION_HIDDEN_CLASS = HIDDEN + upperFirst(CLASS);
-
 const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 const DEFAULT_OPTIONS = {
   [ACTION_INIT]: true,
@@ -244,7 +241,8 @@ const DEFAULT_OPTIONS = {
   shown: null,
   a11y: true,
   hideMode: HIDDEN,
-  [OPTION_KEEP_PLACE]: true,
+  keepPlace: true,
+  transition: true,
 };
 const DEFAULT_TOP_LAYER_OPTIONS = {
   moveModal: true,
@@ -705,7 +703,6 @@ var without = (source, ...values) =>
 
 const OPTIONS_BOOLEAN = [
   APPEAR,
-  OPTION_KEEP_PLACE,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_SCROLL,
   MODAL,
@@ -885,14 +882,14 @@ var toggleHideModeState = (
   const mode = opts[HIDE_MODE];
   if (mode === ACTION_REMOVE) {
     if (s) {
-      if (opts[OPTION_KEEP_PLACE]) {
+      if (opts.keepPlace) {
         subInstance[PLACEHOLDER]?.replaceWith(target);
         subInstance[PLACEHOLDER] = null;
       } else {
         subInstance._parent?.append(target);
       }
     } else {
-      if (opts[OPTION_KEEP_PLACE]) {
+      if (opts.keepPlace) {
         target.replaceWith(
           (subInstance[PLACEHOLDER] ||= doc.createComment(
             UI_PREFIX + PLACEHOLDER + ":" + target.id,
@@ -909,15 +906,7 @@ var toggleHideModeState = (
       }
     }
   } else if (mode === CLASS) {
-    s ??= !isShown(target);
-
-    if (opts[HIDE_MODE] === CLASS) {
-      toggleClass(target, HIDDEN_CLASS, !s);
-    }
-    opts[OPTION_HIDDEN_CLASS] &&
-      toggleClass(target, opts[OPTION_HIDDEN_CLASS], !s);
-    opts[OPTION_SHOWN_CLASS] &&
-      toggleClass(target, opts[OPTION_SHOWN_CLASS], s);
+    toggleClass(target, HIDDEN_CLASS, !s);
   } else {
     target.toggleAttribute(mode, !s);
   }
@@ -1713,6 +1702,10 @@ class Transition {
     this.isInit = false;
   }
   static createOrUpdate(transition, base, opts, defaultOpts) {
+    if (!opts) {
+      transition?.destroy();
+      return;
+    }
     return transition
       ? transition.update(opts, defaultOpts)
       : new Transition(base, opts, defaultOpts);
@@ -1724,15 +1717,13 @@ const TELEPORT_DATA_ATTRIBUTE = kebabToCamel(UI_PREFIX + TELEPORT);
 const TELEPORT_DATA_ATTRIBUTES = [
   [OPTION_TO, TELEPORT],
   [OPTION_POSITION, TELEPORT + upperFirst(OPTION_POSITION)],
-  [OPTION_KEEP_PLACE, TELEPORT + upperFirst(OPTION_KEEP_PLACE)],
 ];
 
 class Teleport {
   static Default = {
     [OPTION_TO]: false,
     [OPTION_POSITION]: "beforeend",
-    [OPTION_KEEP_PLACE]: true,
-    enableAttributes: true,
+    disableAttributes: false,
   };
   constructor(elem, opts = {}, defaultOpts) {
     this.elem = elem;
@@ -1747,7 +1738,7 @@ class Teleport {
     opts = isObject(opts) ? opts : { to: opts };
     opts = mergeDeep(defaultConfig, defaultOpts, opts);
 
-    if (opts.enableAttributes) {
+    if (!opts.disableAttributes) {
       this.opts = updateOptsByData(opts, this.elem, TELEPORT_DATA_ATTRIBUTES);
     } else {
       this.opts = opts;
@@ -1757,14 +1748,13 @@ class Teleport {
   }
   move(...toParameters) {
     const { opts, elem } = this;
-    const { position, keepPlace } = opts;
+    const { position } = opts;
     let to = callOrReturn(opts.to, ...toParameters);
     to = isString(to) ? doc.querySelector(to) : to;
 
     if (!to) return;
-    this.placeholder ||= keepPlace
-      ? doc.createComment(UI_PREFIX + TELEPORT + ":" + elem.id)
-      : null;
+    this.placeholder = doc.createComment(UI_PREFIX + TELEPORT + ":" + elem.id);
+
     if (this.placeholder) {
       elem.before(this.placeholder);
     }
@@ -1783,7 +1773,7 @@ class Teleport {
     return teleport
       ? teleport.update(opts, defaultOpts)
       : opts !== false ||
-        (opts.enableAttributes && elem.dataset[TELEPORT_DATA_ATTRIBUTE])
+        (!opts.disableAttributes && elem.dataset[TELEPORT_DATA_ATTRIBUTE])
       ? new Teleport(elem, opts, defaultOpts)
       : null;
   }
@@ -1878,7 +1868,9 @@ var baseDestroy = (instance, { remove = false, keepInstance = false } = {}) => {
   }
 
   emit(EVENT_DESTROY);
+
   instance.isInit = false;
+
   return instance;
 };
 
@@ -2436,7 +2428,7 @@ class FocusGuards {
       if (opts.focusAfterAnchor && returnElem) {
         if (!isGuardBefore) {
           const globalReturnElems = [
-            ...document.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
+            ...doc.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
           ];
           returnElem =
             globalReturnElems[
@@ -2480,18 +2472,6 @@ class FocusGuards {
   }
 }
 
-// export default function (elem) {
-//   return [BEFORE, AFTER].map((methodName) => {
-//     const focusGuard = createElement("span", {
-//       [TABINDEX]: 0,
-//       [DATA_UI_PREFIX + "focus-guard"]: "",
-//       style: "outline:none;opacity:0;position:fixed;pointer-events:none;",
-//     });
-//     elem[methodName](focusGuard);
-//     return focusGuard;
-//   });
-// }
-
 const COLLAPSE = "collapse";
 
 class Collapse extends ToggleMixin(Base, COLLAPSE) {
@@ -2509,9 +2489,10 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     super(elem, opts);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
-
     const { base, opts } = this;
+
+    opts[HIDE_MODE] =
+      base.dataset[UI + upperFirst(HIDE_MODE)] ?? opts[HIDE_MODE];
 
     addDismiss(this);
 
@@ -2529,9 +2510,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       this[TRANSITION],
       base,
       opts[TRANSITION],
-      {
-        cssVariables: true,
-      },
+      { cssVariables: true },
     );
 
     this.updateTriggers();
@@ -2708,7 +2687,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callShowInit(this);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
+    this.opts[HIDE_MODE] =
+      this.base.dataset[UI + upperFirst(HIDE_MODE)] ?? this.opts[HIDE_MODE];
+
     updateModule(this, OPTION_TOP_LAYER);
     const { base, opts, on, off, hide } = this;
 
@@ -3381,9 +3362,11 @@ class Tablist extends Base {
     super(elem, opts);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
     const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
     const { tablist, tabs, lastShownTab, opts } = this;
+
+    opts[HIDE_MODE] =
+      tablist.dataset[UI + upperFirst(HIDE_MODE)] ?? opts[HIDE_MODE];
 
     if (a11y) {
       setAttribute(tablist, ROLE, a11y[ROLE]);
@@ -3431,10 +3414,16 @@ class Tablist extends Base {
     if (opts.alwaysExpanded && !hasSelected) {
       tabWithState[0][0] = true;
     }
-    tabWithState.forEach(([isShown, { transition, toggle, tabpanel }]) => {
-      transition?.update(this.opts[TRANSITION], { cssVariables: true });
-      toggle(isShown, {
-        animated: opts.appear ?? tabpanel.hasAttribute(DATA_APPEAR),
+    tabWithState.forEach(([isShown, tabInstance]) => {
+      tabInstance[TRANSITION] = Transition.createOrUpdate(
+        tabInstance[TRANSITION],
+        tabInstance[TABPANEL],
+        opts[TRANSITION],
+        { cssVariables: true },
+      );
+      tabInstance.toggle(isShown, {
+        animated:
+          opts.appear ?? tabInstance[TABPANEL].hasAttribute(DATA_APPEAR),
         silent: !isShown,
       });
     });
@@ -3618,7 +3607,9 @@ class Tablist extends Base {
       tabpanel,
       elems,
       index,
-      transition: new Transition(tabpanel, opts[TRANSITION]),
+      transition: opts[TRANSITION]
+        ? new Transition(tabpanel, opts[TRANSITION])
+        : undefined,
       destroy: destroy.bind(this),
       toggleDisabled: toggleDisabled.bind(this),
       isShown,
@@ -4034,7 +4025,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
       toggleHideModeState(false, this);
     }
-    this.transition = Transition.createOrUpdate(
+
+    this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
       base,
       opts[TRANSITION],

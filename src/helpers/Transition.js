@@ -231,6 +231,10 @@ export default class Transition {
     this.isInit = false;
   }
   static createOrUpdate(transition, base, opts, defaultOpts) {
+    if (!opts) {
+      transition?.destroy();
+      return;
+    }
     return transition
       ? transition.update(opts, defaultOpts)
       : new Transition(base, opts, defaultOpts);

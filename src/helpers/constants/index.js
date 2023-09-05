@@ -219,7 +219,7 @@ export const KEY_ARROW_DOWN = 40;
 
 export const A11Y = "a11y";
 export const OPTION_GROUP = "group";
-export const OPTION_KEEP_PLACE = "keepPlace";
+
 export const OPTION_PREVENT_SCROLL = "preventScroll";
 export const OPTION_POSITION = "position";
 export const OPTION_TO = "to";
@@ -235,9 +235,6 @@ export const OPTION_TOP_LAYER = "topLayer";
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = upperFirst(ROLE);
 
-export const OPTION_SHOWN_CLASS = SHOWN + upperFirst(CLASS);
-export const OPTION_HIDDEN_CLASS = HIDDEN + upperFirst(CLASS);
-
 export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
@@ -252,7 +249,8 @@ export const DEFAULT_OPTIONS = {
   shown: null,
   a11y: true,
   hideMode: HIDDEN,
-  [OPTION_KEEP_PLACE]: true,
+  keepPlace: true,
+  transition: true,
 };
 export const DEFAULT_TOP_LAYER_OPTIONS = {
   moveModal: true,

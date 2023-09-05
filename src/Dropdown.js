@@ -28,6 +28,8 @@ import {
   HIDE_MODE,
   TELEPORT,
   TRANSITION,
+  DATA_UI_PREFIX,
+  UI,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -50,6 +52,7 @@ import {
   updateModule,
   getEventsPrefix,
   updateOptsByData,
+  upperFirst,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -120,7 +123,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callShowInit(this);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
+    this.opts[HIDE_MODE] =
+      this.base.dataset[UI + upperFirst(HIDE_MODE)] ?? this.opts[HIDE_MODE];
+
     updateModule(this, OPTION_TOP_LAYER);
     const { base, opts, on, off, hide } = this;
 

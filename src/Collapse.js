@@ -21,6 +21,8 @@ import {
   HIDDEN,
   TRANSITION,
   TELEPORT,
+  DATA_UI_PREFIX,
+  UI,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -35,8 +37,8 @@ import {
   getEventsPrefix,
   getOptionElems,
   getDefaultToggleSelector,
-  updateOptsByData,
   toggleHideModeState,
+  upperFirst,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -62,9 +64,10 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     super(elem, opts);
   }
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, [HIDE_MODE]);
-
     const { base, opts } = this;
+
+    opts[HIDE_MODE] =
+      base.dataset[UI + upperFirst(HIDE_MODE)] ?? opts[HIDE_MODE];
 
     addDismiss(this);
 
@@ -82,9 +85,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       this[TRANSITION],
       base,
       opts[TRANSITION],
-      {
-        cssVariables: true,
-      },
+      { cssVariables: true },
     );
 
     this.updateTriggers();
