@@ -40,7 +40,6 @@ import {
   getEventsPrefix,
   getClassActive,
   updateModule,
-  updateOptsByData,
 } from "./helpers/utils";
 import {
   baseDestroy,
@@ -63,6 +62,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     delay: [200, 0],
     eventPrefix: getEventsPrefix(TOOLTIP),
     placement: TOP,
+    mode: false,
     template: (content) =>
       `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-arrow" data-${UI_TOOLTIP}-arrow></div><div class="${UI_TOOLTIP}-content">${content}</div></div>`,
     interactive: false,
@@ -151,22 +151,22 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   }
 
   async toggle(s, params) {
-    const { anchor, tooltip, id, opts, emit, _cache, isShown, isAnimating } =
+    const { anchor, tooltip, id, opts, emit, _cache, isOpen, isAnimating } =
       this;
     const awaitAnimation = opts.awaitAnimation;
     const { animated, trigger, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isShown;
+    s ??= !isOpen;
 
     if (
       (!ignoreConditions &&
-        ((awaitAnimation && isAnimating) || s === isShown)) ||
+        ((awaitAnimation && isAnimating) || s === isOpen)) ||
       (!s && !inDOM(tooltip))
     )
       return;
 
-    this.isShown = s;
+    this.isOpen = s;
 
     if (isAnimating && !awaitAnimation) {
       await this[TRANSITION].cancel();

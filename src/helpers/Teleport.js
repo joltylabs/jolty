@@ -1,4 +1,4 @@
-import { UI_PREFIX, OPTION_TO, OPTION_POSITION, doc } from "./constants";
+import { UI_PREFIX, OPTION_TO, POSITION, doc } from "./constants";
 import { isString, isObject } from "./is";
 import {
   mergeDeep,
@@ -11,13 +11,13 @@ const TELEPORT = "teleport";
 const TELEPORT_DATA_ATTRIBUTE = kebabToCamel(UI_PREFIX + TELEPORT);
 const TELEPORT_DATA_ATTRIBUTES = [
   [OPTION_TO, TELEPORT],
-  [OPTION_POSITION, TELEPORT + upperFirst(OPTION_POSITION)],
+  [POSITION, TELEPORT + upperFirst(POSITION)],
 ];
 
 class Teleport {
   static Default = {
     [OPTION_TO]: false,
-    [OPTION_POSITION]: "beforeend",
+    [POSITION]: "beforeend",
     disableAttributes: false,
   };
   constructor(elem, opts = {}, defaultOpts) {

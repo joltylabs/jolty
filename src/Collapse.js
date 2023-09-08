@@ -21,7 +21,6 @@ import {
   HIDDEN,
   TRANSITION,
   TELEPORT,
-  DATA_UI_PREFIX,
   UI,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
@@ -62,6 +61,15 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
   constructor(elem, opts) {
     super(elem, opts);
+  }
+  init() {
+    if (this.isInit) return;
+
+    this.emit(EVENT_BEFORE_INIT);
+
+    this._update();
+
+    return callShowInit(this);
   }
   _update() {
     const { base, opts } = this;
@@ -123,15 +131,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     return this;
   }
 
-  init() {
-    if (this.isInit) return;
-
-    this.emit(EVENT_BEFORE_INIT);
-
-    this._update();
-
-    return callShowInit(this);
-  }
   updateTriggers() {
     const { opts, id } = this;
 
@@ -149,7 +148,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
           toggleClass(
             toggler,
             opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-            !!this.isShown,
+            !!this.isOpen,
           );
           this.on(toggler, EVENT_CLICK, (event) => {
             event.preventDefault();
@@ -161,17 +160,17 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     ));
   }
   async toggle(s, params) {
-    const { base, togglers, opts, emit, isShown, isAnimating } = this;
+    const { base, togglers, opts, emit, isOpen, isAnimating } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isShown;
+    s ??= !isOpen;
 
-    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
       return;
 
-    this.isShown = s;
+    this.isOpen = s;
 
     if (isAnimating && !awaitAnimation) {
       await this[TRANSITION].cancel();

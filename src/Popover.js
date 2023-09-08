@@ -22,6 +22,8 @@ import {
   DELAY,
   HIDE_MODE,
   TRANSITION,
+  DIALOG,
+  MODAL,
 } from "./helpers/constants";
 
 import {
@@ -68,12 +70,10 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
+    mode: MODAL,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
-      DATA_UI_PREFIX + CANCEL
-    }="${POPOVER}"]`,
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
@@ -161,12 +161,10 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     if (s) {
       this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
-        [CANCEL, CONFIRM].forEach((name) => {
-          if (opts[name]) {
-            const trigger = closest(event.target, opts[name]);
-            trigger && emit(name, { event, trigger });
-          }
-        });
+        if (opts[CONFIRM]) {
+          const trigger = closest(event.target, opts[CONFIRM]);
+          trigger && emit(CONFIRM, { event, trigger });
+        }
       });
     } else {
       this.off(this.base, EVENT_CLICK + UI_EVENT_PREFIX);

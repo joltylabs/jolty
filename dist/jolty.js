@@ -221,7 +221,7 @@
   const OPTION_GROUP = "group";
 
   const OPTION_PREVENT_SCROLL = "preventScroll";
-  const OPTION_POSITION = "position";
+  const POSITION = "position";
   const OPTION_TO = "to";
   kebabToCamel(ARIA_LABELLEDBY);
   const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
@@ -266,7 +266,7 @@
     sticky: false,
     escapeHide: true,
     outsideHide: true,
-    mode: POPOVER,
+    mode: false,
     focusTrap: false,
     topLayer: true,
     popoverApi: true,
@@ -892,7 +892,7 @@
           subInstance[PLACEHOLDER]?.replaceWith(target);
           subInstance[PLACEHOLDER] = null;
         } else {
-          subInstance._parent?.append(target);
+          subInstance._floatingParent?.append(target);
         }
       } else {
         if (opts.keepPlace) {
@@ -904,18 +904,24 @@
         } else {
           const parent = target.parentElement;
           if (parent) {
-            subInstance._parent = parent.hasAttribute(FLOATING_DATA_ATTRIBUTE)
+            subInstance._floatingParent = parent.hasAttribute(
+              FLOATING_DATA_ATTRIBUTE,
+            )
               ? parent.parentElement
               : parent;
             target.remove();
           }
         }
       }
-    } else if (mode === CLASS) {
-      toggleClass(target, HIDDEN_CLASS, !s);
-    } else {
+    } else if (mode !== CLASS) {
       target.toggleAttribute(mode, !s);
     }
+
+    target.classList.toggle(
+      HIDDEN_CLASS,
+      !(s && mode !== ACTION_REMOVE && mode !== HIDDEN),
+    );
+
     if (s) {
       target[HIDDEN] = false;
     }
@@ -1481,7 +1487,11 @@
         return this.transition?.isAnimating;
       }
       get initialPlaceNode() {
-        return this.teleport?.placeholder ?? this.placeholder ?? this.base;
+        return (
+          this.teleport?.placeholder ??
+          this.placeholder ??
+          this[this.constructor.NAME]
+        );
       }
       hide(opts) {
         return this.toggle(false, opts);
@@ -1722,13 +1732,13 @@
   const TELEPORT_DATA_ATTRIBUTE = kebabToCamel(UI_PREFIX + TELEPORT);
   const TELEPORT_DATA_ATTRIBUTES = [
     [OPTION_TO, TELEPORT],
-    [OPTION_POSITION, TELEPORT + upperFirst(OPTION_POSITION)],
+    [POSITION, TELEPORT + upperFirst(POSITION)],
   ];
 
   class Teleport {
     static Default = {
       [OPTION_TO]: false,
-      [OPTION_POSITION]: "beforeend",
+      [POSITION]: "beforeend",
       disableAttributes: false,
     };
     constructor(elem, opts = {}, defaultOpts) {
@@ -1987,12 +1997,11 @@
       const anchorStyles = getComputedStyle(anchor);
       const targetStyles = getComputedStyle(target);
 
-      let [flip, sticky, shrink, placement, mode, topLayer] = [
+      let [flip, sticky, shrink, placement, topLayer] = [
         STICKY,
         FLIP,
         SHRINK,
         PLACEMENT,
-        MODE,
         TOP_LAYER,
       ].map(
         (name) =>
@@ -2008,7 +2017,7 @@
       shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
       if (topLayer !== FALSE) {
-        this.topLayer = topLayer = opts[TOP_LAYER] || defaultTopLayerOpts;
+        this.topLayer = topLayer = opts.topLayer || defaultTopLayerOpts;
       } else {
         this.topLayer = topLayer = false;
       }
@@ -2022,30 +2031,32 @@
         base.getAttribute(DATA_UI_PREFIX + name + "-" + FLOATING + "-" + CLASS) ??
         opts.floatingClass;
 
-      this[MODE] = mode =
-        base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) ||
-        mode ||
-        opts[MODE];
-
-      const modeIsModal = mode.startsWith(MODAL);
+      const mode = (this[MODE] =
+        base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) || opts[MODE]);
 
       const usePopoverApi =
-        topLayer && !modeIsModal && opts.popoverApi && POPOVER_API_SUPPORTED;
+        topLayer && mode !== MODAL && opts.popoverApi && POPOVER_API_SUPPORTED;
 
       const inTopLayer =
-        (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) || modeIsModal;
+        (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
+        mode === MODAL;
 
       const moveToRoot =
         topLayer &&
-        (!modeIsModal || topLayer.moveModal) &&
+        (mode !== MODAL || topLayer.moveModal) &&
         (!usePopoverApi || topLayer.movePopover);
 
       const useFocusGuards =
-        (opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot);
+        (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
 
-      const wrapper = this.createWrapper(mode, moveToRoot, usePopoverApi);
+      const wrapper = this.createWrapper(
+        placement,
+        mode,
+        moveToRoot,
+        usePopoverApi,
+      );
 
-      if (moveToRoot && !modeIsModal && !opts.focusTrap) {
+      if (moveToRoot && mode !== MODAL && !opts.focusTrap) {
         on(anchor, EVENT_KEYDOWN, (e) => {
           if (e.keyCode === KEY_TAB && !e.shiftKey) {
             const focusElem = target.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
@@ -2057,10 +2068,8 @@
         });
       }
 
-      if (mode === MODAL || mode === DIALOG) {
-        this._toggleApi(useFocusGuards);
-        return this;
-      }
+      console.log(mode);
+      if (placement === DIALOG) return this;
 
       const wrapperStyle = wrapper.style;
 
@@ -2198,7 +2207,7 @@
       const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
       const wrapperIsDialog = isDialog(wrapper);
       const isModal =
-        mode.startsWith(MODAL) && (!opts.safeModal || POPOVER_API_SUPPORTED);
+        mode === MODAL && (!opts.safeModal || POPOVER_API_SUPPORTED);
       const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
 
       if (wrapperIsDialog) {
@@ -2236,7 +2245,7 @@
       }
     }
 
-    createWrapper(mode, moveToRoot, usePopoverApi) {
+    createWrapper(placement, mode, moveToRoot, usePopoverApi) {
       const { target, name, anchor, opts } = this;
 
       const style = {
@@ -2253,7 +2262,7 @@
         alignItems: CENTER,
       };
 
-      if (mode === MODAL || mode === DIALOG) {
+      if (!placement) {
         style.position = FIXED;
         style.inset = 0;
         style.height = style.width = AUTO;
@@ -2271,7 +2280,7 @@
         style,
         class: this.class,
         [FLOATING_DATA_ATTRIBUTE]: name,
-        [DATA_UI_PREFIX + "current-mode"]: mode,
+        [DATA_UI_PREFIX + FLOATING + "-" + MODE]: mode,
       };
 
       if (usePopoverApi) {
@@ -2286,7 +2295,7 @@
       }
 
       const wrapper = (this.wrapper = createElement(
-        mode.startsWith(MODAL) || mode.startsWith(DIALOG) ? DIALOG : DIV,
+        mode === MODAL || mode === DIALOG ? DIALOG : DIV,
         attributes,
       ));
 
@@ -2323,19 +2332,15 @@
     const target = instance[name];
     const anchor = toggler ?? base;
 
-    transition && (transition.parent = null);
-
     s && toggleHideModeState(true, instance, target);
 
     if (s) {
-      const arrow = target.querySelector(getDataSelector(name, ARROW));
-
       instance[FLOATING] = new Floating({
         teleport,
         base,
         anchor,
         target,
-        arrow,
+        arrow: target.querySelector(getDataSelector(name, ARROW)),
         opts,
         hide: instance.hide,
         defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
@@ -2352,11 +2357,14 @@
 
     const promise = transition?.run(s, animated);
 
-    if (opts.outsideHide && s) {
-      instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
-        !closest(event.target, [toggler ?? base, target]) &&
-          instance.hide({ event });
-      });
+    if (s && opts.outsideHide) {
+      instance.on(
+        doc,
+        EVENT_ACTION_OUTSIDE,
+        (event) =>
+          !closest(event.target, [toggler ?? base, target]) &&
+          instance.hide({ event }),
+      );
     } else {
       instance.off(doc, EVENT_ACTION_OUTSIDE);
     }
@@ -2401,9 +2409,10 @@
 
     shown &&
       show({
-        animated: opts.appear ?? target.hasAttribute(DATA_APPEAR),
+        animated:
+          opts.appear ?? instance._fromHTML ?? target.hasAttribute(DATA_APPEAR),
         ignoreConditions: true,
-        ignoreAutofocus: true,
+        ignoreAutofocus: !instance._fromHTML,
       });
 
     return instance;
@@ -2494,6 +2503,15 @@
     constructor(elem, opts) {
       super(elem, opts);
     }
+    init() {
+      if (this.isInit) return;
+
+      this.emit(EVENT_BEFORE_INIT);
+
+      this._update();
+
+      return callShowInit(this);
+    }
     _update() {
       const { base, opts } = this;
 
@@ -2554,15 +2572,6 @@
       return this;
     }
 
-    init() {
-      if (this.isInit) return;
-
-      this.emit(EVENT_BEFORE_INIT);
-
-      this._update();
-
-      return callShowInit(this);
-    }
     updateTriggers() {
       const { opts, id } = this;
 
@@ -2580,7 +2589,7 @@
             toggleClass(
               toggler,
               opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-              !!this.isShown,
+              !!this.isOpen,
             );
             this.on(toggler, EVENT_CLICK, (event) => {
               event.preventDefault();
@@ -2592,17 +2601,17 @@
       ));
     }
     async toggle(s, params) {
-      const { base, togglers, opts, emit, isShown, isAnimating } = this;
+      const { base, togglers, opts, emit, isOpen, isAnimating } = this;
       const { awaitAnimation, a11y } = opts;
       const { animated, silent, trigger, event, ignoreConditions } =
         normalizeToggleParameters(params);
 
-      s ??= !isShown;
+      s ??= !isOpen;
 
-      if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
+      if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
         return;
 
-      this.isShown = s;
+      this.isOpen = s;
 
       if (isAnimating && !awaitAnimation) {
         await this[TRANSITION].cancel();
@@ -2670,12 +2679,12 @@
           event.preventDefault();
         }
         if (arrowActivated) {
-          if (!this.isShown) {
+          if (!this.isOpen) {
             await show({ event, trigger: toggler });
           }
         }
         if (arrowActivated) {
-          if (this.isAnimating && !this.isShown) return;
+          if (this.isAnimating && !this.isOpen) return;
           this.focusableElems[0]?.focus();
         }
       });
@@ -2802,17 +2811,17 @@
     }
 
     async toggle(s, params) {
-      const { toggler, opts, emit, transition, isShown, isAnimating } = this;
+      const { toggler, opts, emit, transition, isOpen, isAnimating } = this;
       const { awaitAnimation, a11y } = opts;
       const { animated, silent, trigger, event, ignoreConditions } =
         normalizeToggleParameters(params);
 
-      s ??= !isShown;
+      s ??= !isOpen;
 
-      if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
+      if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
         return;
 
-      this.isShown = s;
+      this.isOpen = s;
 
       if (isAnimating && !awaitAnimation) {
         await transition.cancel();
@@ -2866,6 +2875,7 @@
     [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
     [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
     HIDE_MODE,
+    OPTION_GROUP,
   ];
 
   class Dialog extends ToggleMixin(Base, DIALOG) {
@@ -2887,9 +2897,6 @@
       preventHide: false,
       dismiss: true,
       preventScroll: true,
-      cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
-      DATA_UI_PREFIX + CANCEL
-    }="${DIALOG}"]`,
       confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${DIALOG}"]`,
@@ -3011,12 +3018,10 @@
         ],
         (event) => {
           if (event.type === EVENT_CLICK) {
-            [CANCEL, CONFIRM].forEach((name) => {
-              if (opts[name]) {
-                const trigger = closest(event.target, opts[name]);
-                trigger && emit(name, { event, trigger });
-              }
-            });
+            if (opts[CONFIRM]) {
+              const trigger = closest(event.target, opts[CONFIRM]);
+              trigger && emit(CONFIRM, { event, trigger });
+            }
           }
           if (
             this.opts.backdropHide &&
@@ -3129,6 +3134,13 @@
       )
         return;
 
+      let groupClosingFinish;
+      if (!s && opts.group) {
+        this.groupClosing = new Promise((resolve) => {
+          groupClosingFinish = resolve;
+        });
+      }
+
       if (isAnimating && !opts.awaitAnimation) {
         await this[TRANSITION]?.cancel();
       }
@@ -3144,6 +3156,7 @@
           ? !(await opts.preventHide(this, eventParams))
           : opts.preventHide)
       ) {
+        this.groupClosing = false;
         return emit(EVENT_HIDE_PREVENTED);
       }
 
@@ -3159,10 +3172,10 @@
           const promises = Promise.allSettled(
             shownGroupDialogs
               .filter((m) => m !== this)
-              .map(
-                (instance) =>
-                  instance.hide() && instance[TRANSITION]?.getAwaitPromise(),
-              ),
+              .map((instance) => {
+                !instance.groupClosing && instance.hide();
+                return instance.groupClosing;
+              }),
           );
           if (opts.group.awaitPrevious) {
             await promises;
@@ -3228,6 +3241,8 @@
 
         if (!s) {
           opts.autodestroy && this.destroy({ remove: true });
+          this.groupClosing = false;
+          groupClosingFinish?.();
         }
       });
 
@@ -3403,34 +3418,34 @@
           opts.teleport,
         )?.move(this, tabObj);
 
-        let isShownTabpanel;
+        let isOpenTabpanel;
         if (isFunction(shown)) {
-          isShownTabpanel = shown(tabObj);
+          isOpenTabpanel = shown(tabObj);
         } else if (isArray(shown)) {
-          isShownTabpanel = shown.some((val) => val === i || val === tabpanel.id);
+          isOpenTabpanel = shown.some((val) => val === i || val === tabpanel.id);
         } else if (shown !== null) {
-          isShownTabpanel = tabpanel.id === shown || i === shown;
+          isOpenTabpanel = tabpanel.id === shown || i === shown;
         } else {
-          isShownTabpanel = isShown(tabpanel, opts.hideMode);
+          isOpenTabpanel = isShown(tabpanel, opts.hideMode);
         }
 
-        return [isShownTabpanel, tabObj];
+        return [isOpenTabpanel, tabObj];
       });
-      const hasSelected = tabWithState.find(([isShown]) => isShown);
+      const hasSelected = tabWithState.find(([isOpen]) => isOpen);
       if (opts.alwaysExpanded && !hasSelected) {
         tabWithState[0][0] = true;
       }
-      tabWithState.forEach(([isShown, tabInstance]) => {
+      tabWithState.forEach(([isOpen, tabInstance]) => {
         tabInstance[TRANSITION] = Transition.createOrUpdate(
           tabInstance[TRANSITION],
           tabInstance[TABPANEL],
           opts[TRANSITION],
           { cssVariables: true },
         );
-        tabInstance.toggle(isShown, {
+        tabInstance.toggle(isOpen, {
           animated:
             opts.appear ?? tabInstance[TABPANEL].hasAttribute(DATA_APPEAR),
-          silent: !isShown,
+          silent: !isOpen,
         });
       });
     }
@@ -3534,12 +3549,12 @@
       const id = (tabpanel.id ||= TABPANEL + "-" + uuid);
       tab.id ||= TAB + "-" + uuid;
 
-      let isShown;
+      let isOpen;
       if (shownTabs.length && !opts.multiExpand) {
-        isShown = false;
+        isOpen = false;
       }
       if (opts.hashNavigation && checkHash(id)) {
-        isShown = true;
+        isOpen = true;
       }
 
       on(tab, EVENT_FOCUS, (e) => this._onTabFocus(e));
@@ -3618,7 +3633,7 @@
           : undefined,
         destroy: destroy.bind(this),
         toggleDisabled: toggleDisabled.bind(this),
-        isShown,
+        isOpen,
         get isDisabled() {
           return tab.hasAttribute(DISABLED);
         },
@@ -3665,7 +3680,7 @@
       const tabInstance = this.getTab(currentTarget);
       if (!tabInstance || !this.focusFilter(tabInstance)) return;
 
-      this.opts.arrowActivation && !tabInstance.isShown && tabInstance.show();
+      this.opts.arrowActivation && !tabInstance.isOpen && tabInstance.show();
 
       this.currentTabIndex = tabInstance.index;
     }
@@ -3739,7 +3754,7 @@
       );
     }
     get shownTabs() {
-      return this.tabs.filter(({ isShown }) => isShown);
+      return this.tabs.filter(({ isOpen }) => isOpen);
     }
     get firstActiveTabIndex() {
       return this.tabs.find((tab) => this.focusFilter(tab))?.index;
@@ -3757,18 +3772,18 @@
 
       const { opts, shownTabs, emit } = this;
       const { a11y, multiExpand, awaitAnimation } = opts;
-      const { tab, isShown, transition, index, tabpanel } = tabInstance;
+      const { tab, isOpen, transition, index, tabpanel } = tabInstance;
 
-      s = !!(s ?? !isShown);
+      s = !!(s ?? !isOpen);
 
       s && this._updateTabIndex(index);
 
       if (
-        s === isShown ||
+        s === isOpen ||
         (awaitAnimation &&
           transition?.isAnimating &&
           ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
-        (isShown && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
+        (isOpen && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
         (s && !this.focusFilter(tabInstance))
       )
         return;
@@ -3782,18 +3797,18 @@
       !silent &&
         emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, tabInstance, eventParams);
 
-      tabInstance.isShown = s;
+      tabInstance.isOpen = s;
 
       if (!multiExpand && s) {
         for (const shownTab of shownTabs) {
-          if (tabInstance !== shownTab && shownTab.isShown) {
+          if (tabInstance !== shownTab && shownTab.isOpen) {
             shownTab.hide(animated);
             if (opts.awaitPrevious) await shownTab.transition?.getAwaitPromise();
           }
         }
       }
 
-      if (s && !tabInstance.isShown) return;
+      if (s && !tabInstance.isOpen) return;
 
       s && toggleHideModeState(true, this, tabpanel, tabInstance);
 
@@ -4252,6 +4267,7 @@
       delay: [200, 0],
       eventPrefix: getEventsPrefix(TOOLTIP),
       placement: TOP,
+      mode: false,
       template: (content) =>
         `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-arrow" data-${UI_TOOLTIP}-arrow></div><div class="${UI_TOOLTIP}-content">${content}</div></div>`,
       interactive: false,
@@ -4340,22 +4356,22 @@
     }
 
     async toggle(s, params) {
-      const { anchor, tooltip, id, opts, emit, _cache, isShown, isAnimating } =
+      const { anchor, tooltip, id, opts, emit, _cache, isOpen, isAnimating } =
         this;
       const awaitAnimation = opts.awaitAnimation;
       const { animated, trigger, silent, event, ignoreConditions } =
         normalizeToggleParameters(params);
 
-      s ??= !isShown;
+      s ??= !isOpen;
 
       if (
         (!ignoreConditions &&
-          ((awaitAnimation && isAnimating) || s === isShown)) ||
+          ((awaitAnimation && isAnimating) || s === isOpen)) ||
         (!s && !inDOM(tooltip))
       )
         return;
 
-      this.isShown = s;
+      this.isOpen = s;
 
       if (isAnimating && !awaitAnimation) {
         await this[TRANSITION].cancel();
@@ -4409,12 +4425,10 @@
       dismiss: true,
       autofocus: true,
       trigger: CLICK,
+      mode: MODAL,
       [TOGGLER]: null,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-      cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
-      DATA_UI_PREFIX + CANCEL
-    }="${POPOVER}"]`,
       confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
@@ -4502,12 +4516,10 @@
 
       if (s) {
         this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
-          [CANCEL, CONFIRM].forEach((name) => {
-            if (opts[name]) {
-              const trigger = closest(event.target, opts[name]);
-              trigger && emit(name, { event, trigger });
-            }
-          });
+          if (opts[CONFIRM]) {
+            const trigger = closest(event.target, opts[CONFIRM]);
+            trigger && emit(CONFIRM, { event, trigger });
+          }
         });
       } else {
         this.off(this.base, EVENT_CLICK + UI_EVENT_PREFIX);

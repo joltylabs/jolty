@@ -221,7 +221,7 @@ export const A11Y = "a11y";
 export const OPTION_GROUP = "group";
 
 export const OPTION_PREVENT_SCROLL = "preventScroll";
-export const OPTION_POSITION = "position";
+export const POSITION = "position";
 export const OPTION_TO = "to";
 export const OPTION_ARIA_LABELLEDBY = kebabToCamel(ARIA_LABELLEDBY);
 export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
@@ -268,7 +268,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   sticky: false,
   escapeHide: true,
   outsideHide: true,
-  mode: POPOVER,
+  mode: false,
   focusTrap: false,
   topLayer: true,
   popoverApi: true,

@@ -20,19 +20,15 @@ export default (instance, { s, animated, silent, eventParams }) => {
   const target = instance[name];
   const anchor = toggler ?? base;
 
-  transition && (transition.parent = null);
-
   s && toggleHideModeState(true, instance, target);
 
   if (s) {
-    const arrow = target.querySelector(getDataSelector(name, ARROW));
-
     instance[FLOATING] = new Floating({
       teleport,
       base,
       anchor,
       target,
-      arrow,
+      arrow: target.querySelector(getDataSelector(name, ARROW)),
       opts,
       hide: instance.hide,
       defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
@@ -49,11 +45,14 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   const promise = transition?.run(s, animated);
 
-  if (opts.outsideHide && s) {
-    instance.on(doc, EVENT_ACTION_OUTSIDE, (event) => {
-      !closest(event.target, [toggler ?? base, target]) &&
-        instance.hide({ event });
-    });
+  if (s && opts.outsideHide) {
+    instance.on(
+      doc,
+      EVENT_ACTION_OUTSIDE,
+      (event) =>
+        !closest(event.target, [toggler ?? base, target]) &&
+        instance.hide({ event }),
+    );
   } else {
     instance.off(doc, EVENT_ACTION_OUTSIDE);
   }

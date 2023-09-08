@@ -9,7 +9,6 @@ import {
   PLACEHOLDER,
   UI_PREFIX,
 } from "../constants/index.js";
-import { isShown } from "./index.js";
 import { toggleClass } from "../dom/index.js";
 
 export default (
@@ -26,7 +25,7 @@ export default (
         subInstance[PLACEHOLDER]?.replaceWith(target);
         subInstance[PLACEHOLDER] = null;
       } else {
-        subInstance._parent?.append(target);
+        subInstance._floatingParent?.append(target);
       }
     } else {
       if (opts.keepPlace) {
@@ -38,18 +37,24 @@ export default (
       } else {
         const parent = target.parentElement;
         if (parent) {
-          subInstance._parent = parent.hasAttribute(FLOATING_DATA_ATTRIBUTE)
+          subInstance._floatingParent = parent.hasAttribute(
+            FLOATING_DATA_ATTRIBUTE,
+          )
             ? parent.parentElement
             : parent;
           target.remove();
         }
       }
     }
-  } else if (mode === CLASS) {
-    toggleClass(target, HIDDEN_CLASS, !s);
-  } else {
+  } else if (mode !== CLASS) {
     target.toggleAttribute(mode, !s);
   }
+
+  target.classList.toggle(
+    HIDDEN_CLASS,
+    !(s && mode !== ACTION_REMOVE && mode !== HIDDEN),
+  );
+
   if (s) {
     target[HIDDEN] = false;
   }

@@ -16,9 +16,10 @@ export default (instance, target = instance.base, stateElem = target) => {
 
   shown &&
     show({
-      animated: opts.appear ?? target.hasAttribute(DATA_APPEAR),
+      animated:
+        opts.appear ?? instance._fromHTML ?? target.hasAttribute(DATA_APPEAR),
       ignoreConditions: true,
-      ignoreAutofocus: true,
+      ignoreAutofocus: !instance._fromHTML,
     });
 
   return instance;

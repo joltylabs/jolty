@@ -114,6 +114,7 @@ const DIALOG_DATA_OPTIONS = [
   [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
   [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
   HIDE_MODE,
+  OPTION_GROUP,
 ];
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
@@ -135,9 +136,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     preventHide: false,
     dismiss: true,
     preventScroll: true,
-    cancel: `[${DATA_UI_PREFIX + CANCEL}],[${
-      DATA_UI_PREFIX + CANCEL
-    }="${DIALOG}"]`,
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${DIALOG}"]`,
@@ -259,12 +257,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       ],
       (event) => {
         if (event.type === EVENT_CLICK) {
-          [CANCEL, CONFIRM].forEach((name) => {
-            if (opts[name]) {
-              const trigger = closest(event.target, opts[name]);
-              trigger && emit(name, { event, trigger });
-            }
-          });
+          if (opts[CONFIRM]) {
+            const trigger = closest(event.target, opts[CONFIRM]);
+            trigger && emit(CONFIRM, { event, trigger });
+          }
         }
         if (
           this.opts.backdropHide &&
@@ -377,6 +373,13 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     )
       return;
 
+    let groupClosingFinish;
+    if (!s && opts.group) {
+      this.groupClosing = new Promise((resolve) => {
+        groupClosingFinish = resolve;
+      });
+    }
+
     if (isAnimating && !opts.awaitAnimation) {
       await this[TRANSITION]?.cancel();
     }
@@ -392,6 +395,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         ? !(await opts.preventHide(this, eventParams))
         : opts.preventHide)
     ) {
+      this.groupClosing = false;
       return emit(EVENT_HIDE_PREVENTED);
     }
 
@@ -407,10 +411,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         const promises = Promise.allSettled(
           shownGroupDialogs
             .filter((m) => m !== this)
-            .map(
-              (instance) =>
-                instance.hide() && instance[TRANSITION]?.getAwaitPromise(),
-            ),
+            .map((instance) => {
+              !instance.groupClosing && instance.hide();
+              return instance.groupClosing;
+            }),
         );
         if (opts.group.awaitPrevious) {
           await promises;
@@ -476,6 +480,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
       if (!s) {
         opts.autodestroy && this.destroy({ remove: true });
+        this.groupClosing = false;
+        groupClosingFinish?.();
       }
     });
 

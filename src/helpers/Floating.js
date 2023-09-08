@@ -107,12 +107,11 @@ export default class Floating {
     const anchorStyles = getComputedStyle(anchor);
     const targetStyles = getComputedStyle(target);
 
-    let [flip, sticky, shrink, placement, mode, topLayer] = [
+    let [flip, sticky, shrink, placement, topLayer] = [
       STICKY,
       FLIP,
       SHRINK,
       PLACEMENT,
-      MODE,
       TOP_LAYER,
     ].map(
       (name) =>
@@ -128,7 +127,7 @@ export default class Floating {
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
     if (topLayer !== FALSE) {
-      this.topLayer = topLayer = opts[TOP_LAYER] || defaultTopLayerOpts;
+      this.topLayer = topLayer = opts.topLayer || defaultTopLayerOpts;
     } else {
       this.topLayer = topLayer = false;
     }
@@ -142,30 +141,32 @@ export default class Floating {
       base.getAttribute(DATA_UI_PREFIX + name + "-" + FLOATING + "-" + CLASS) ??
       opts.floatingClass;
 
-    this[MODE] = mode =
-      base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) ||
-      mode ||
-      opts[MODE];
-
-    const modeIsModal = mode.startsWith(MODAL);
+    const mode = (this[MODE] =
+      base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) || opts[MODE]);
 
     const usePopoverApi =
-      topLayer && !modeIsModal && opts.popoverApi && POPOVER_API_SUPPORTED;
+      topLayer && mode !== MODAL && opts.popoverApi && POPOVER_API_SUPPORTED;
 
     const inTopLayer =
-      (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) || modeIsModal;
+      (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
+      mode === MODAL;
 
     const moveToRoot =
       topLayer &&
-      (!modeIsModal || topLayer.moveModal) &&
+      (mode !== MODAL || topLayer.moveModal) &&
       (!usePopoverApi || topLayer.movePopover);
 
     const useFocusGuards =
-      (opts.focusTrap && !modeIsModal) || (usePopoverApi && moveToRoot);
+      (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
 
-    const wrapper = this.createWrapper(mode, moveToRoot, usePopoverApi);
+    const wrapper = this.createWrapper(
+      placement,
+      mode,
+      moveToRoot,
+      usePopoverApi,
+    );
 
-    if (moveToRoot && !modeIsModal && !opts.focusTrap) {
+    if (moveToRoot && mode !== MODAL && !opts.focusTrap) {
       on(anchor, EVENT_KEYDOWN, (e) => {
         if (e.keyCode === KEY_TAB && !e.shiftKey) {
           const focusElem = target.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
@@ -177,10 +178,8 @@ export default class Floating {
       });
     }
 
-    if (mode === MODAL || mode === DIALOG) {
-      this._toggleApi(useFocusGuards);
-      return this;
-    }
+    console.log(mode);
+    if (placement === DIALOG) return this;
 
     const wrapperStyle = wrapper.style;
 
@@ -318,7 +317,7 @@ export default class Floating {
     const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
     const wrapperIsDialog = isDialog(wrapper);
     const isModal =
-      mode.startsWith(MODAL) && (!opts.safeModal || POPOVER_API_SUPPORTED);
+      mode === MODAL && (!opts.safeModal || POPOVER_API_SUPPORTED);
     const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
 
     if (wrapperIsDialog) {
@@ -356,7 +355,7 @@ export default class Floating {
     }
   }
 
-  createWrapper(mode, moveToRoot, usePopoverApi) {
+  createWrapper(placement, mode, moveToRoot, usePopoverApi) {
     const { target, name, anchor, opts } = this;
 
     const style = {
@@ -373,7 +372,7 @@ export default class Floating {
       alignItems: CENTER,
     };
 
-    if (mode === MODAL || mode === DIALOG) {
+    if (!placement) {
       style.position = FIXED;
       style.inset = 0;
       style.height = style.width = AUTO;
@@ -391,7 +390,7 @@ export default class Floating {
       style,
       class: this.class,
       [FLOATING_DATA_ATTRIBUTE]: name,
-      [DATA_UI_PREFIX + "current-mode"]: mode,
+      [DATA_UI_PREFIX + FLOATING + "-" + MODE]: mode,
     };
 
     if (usePopoverApi) {
@@ -406,7 +405,7 @@ export default class Floating {
     }
 
     const wrapper = (this.wrapper = createElement(
-      mode.startsWith(MODAL) || mode.startsWith(DIALOG) ? DIALOG : DIV,
+      mode === MODAL || mode === DIALOG ? DIALOG : DIV,
       attributes,
     ));
 

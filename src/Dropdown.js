@@ -100,12 +100,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
         event.preventDefault();
       }
       if (arrowActivated) {
-        if (!this.isShown) {
+        if (!this.isOpen) {
           await show({ event, trigger: toggler });
         }
       }
       if (arrowActivated) {
-        if (this.isAnimating && !this.isShown) return;
+        if (this.isAnimating && !this.isOpen) return;
         this.focusableElems[0]?.focus();
       }
     });
@@ -234,17 +234,17 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 
   async toggle(s, params) {
-    const { toggler, opts, emit, transition, isShown, isAnimating } = this;
+    const { toggler, opts, emit, transition, isOpen, isAnimating } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isShown;
+    s ??= !isOpen;
 
-    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
       return;
 
-    this.isShown = s;
+    this.isOpen = s;
 
     if (isAnimating && !awaitAnimation) {
       await transition.cancel();

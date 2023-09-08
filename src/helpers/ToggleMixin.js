@@ -9,7 +9,11 @@ export default (Base, NAME) =>
       return this.transition?.isAnimating;
     }
     get initialPlaceNode() {
-      return this.teleport?.placeholder ?? this.placeholder ?? this.base;
+      return (
+        this.teleport?.placeholder ??
+        this.placeholder ??
+        this[this.constructor.NAME]
+      );
     }
     hide(opts) {
       return this.toggle(false, opts);

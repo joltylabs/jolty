@@ -196,34 +196,34 @@ class Tablist extends Base {
         opts.teleport,
       )?.move(this, tabObj);
 
-      let isShownTabpanel;
+      let isOpenTabpanel;
       if (isFunction(shown)) {
-        isShownTabpanel = shown(tabObj);
+        isOpenTabpanel = shown(tabObj);
       } else if (isArray(shown)) {
-        isShownTabpanel = shown.some((val) => val === i || val === tabpanel.id);
+        isOpenTabpanel = shown.some((val) => val === i || val === tabpanel.id);
       } else if (shown !== null) {
-        isShownTabpanel = tabpanel.id === shown || i === shown;
+        isOpenTabpanel = tabpanel.id === shown || i === shown;
       } else {
-        isShownTabpanel = isShown(tabpanel, opts.hideMode);
+        isOpenTabpanel = isShown(tabpanel, opts.hideMode);
       }
 
-      return [isShownTabpanel, tabObj];
+      return [isOpenTabpanel, tabObj];
     });
-    const hasSelected = tabWithState.find(([isShown]) => isShown);
+    const hasSelected = tabWithState.find(([isOpen]) => isOpen);
     if (opts.alwaysExpanded && !hasSelected) {
       tabWithState[0][0] = true;
     }
-    tabWithState.forEach(([isShown, tabInstance]) => {
+    tabWithState.forEach(([isOpen, tabInstance]) => {
       tabInstance[TRANSITION] = Transition.createOrUpdate(
         tabInstance[TRANSITION],
         tabInstance[TABPANEL],
         opts[TRANSITION],
         { cssVariables: true },
       );
-      tabInstance.toggle(isShown, {
+      tabInstance.toggle(isOpen, {
         animated:
           opts.appear ?? tabInstance[TABPANEL].hasAttribute(DATA_APPEAR),
-        silent: !isShown,
+        silent: !isOpen,
       });
     });
   }
@@ -327,12 +327,12 @@ class Tablist extends Base {
     const id = (tabpanel.id ||= TABPANEL + "-" + uuid);
     tab.id ||= TAB + "-" + uuid;
 
-    let isShown;
+    let isOpen;
     if (shownTabs.length && !opts.multiExpand) {
-      isShown = false;
+      isOpen = false;
     }
     if (opts.hashNavigation && checkHash(id)) {
-      isShown = true;
+      isOpen = true;
     }
 
     on(tab, EVENT_FOCUS, (e) => this._onTabFocus(e));
@@ -411,7 +411,7 @@ class Tablist extends Base {
         : undefined,
       destroy: destroy.bind(this),
       toggleDisabled: toggleDisabled.bind(this),
-      isShown,
+      isOpen,
       get isDisabled() {
         return tab.hasAttribute(DISABLED);
       },
@@ -458,7 +458,7 @@ class Tablist extends Base {
     const tabInstance = this.getTab(currentTarget);
     if (!tabInstance || !this.focusFilter(tabInstance)) return;
 
-    this.opts.arrowActivation && !tabInstance.isShown && tabInstance.show();
+    this.opts.arrowActivation && !tabInstance.isOpen && tabInstance.show();
 
     this.currentTabIndex = tabInstance.index;
   }
@@ -532,7 +532,7 @@ class Tablist extends Base {
     );
   }
   get shownTabs() {
-    return this.tabs.filter(({ isShown }) => isShown);
+    return this.tabs.filter(({ isOpen }) => isOpen);
   }
   get firstActiveTabIndex() {
     return this.tabs.find((tab) => this.focusFilter(tab))?.index;
@@ -550,18 +550,18 @@ class Tablist extends Base {
 
     const { opts, shownTabs, emit } = this;
     const { a11y, multiExpand, awaitAnimation } = opts;
-    const { tab, isShown, transition, index, tabpanel } = tabInstance;
+    const { tab, isOpen, transition, index, tabpanel } = tabInstance;
 
-    s = !!(s ?? !isShown);
+    s = !!(s ?? !isOpen);
 
     s && this._updateTabIndex(index);
 
     if (
-      s === isShown ||
+      s === isOpen ||
       (awaitAnimation &&
         transition?.isAnimating &&
         ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
-      (isShown && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
+      (isOpen && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
       (s && !this.focusFilter(tabInstance))
     )
       return;
@@ -575,18 +575,18 @@ class Tablist extends Base {
     !silent &&
       emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, tabInstance, eventParams);
 
-    tabInstance.isShown = s;
+    tabInstance.isOpen = s;
 
     if (!multiExpand && s) {
       for (const shownTab of shownTabs) {
-        if (tabInstance !== shownTab && shownTab.isShown) {
+        if (tabInstance !== shownTab && shownTab.isOpen) {
           shownTab.hide(animated);
           if (opts.awaitPrevious) await shownTab.transition?.getAwaitPromise();
         }
       }
     }
 
-    if (s && !tabInstance.isShown) return;
+    if (s && !tabInstance.isOpen) return;
 
     s && toggleHideModeState(true, this, tabpanel, tabInstance);
 
