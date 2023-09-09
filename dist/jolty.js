@@ -1049,9 +1049,8 @@
   var parents = (elem, selector, until) =>
     dir(elem, "parentElement", selector, until);
 
-  var removeAttribute = (elem, names) => {
-    names = strToArray(names);
-    if (isIterable(elem)) {
+  var removeAttribute = (elem, ...names) => {
+    if (isArray(elem)) {
       elem.forEach((elem) =>
         names.forEach((name) => elem && elem.removeAttribute(name)),
       );
@@ -2016,11 +2015,8 @@
       sticky = sticky ? sticky === TRUE : opts[STICKY];
       shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
-      if (topLayer !== FALSE) {
-        this.topLayer = topLayer = opts.topLayer || defaultTopLayerOpts;
-      } else {
-        this.topLayer = topLayer = false;
-      }
+      this.topLayer = topLayer =
+        topLayer === FALSE ? false : opts.topLayer || defaultTopLayerOpts;
 
       this[PLACEMENT] = placement =
         base.getAttribute(DATA_UI_PREFIX + name + "-" + PLACEMENT) ||
@@ -2262,7 +2258,7 @@
         alignItems: CENTER,
       };
 
-      if (!placement) {
+      if (placement === DIALOG) {
         style.position = FIXED;
         style.inset = 0;
         style.height = style.width = AUTO;
@@ -2487,6 +2483,19 @@
     }
   }
 
+  var toggleConfirm = (s, instance) => {
+    if (s) {
+      instance.on(instance.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+        if (instance.opts[CONFIRM]) {
+          const trigger = closest(event.target, instance.opts[CONFIRM]);
+          trigger && instance.emit(CONFIRM, { event, trigger });
+        }
+      });
+    } else {
+      instance.off(instance.base, EVENT_CLICK + UI_EVENT_PREFIX);
+    }
+  };
+
   const COLLAPSE = "collapse";
 
   class Collapse extends ToggleMixin(Base, COLLAPSE) {
@@ -2564,8 +2573,7 @@
         }
       }
 
-      opts.a11y &&
-        removeAttribute(togglers, [ARIA_CONTROLS, ARIA_EXPANDED, ROLE]);
+      opts.a11y && removeAttribute(togglers, ARIA_CONTROLS, ARIA_EXPANDED, ROLE);
 
       baseDestroy(this, destroyOpts);
 
@@ -2805,7 +2813,7 @@
       if (!this.isInit) return;
       const { opts, toggler } = this;
       this.emit(EVENT_BEFORE_DESTROY);
-      opts.a11y && removeAttribute(toggler, ARIA_CONTROLS);
+      opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
       removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
       return baseDestroy(this, destroyOpts);
     }
@@ -3017,12 +3025,6 @@
             EVENT_RIGHT_CLICK,
         ],
         (event) => {
-          if (event.type === EVENT_CLICK) {
-            if (opts[CONFIRM]) {
-              const trigger = closest(event.target, opts[CONFIRM]);
-              trigger && emit(CONFIRM, { event, trigger });
-            }
-          }
           if (
             this.opts.backdropHide &&
             !this[CONTENT].contains(event.target) &&
@@ -3053,12 +3055,13 @@
 
       removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
       this.opts.a11y &&
-        removeAttribute(this.base, [
+        removeAttribute(
+          this.base,
           TABINDEX,
           ROLE,
           ARIA_LABELLEDBY,
           ARIA_DESCRIBEDBY,
-        ]);
+        );
       this.focusGuards?.destroy();
       this.focusGuards = null;
       this.placeholder?.replaceWith(this.base);
@@ -3161,6 +3164,8 @@
       }
 
       this.isOpen = s;
+
+      toggleConfirm(s, this);
 
       const backdropIsOpen = Dialog.shownDialogs.find(
         (instance) => instance !== this && instance[BACKDROP] === backdrop,
@@ -3405,7 +3410,7 @@
         const { tab, tabpanel, teleport } = tabObj;
 
         if (a11y) {
-          removeAttribute(tab, [ARIA_SELECTED, ARIA_EXPANDED]);
+          removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
           setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
           setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
           setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
@@ -3493,10 +3498,11 @@
       off(tabs);
 
       if (a11y) {
-        removeAttribute(tablist, [
+        removeAttribute(
+          tablist,
           a11y[ROLE] && ROLE,
           a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
-        ]);
+        );
       }
       tablist.id.includes(uuid) && tablist.removeAttribute(ID);
 
@@ -3568,20 +3574,22 @@
         const opts = this.opts;
         const a11y = opts.a11y;
         if (a11y) {
-          removeAttribute(tab, [
+          removeAttribute(
+            tab,
             ROLE,
             a11y[TABINDEX] && TABINDEX,
             ARIA_CONTROLS,
             a11y[OPTION_STATE_ATTRIBUTE],
-          ]);
-          removeAttribute(tabpanel, [
+          );
+          removeAttribute(
+            tabpanel,
             ROLE,
             a11y[OPTION_TABPANEL_TABINDEX] && TABINDEX,
             ARIA_LABELLEDBY,
             a11y[OPTION_ARIA_HIDDEN] && ARIA_HIDDEN,
             HIDDEN,
             INERT,
-          ]);
+          );
         }
 
         off(elems);
@@ -4425,7 +4433,7 @@
       dismiss: true,
       autofocus: true,
       trigger: CLICK,
-      mode: MODAL,
+      mode: false,
       [TOGGLER]: null,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -4486,7 +4494,7 @@
       if (!this.isInit) return;
       const { opts, toggler } = this;
       this.emit(EVENT_BEFORE_DESTROY);
-      opts.a11y && removeAttribute(toggler, ARIA_CONTROLS);
+      opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
       removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
       return baseDestroy(this, destroyOpts);
     }
@@ -4508,22 +4516,13 @@
         await this[TRANSITION].cancel();
       }
 
-      const eventParams = { event };
+      const eventParams = { event, trigger: toggler };
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
       a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
-      if (s) {
-        this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
-          if (opts[CONFIRM]) {
-            const trigger = closest(event.target, opts[CONFIRM]);
-            trigger && emit(CONFIRM, { event, trigger });
-          }
-        });
-      } else {
-        this.off(this.base, EVENT_CLICK + UI_EVENT_PREFIX);
-      }
+      toggleConfirm(s, this);
 
       const promise = floatingTransition(this, {
         s,

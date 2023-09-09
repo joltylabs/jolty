@@ -123,8 +123,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       }
     }
 
-    opts.a11y &&
-      removeAttribute(togglers, [ARIA_CONTROLS, ARIA_EXPANDED, ROLE]);
+    opts.a11y && removeAttribute(togglers, ARIA_CONTROLS, ARIA_EXPANDED, ROLE);
 
     baseDestroy(this, destroyOpts);
 

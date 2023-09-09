@@ -7,6 +7,9 @@ import {
   EVENT_HIDDEN,
   FLOATING,
   EVENT_ACTION_OUTSIDE,
+  MODAL,
+  POPOVER_API_SUPPORTED,
+  POPOVER_API_MODE_MANUAL,
 } from "../constants";
 import { getDataSelector, toggleHideModeState } from "../utils";
 import { addEscapeHide, callAutofocus } from "../modules";
@@ -41,7 +44,15 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-  !s && instance[FLOATING]?.wrapper.close?.();
+  const wrapper = instance[FLOATING]?.wrapper;
+
+  if (!s && wrapper?.matches(":" + MODAL)) {
+    wrapper.close();
+    if (opts.popoverApi && POPOVER_API_SUPPORTED) {
+      wrapper.popover = POPOVER_API_MODE_MANUAL;
+      wrapper.showPopover();
+    }
+  }
 
   const promise = transition?.run(s, animated);
 
@@ -70,7 +81,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
         await promise;
       }
       if (instance.placeholder) {
-        instance[FLOATING].wrapper.replaceWith(instance.placeholder);
+        wrapper.replaceWith(instance.placeholder);
       }
       instance[FLOATING]?.destroy();
       instance[FLOATING] = null;

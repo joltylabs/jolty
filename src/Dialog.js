@@ -81,6 +81,7 @@ import {
   addEscapeHide,
   callShowInit,
   awaitPromise,
+  toggleConfirm,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -256,12 +257,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           EVENT_RIGHT_CLICK,
       ],
       (event) => {
-        if (event.type === EVENT_CLICK) {
-          if (opts[CONFIRM]) {
-            const trigger = closest(event.target, opts[CONFIRM]);
-            trigger && emit(CONFIRM, { event, trigger });
-          }
-        }
         if (
           this.opts.backdropHide &&
           !this[CONTENT].contains(event.target) &&
@@ -292,12 +287,13 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
     this.opts.a11y &&
-      removeAttribute(this.base, [
+      removeAttribute(
+        this.base,
         TABINDEX,
         ROLE,
         ARIA_LABELLEDBY,
         ARIA_DESCRIBEDBY,
-      ]);
+      );
     this.focusGuards?.destroy();
     this.focusGuards = null;
     this.placeholder?.replaceWith(this.base);
@@ -400,6 +396,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     this.isOpen = s;
+
+    toggleConfirm(s, this);
 
     const backdropIsOpen = Dialog.shownDialogs.find(
       (instance) => instance !== this && instance[BACKDROP] === backdrop,

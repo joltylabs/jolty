@@ -183,7 +183,7 @@ class Tablist extends Base {
       const { tab, tabpanel, teleport } = tabObj;
 
       if (a11y) {
-        removeAttribute(tab, [ARIA_SELECTED, ARIA_EXPANDED]);
+        removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
         setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
         setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
         setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
@@ -271,10 +271,11 @@ class Tablist extends Base {
     off(tabs);
 
     if (a11y) {
-      removeAttribute(tablist, [
+      removeAttribute(
+        tablist,
         a11y[ROLE] && ROLE,
         a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
-      ]);
+      );
     }
     tablist.id.includes(uuid) && tablist.removeAttribute(ID);
 
@@ -346,20 +347,22 @@ class Tablist extends Base {
       const opts = this.opts;
       const a11y = opts.a11y;
       if (a11y) {
-        removeAttribute(tab, [
+        removeAttribute(
+          tab,
           ROLE,
           a11y[TABINDEX] && TABINDEX,
           ARIA_CONTROLS,
           a11y[OPTION_STATE_ATTRIBUTE],
-        ]);
-        removeAttribute(tabpanel, [
+        );
+        removeAttribute(
+          tabpanel,
           ROLE,
           a11y[OPTION_TABPANEL_TABINDEX] && TABINDEX,
           ARIA_LABELLEDBY,
           a11y[OPTION_ARIA_HIDDEN] && ARIA_HIDDEN,
           HIDDEN,
           INERT,
-        ]);
+        );
       }
 
       off(elems);

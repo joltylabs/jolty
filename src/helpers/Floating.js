@@ -126,11 +126,8 @@ export default class Floating {
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
-    if (topLayer !== FALSE) {
-      this.topLayer = topLayer = opts.topLayer || defaultTopLayerOpts;
-    } else {
-      this.topLayer = topLayer = false;
-    }
+    this.topLayer = topLayer =
+      topLayer === FALSE ? false : opts.topLayer || defaultTopLayerOpts;
 
     this[PLACEMENT] = placement =
       base.getAttribute(DATA_UI_PREFIX + name + "-" + PLACEMENT) ||
@@ -372,7 +369,7 @@ export default class Floating {
       alignItems: CENTER,
     };
 
-    if (!placement) {
+    if (placement === DIALOG) {
       style.position = FIXED;
       style.inset = 0;
       style.height = style.width = AUTO;

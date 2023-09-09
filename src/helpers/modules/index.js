@@ -7,3 +7,4 @@ export { default as floatingTransition } from "./floatingTransition";
 export { default as callShowInit } from "./callShowInit.js";
 export { default as awaitPromise } from "../utils/awaitPromise.js";
 export { default as FocusGuards } from "./FocusGuards.js";
+export { default as toggleConfirm } from "./toggleConfirm.js";

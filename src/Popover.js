@@ -14,16 +14,11 @@ import {
   DEFAULT_TOP_LAYER_OPTIONS,
   OPTION_TOP_LAYER,
   DATA_UI_PREFIX,
-  CANCEL,
   CONFIRM,
-  EVENT_CLICK,
-  UI_EVENT_PREFIX,
   TRIGGER,
   DELAY,
   HIDE_MODE,
   TRANSITION,
-  DIALOG,
-  MODAL,
 } from "./helpers/constants";
 
 import {
@@ -31,7 +26,6 @@ import {
   removeClass,
   setAttribute,
   removeAttribute,
-  closest,
 } from "./helpers/dom";
 import {
   normalizeToggleParameters,
@@ -48,6 +42,7 @@ import {
   toggleOnInterection,
   floatingTransition,
   callShowInit,
+  toggleConfirm,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -70,7 +65,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
-    mode: MODAL,
+    mode: false,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -153,22 +148,13 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       await this[TRANSITION].cancel();
     }
 
-    const eventParams = { event };
+    const eventParams = { event, trigger: toggler };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
-    if (s) {
-      this.on(this.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
-        if (opts[CONFIRM]) {
-          const trigger = closest(event.target, opts[CONFIRM]);
-          trigger && emit(CONFIRM, { event, trigger });
-        }
-      });
-    } else {
-      this.off(this.base, EVENT_CLICK + UI_EVENT_PREFIX);
-    }
+    toggleConfirm(s, this);
 
     const promise = floatingTransition(this, {
       s,
