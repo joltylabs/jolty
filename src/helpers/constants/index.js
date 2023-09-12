@@ -152,7 +152,6 @@ export const AUTO = "auto";
 export const POPOVER_DATA_ATTRIBUTE = DATA_UI_PREFIX + POPOVER + "-wrapper";
 export const FLOATING_DATA_ATTRIBUTE = DATA_UI_PREFIX + FLOATING;
 export const DATA_PREVENT_INERT = DATA_UI_PREFIX + ACTION_PREVENT + "-" + INERT;
-export const DATA_APPEAR = DATA_UI_PREFIX + APPEAR;
 export const POPOVER_API_MODE_MANUAL = "manual";
 
 export const PLACEHOLDER = "placeholder";
@@ -222,7 +221,6 @@ export const OPTION_GROUP = "group";
 
 export const OPTION_PREVENT_SCROLL = "preventScroll";
 export const POSITION = "position";
-export const OPTION_TO = "to";
 export const OPTION_ARIA_LABELLEDBY = kebabToCamel(ARIA_LABELLEDBY);
 export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
 export const OPTION_ARIA_EXPANDED = kebabToCamel(ARIA_EXPANDED);
@@ -239,11 +237,11 @@ export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
 export const DEFAULT_OPTIONS = {
-  [ACTION_INIT]: true,
-  [ACTION_DESTROY]: false,
+  init: true,
+  destroy: false,
   data: "",
   on: null,
-  [APPEAR]: null,
+  appear: null,
   eventDispatch: true,
   eventBubble: true,
   shown: null,
@@ -251,11 +249,9 @@ export const DEFAULT_OPTIONS = {
   hideMode: HIDDEN,
   keepPlace: true,
   transition: true,
+  awaitAnimation: false,
 };
-export const DEFAULT_TOP_LAYER_OPTIONS = {
-  moveModal: true,
-  movePopover: true,
-};
+
 export const DEFAULT_FLOATING_OPTIONS = {
   awaitAnimation: false,
   placement: BOTTOM,
@@ -271,6 +267,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   mode: false,
   focusTrap: false,
   topLayer: true,
+  topLayerForce: true,
   popoverApi: true,
   safeModal: true,
   floatingClass: "",

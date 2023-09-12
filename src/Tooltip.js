@@ -19,8 +19,6 @@ import {
   CONTENT,
   TOOLTIP,
   CLASS_ACTIVE_SUFFIX,
-  DEFAULT_TOP_LAYER_OPTIONS,
-  OPTION_TOP_LAYER,
   TRANSITION,
 } from "./helpers/constants";
 
@@ -53,16 +51,12 @@ import Teleport from "./helpers/Teleport.js";
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
 class Tooltip extends ToggleMixin(Base, TOOLTIP) {
-  static DefaultTopLayer = {
-    ...DEFAULT_TOP_LAYER_OPTIONS,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
     delay: [200, 0],
     eventPrefix: getEventsPrefix(TOOLTIP),
     placement: TOP,
-    mode: false,
     template: (content) =>
       `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-arrow" data-${UI_TOOLTIP}-arrow></div><div class="${UI_TOOLTIP}-content">${content}</div></div>`,
     interactive: false,
@@ -80,14 +74,12 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     super(elem, opts);
   }
   _update() {
-    updateModule(this, OPTION_TOP_LAYER);
     const { tooltip, opts } = this;
 
     this.transition = Transition.createOrUpdate(
       this[TRANSITION],
       tooltip,
       opts[TRANSITION],
-      { keepPlace: false },
     );
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);

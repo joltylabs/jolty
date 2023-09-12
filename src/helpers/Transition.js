@@ -21,11 +21,7 @@ import {
 } from "./constants";
 
 import { isString, isFunction, isObject } from "./is";
-import { toMs, camelToKebab, updateOptsByData, upperFirst } from "./utils";
-
-const DATASET_DURATION = UI + upperFirst(DURATION);
-const DATASET_DURATION_ENTER = DATASET_DURATION + upperFirst(ENTER);
-const DATASET_DURATION_LEAVE = DATASET_DURATION + upperFirst(LEAVE);
+import { camelToKebab, updateOptsByData } from "./utils";
 
 export default class Transition {
   static Default = {
@@ -43,43 +39,23 @@ export default class Transition {
     [DURATION]: null,
   };
 
-  constructor(base, opts, defaultOpts) {
-    this.base = base;
+  constructor(elem, opts, defaultOpts) {
+    this.elem = elem;
     this.update(opts, defaultOpts);
     this.promises = [];
 
     this.isInit = true;
   }
   update(opts, defaultOpts = {}) {
-    const base = this.base;
-    const defaultConfig = Transition.Default;
-    const dataset = base.dataset;
-
-    const datasetData = {};
-
-    const duration = dataset[DATASET_DURATION];
-    const durationEnter = dataset[DATASET_DURATION_ENTER];
-    const durationLeave = dataset[DATASET_DURATION_LEAVE];
-    if (duration || durationEnter || durationLeave) {
-      datasetData.duration =
-        durationEnter || durationLeave
-          ? {
-              enter: toMs(durationEnter ?? duration),
-              leave: toMs(durationLeave ?? duration),
-            }
-          : toMs(duration);
-    }
-
     opts = isString(opts) ? { name: opts } : opts;
 
     opts = {
-      ...defaultConfig,
+      ...Transition.Default,
       ...defaultOpts,
       ...opts,
-      ...datasetData,
     };
 
-    this.opts = updateOptsByData(opts, base, [
+    this.opts = updateOptsByData(opts, this.elem, [
       ENTER_ACTIVE,
       ENTER_FROM,
       ENTER_TO,
@@ -92,7 +68,7 @@ export default class Transition {
     return this;
   }
   toggleVariables(s) {
-    const { offsetWidth, offsetHeight, style } = this.base;
+    const { offsetWidth, offsetHeight, style } = this.elem;
     const rect = [offsetWidth, offsetHeight];
     [WIDTH, HEIGHT].forEach((name, i) => {
       const prop = VAR_UI_PREFIX + TRANSITION + "-" + name;
@@ -105,16 +81,16 @@ export default class Transition {
   }
 
   toggleAnimationClasses(s) {
-    this.base.style.transition = NONE;
+    this.elem.style.transition = NONE;
     this.setClasses([s ? ENTER_FROM : LEAVE_FROM]);
-    this.base.offsetWidth;
-    this.base.style.transition = "";
+    this.elem.offsetWidth;
+    this.elem.style.transition = "";
     this.setClasses([s ? ENTER_ACTIVE : LEAVE_ACTIVE, s ? ENTER_TO : LEAVE_TO]);
     return this;
   }
 
   setClasses(animations) {
-    const { base, opts } = this;
+    const { elem, opts } = this;
     const classes = ["", ""];
     const styles = [{}, {}];
     let hasStyle = false;
@@ -140,7 +116,7 @@ export default class Transition {
     });
     if (hasClass) {
       classes.forEach((classes, s) =>
-        base.classList[s ? ACTION_ADD : ACTION_REMOVE](
+        elem.classList[s ? ACTION_ADD : ACTION_REMOVE](
           ...classes.split(" ").filter(Boolean),
         ),
       );
@@ -152,27 +128,27 @@ export default class Transition {
             name = camelToKebab(name);
           }
           if (s) {
-            base.style.setProperty(name, value);
+            elem.style.setProperty(name, value);
           } else {
-            base.style.removeProperty(name);
+            elem.style.removeProperty(name);
           }
         });
       });
     }
   }
   collectPromises(s) {
-    const { base, promises, opts } = this;
+    const { elem, promises, opts } = this;
     const state = s ? ENTER : LEAVE;
     const duration = opts.duration?.[state] ?? opts.duration;
 
     promises.length = 0;
     let promisesEvent, promisesAnimation;
     if (isFunction(opts[state])) {
-      promisesEvent = new Promise((resolve) => opts[state](base, resolve));
+      promisesEvent = new Promise((resolve) => opts[state](elem, resolve));
     }
     let animations;
     if (opts.css) {
-      animations = base.getAnimations();
+      animations = elem.getAnimations();
       promisesAnimation =
         animations.length &&
         Promise.allSettled(animations.map(({ finished }) => finished));
@@ -205,8 +181,8 @@ export default class Transition {
   }
 
   async run(s, animated = true) {
-    const { base, opts } = this;
-    if (!base) return;
+    const { elem, opts } = this;
+    if (!elem) return;
 
     if (animated) {
       if (opts.css) {
@@ -230,13 +206,13 @@ export default class Transition {
     this.setClasses(null);
     this.isInit = false;
   }
-  static createOrUpdate(transition, base, opts, defaultOpts) {
+  static createOrUpdate(transition, elem, opts, defaultOpts) {
     if (!opts) {
       transition?.destroy();
       return;
     }
     return transition
       ? transition.update(opts, defaultOpts)
-      : new Transition(base, opts, defaultOpts);
+      : new Transition(elem, opts, defaultOpts);
   }
 }

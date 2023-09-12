@@ -34,3 +34,5 @@ export { default as collectCssVariables } from "./floating/collectCssVariables";
 export { default as valuesToArray } from "./valuesToArray";
 export { default as isShown } from "./isShown";
 export { default as toggleHideModeState } from "../modules/toggleHideModeState.js";
+export { default as getBooleanDataAttrValue } from "../utils/getBooleanDataAttrValue.js";
+export { default as getDatasetValue } from "../utils/getDatasetValue.js";

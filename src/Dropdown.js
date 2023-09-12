@@ -23,13 +23,11 @@ import {
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   doc,
-  DEFAULT_TOP_LAYER_OPTIONS,
   OPTION_TOP_LAYER,
   HIDE_MODE,
   TELEPORT,
   TRANSITION,
-  DATA_UI_PREFIX,
-  UI,
+  TRIGGER,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -52,7 +50,6 @@ import {
   updateModule,
   getEventsPrefix,
   updateOptsByData,
-  upperFirst,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -64,15 +61,11 @@ import {
 import Teleport from "./helpers/Teleport.js";
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
-  static DefaultTopLayer = {
-    ...DEFAULT_TOP_LAYER_OPTIONS,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
     eventPrefix: getEventsPrefix(DROPDOWN),
     itemClickHide: true,
-    mode: false,
     autofocus: true,
     items: getDataSelector(DROPDOWN + "-item"),
     trigger: CLICK,
@@ -123,19 +116,13 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callShowInit(this);
   }
   _update() {
-    this.opts[HIDE_MODE] =
-      this.base.dataset[UI + upperFirst(HIDE_MODE)] ?? this.opts[HIDE_MODE];
-
-    updateModule(this, OPTION_TOP_LAYER);
     const { base, opts, on, off, hide } = this;
+    updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
       base,
       opts[TRANSITION],
-      {
-        keepPlace: false,
-      },
     );
 
     this.updateToggler();

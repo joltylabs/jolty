@@ -44,7 +44,6 @@ import {
   OPTION_PREVENT_SCROLL,
   POPOVER,
   POPOVER_API_MODE_MANUAL,
-  DEFAULT_TOP_LAYER_OPTIONS,
   DATA_UI_PREFIX,
   ACTION_REMOVE,
   HIDDEN,
@@ -109,19 +108,7 @@ const updateBodyScrollbarWidth = () => {
     );
 };
 
-const DIALOG_DATA_OPTIONS = [
-  [MODAL, DIALOG + upperFirst(MODAL)],
-  [BACKDROP, DIALOG + upperFirst(BACKDROP)],
-  [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
-  [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
-  HIDE_MODE,
-  OPTION_GROUP,
-];
-
 class Dialog extends ToggleMixin(Base, DIALOG) {
-  static DefaultTopLayer = {
-    ...DEFAULT_TOP_LAYER_OPTIONS,
-  };
   static DefaultGroup = {
     name: "",
     awaitPrevious: true,
@@ -158,6 +145,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     modal: true,
     topLayer: true,
+    topLayerForce: true,
 
     popoverApi: true,
     safeModal: true,
@@ -168,23 +156,22 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   _update() {
-    this.opts = updateOptsByData(this.opts, this.base, DIALOG_DATA_OPTIONS);
-
-    updateModule(this, OPTION_TOP_LAYER);
+    const { base, _fromHTML, opts, id, on } = this;
+    updateOptsByData(opts, base, [
+      MODAL,
+      BACKDROP,
+      OPTION_TOP_LAYER,
+      OPTION_PREVENT_SCROLL,
+      HIDE_MODE,
+      OPTION_GROUP,
+    ]);
     updateModule(this, OPTION_GROUP, NAME);
 
-    const { base, _fromHTML, opts, id, on } = this;
-
     let backdrop;
-    if (opts[BACKDROP]) {
-      if (isFunction(opts[BACKDROP])) {
-        backdrop = opts[BACKDROP](this);
-      }
-      if (isString(opts[BACKDROP])) {
-        backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
-          opts[BACKDROP],
-        );
-      }
+    if (isString(opts[BACKDROP])) {
+      backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
+        opts[BACKDROP],
+      );
     }
 
     this[BACKDROP] = backdrop;
@@ -193,12 +180,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     const isDialogElem = isDialog(base);
 
-    const moveToBody =
-      (opts.topLayer &&
-        (!opts.modal || opts.topLayer.moveModal) &&
-        (!opts.popoverApi ||
-          (opts.topLayer.movePopover && POPOVER_API_SUPPORTED))) ||
-      _fromHTML;
+    const moveToBody = (opts.topLayer && opts.topLayerForce) || _fromHTML;
 
     this[TELEPORT] = Teleport.createOrUpdate(
       this[TELEPORT],

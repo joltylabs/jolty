@@ -38,7 +38,6 @@ import {
   ACTION_SHOW,
   ACTION_TOGGLE,
   DEFAULT_OPTIONS,
-  DATA_APPEAR,
   ID,
   HORIZONTAL,
   VERTICAL,
@@ -52,7 +51,7 @@ import {
   TRANSITION,
   TELEPORT,
   ACTION_REMOVE,
-  UI,
+  APPEAR,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -77,6 +76,8 @@ import {
   getOptionElems,
   isShown,
   toggleHideModeState,
+  getBooleanDataAttrValue,
+  updateOptsByData,
 } from "./helpers/utils";
 import {
   toggleClass,
@@ -161,17 +162,16 @@ class Tablist extends Base {
     super(elem, opts);
   }
   _update() {
+    const { base, tabs, lastShownTab, opts } = this;
     const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
-    const { tablist, tabs, lastShownTab, opts } = this;
 
-    opts[HIDE_MODE] =
-      tablist.dataset[UI + upperFirst(HIDE_MODE)] ?? opts[HIDE_MODE];
+    updateOptsByData(opts, base, [HIDE_MODE]);
 
     if (a11y) {
-      setAttribute(tablist, ROLE, a11y[ROLE]);
+      setAttribute(base, ROLE, a11y[ROLE]);
       a11y[OPTION_ARIA_ORIENTRATION] &&
         setAttribute(
-          tablist,
+          base,
           ARIA_ORIENTATION,
           opts[HORIZONTAL] ? HORIZONTAL : VERTICAL,
         );
@@ -222,7 +222,7 @@ class Tablist extends Base {
       );
       tabInstance.toggle(isOpen, {
         animated:
-          opts.appear ?? tabInstance[TABPANEL].hasAttribute(DATA_APPEAR),
+          getBooleanDataAttrValue(tabInstance[TABPANEL], APPEAR) ?? opts.appear,
         silent: !isOpen,
       });
     });

@@ -24,6 +24,7 @@ import {
   callOrReturn,
   getDataSelector,
   arrayFrom,
+  getDatasetValue,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import Breakpoints from "./Breakpoints";
@@ -56,7 +57,6 @@ class Base {
     const baseElemName = BASE_NODE_NAME ?? NAME;
 
     let dataName = opts.data;
-    let datasetValue, isDataObject;
 
     if (elem == null) {
       opts = mergeDeep(Default, getDataValue(_data, dataName, elem), opts);
@@ -71,11 +71,10 @@ class Base {
       } else if (isString(elem)) {
         elem = doc.querySelector(elem);
       }
-      datasetValue = elem.getAttribute(DATA_UI_PREFIX + NAME)?.trim() || "";
-      isDataObject = datasetValue[0] === "{";
-      dataName ||= !isDataObject && datasetValue;
 
-      datasetValue = isDataObject ? JSON.parse(datasetValue) : {};
+      const [datasetValue, isDataObject] = getDatasetValue(elem, NAME);
+
+      dataName ||= !isDataObject && datasetValue;
 
       if (dataName && !_data[dataName]) return;
 

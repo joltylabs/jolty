@@ -43,11 +43,13 @@ export default ({
   }
   if (triggerFocus) {
     events.push(EVENT_FOCUSIN, EVENT_FOCUSOUT);
-    on(toggler, EVENT_MOUSEDOWN, () => {
-      isMouseDown = true;
-      clearTimeout(instance._hoverTimer);
-      requestAnimationFrame(() => (isMouseDown = false));
-    });
+
+    triggerClick &&
+      on(toggler, EVENT_MOUSEDOWN, () => {
+        isMouseDown = true;
+        clearTimeout(instance._hoverTimer);
+        requestAnimationFrame(() => (isMouseDown = false));
+      });
   }
   if (triggerHover || triggerFocus) {
     on([toggler, target], events, (event) => {

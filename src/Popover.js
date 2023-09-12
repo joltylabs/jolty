@@ -11,12 +11,10 @@ import {
   DEFAULT_OPTIONS,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
-  DEFAULT_TOP_LAYER_OPTIONS,
   OPTION_TOP_LAYER,
   DATA_UI_PREFIX,
   CONFIRM,
   TRIGGER,
-  DELAY,
   HIDE_MODE,
   TRANSITION,
 } from "./helpers/constants";
@@ -31,10 +29,8 @@ import {
   normalizeToggleParameters,
   getDefaultToggleSelector,
   getOptionElem,
-  updateModule,
   getEventsPrefix,
   updateOptsByData,
-  upperFirst,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -49,15 +45,7 @@ import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 
-const POPOVER_DATA_ATTRIBUTES = [
-  [TRIGGER, POPOVER + upperFirst(TRIGGER)],
-  [DELAY, POPOVER + upperFirst(DELAY)],
-  HIDE_MODE,
-];
 class Popover extends ToggleMixin(Base, POPOVER) {
-  static DefaultTopLayer = {
-    ...DEFAULT_TOP_LAYER_OPTIONS,
-  };
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -65,7 +53,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
-    mode: false,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -97,17 +84,12 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   _update() {
     const { base, opts } = this;
-    this.opts = updateOptsByData(opts, base, POPOVER_DATA_ATTRIBUTES);
-
-    updateModule(this, OPTION_TOP_LAYER);
+    updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
       base,
       opts[TRANSITION],
-      {
-        keepPlace: false,
-      },
     );
 
     this.updateToggler();

@@ -50,7 +50,7 @@
   const ABSOLUTE = "absolute";
   const FIXED = "fixed";
   const TRANSITION = "transition";
-  const TELEPORT$1 = "teleport";
+  const TELEPORT = "teleport";
 
   const DIV = "div";
   const BUTTON = "button";
@@ -93,7 +93,6 @@
   const TOOLTIP = "tooltip";
   const TOGGLER = "toggler";
   const TRIGGER = "trigger";
-  const DELAY = "delay";
   const DROPDOWN = "dropdown";
   const ARROW = "arrow";
   const PROGRESS = "progress";
@@ -159,7 +158,6 @@
   const DISABLED = "disabled";
   const AUTO = "auto";
   const FLOATING_DATA_ATTRIBUTE = DATA_UI_PREFIX + FLOATING;
-  const DATA_APPEAR = DATA_UI_PREFIX + APPEAR;
   const POPOVER_API_MODE_MANUAL = "manual";
 
   const PLACEHOLDER = "placeholder";
@@ -222,7 +220,6 @@
 
   const OPTION_PREVENT_SCROLL = "preventScroll";
   const POSITION = "position";
-  const OPTION_TO = "to";
   kebabToCamel(ARIA_LABELLEDBY);
   const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
   kebabToCamel(ARIA_EXPANDED);
@@ -237,11 +234,11 @@
 
   const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
   const DEFAULT_OPTIONS = {
-    [ACTION_INIT]: true,
-    [ACTION_DESTROY]: false,
+    init: true,
+    destroy: false,
     data: "",
     on: null,
-    [APPEAR]: null,
+    appear: null,
     eventDispatch: true,
     eventBubble: true,
     shown: null,
@@ -249,11 +246,9 @@
     hideMode: HIDDEN,
     keepPlace: true,
     transition: true,
+    awaitAnimation: false,
   };
-  const DEFAULT_TOP_LAYER_OPTIONS = {
-    moveModal: true,
-    movePopover: true,
-  };
+
   const DEFAULT_FLOATING_OPTIONS = {
     awaitAnimation: false,
     placement: BOTTOM,
@@ -269,6 +264,7 @@
     mode: false,
     focusTrap: false,
     topLayer: true,
+    topLayerForce: true,
     popoverApi: true,
     safeModal: true,
     floatingClass: "",
@@ -688,19 +684,6 @@
   var strToArray = (str = "", separator = " ") =>
     str ? (isArray(str) ? str : str.split(separator)).filter(Boolean) : [];
 
-  var toMs = (time) => {
-    if (!time) return;
-    let num = parseFloat(time);
-    let unit = time.match(/m?s/);
-    if (unit) {
-      unit = unit[0];
-    }
-    if (unit === "s") {
-      num *= 1000;
-    }
-    return num;
-  };
-
   var uuidGenerator = (prefix = "") =>
     prefix + Math.random().toString(36).substring(2, 12);
 
@@ -925,6 +908,24 @@
     if (s) {
       target[HIDDEN] = false;
     }
+  };
+
+  var getBooleanDataAttrValue = (elem, name) => {
+    const value = elem.getAttribute(DATA_UI_PREFIX + name);
+    return value === null ? value : value && value !== FALSE;
+  };
+
+  var getDatasetValue = (elem, name, property) => {
+    let datasetValue = elem.getAttribute(DATA_UI_PREFIX + name)?.trim() || "";
+    const isDataObject = datasetValue[0] === "{";
+    if (datasetValue) {
+      if (isDataObject) {
+        datasetValue = JSON.parse(datasetValue);
+      } else if (property) {
+        datasetValue = { [property]: datasetValue };
+      }
+    }
+    return property ? datasetValue : [datasetValue, isDataObject];
   };
 
   function addStyle(elem, name, value) {
@@ -1307,7 +1308,6 @@
       const baseElemName = BASE_NODE_NAME ?? NAME;
 
       let dataName = opts.data;
-      let datasetValue, isDataObject;
 
       if (elem == null) {
         opts = mergeDeep(Default, getDataValue(_data, dataName, elem), opts);
@@ -1322,11 +1322,10 @@
         } else if (isString(elem)) {
           elem = doc.querySelector(elem);
         }
-        datasetValue = elem.getAttribute(DATA_UI_PREFIX + NAME)?.trim() || "";
-        isDataObject = datasetValue[0] === "{";
-        dataName ||= !isDataObject && datasetValue;
 
-        datasetValue = isDataObject ? JSON.parse(datasetValue) : {};
+        const [datasetValue, isDataObject] = getDatasetValue(elem, NAME);
+
+        dataName ||= !isDataObject && datasetValue;
 
         if (dataName && !_data[dataName]) return;
 
@@ -1509,10 +1508,6 @@
       }
     };
 
-  const DATASET_DURATION = UI + upperFirst(DURATION);
-  const DATASET_DURATION_ENTER = DATASET_DURATION + upperFirst(ENTER);
-  const DATASET_DURATION_LEAVE = DATASET_DURATION + upperFirst(LEAVE);
-
   class Transition {
     static Default = {
       name: UI,
@@ -1529,43 +1524,23 @@
       [DURATION]: null,
     };
 
-    constructor(base, opts, defaultOpts) {
-      this.base = base;
+    constructor(elem, opts, defaultOpts) {
+      this.elem = elem;
       this.update(opts, defaultOpts);
       this.promises = [];
 
       this.isInit = true;
     }
     update(opts, defaultOpts = {}) {
-      const base = this.base;
-      const defaultConfig = Transition.Default;
-      const dataset = base.dataset;
-
-      const datasetData = {};
-
-      const duration = dataset[DATASET_DURATION];
-      const durationEnter = dataset[DATASET_DURATION_ENTER];
-      const durationLeave = dataset[DATASET_DURATION_LEAVE];
-      if (duration || durationEnter || durationLeave) {
-        datasetData.duration =
-          durationEnter || durationLeave
-            ? {
-                enter: toMs(durationEnter ?? duration),
-                leave: toMs(durationLeave ?? duration),
-              }
-            : toMs(duration);
-      }
-
       opts = isString(opts) ? { name: opts } : opts;
 
       opts = {
-        ...defaultConfig,
+        ...Transition.Default,
         ...defaultOpts,
         ...opts,
-        ...datasetData,
       };
 
-      this.opts = updateOptsByData(opts, base, [
+      this.opts = updateOptsByData(opts, this.elem, [
         ENTER_ACTIVE,
         ENTER_FROM,
         ENTER_TO,
@@ -1578,7 +1553,7 @@
       return this;
     }
     toggleVariables(s) {
-      const { offsetWidth, offsetHeight, style } = this.base;
+      const { offsetWidth, offsetHeight, style } = this.elem;
       const rect = [offsetWidth, offsetHeight];
       [WIDTH, HEIGHT].forEach((name, i) => {
         const prop = VAR_UI_PREFIX + TRANSITION + "-" + name;
@@ -1591,16 +1566,16 @@
     }
 
     toggleAnimationClasses(s) {
-      this.base.style.transition = NONE;
+      this.elem.style.transition = NONE;
       this.setClasses([s ? ENTER_FROM : LEAVE_FROM]);
-      this.base.offsetWidth;
-      this.base.style.transition = "";
+      this.elem.offsetWidth;
+      this.elem.style.transition = "";
       this.setClasses([s ? ENTER_ACTIVE : LEAVE_ACTIVE, s ? ENTER_TO : LEAVE_TO]);
       return this;
     }
 
     setClasses(animations) {
-      const { base, opts } = this;
+      const { elem, opts } = this;
       const classes = ["", ""];
       const styles = [{}, {}];
       let hasStyle = false;
@@ -1626,7 +1601,7 @@
       });
       if (hasClass) {
         classes.forEach((classes, s) =>
-          base.classList[s ? ACTION_ADD : ACTION_REMOVE](
+          elem.classList[s ? ACTION_ADD : ACTION_REMOVE](
             ...classes.split(" ").filter(Boolean),
           ),
         );
@@ -1638,27 +1613,27 @@
               name = camelToKebab(name);
             }
             if (s) {
-              base.style.setProperty(name, value);
+              elem.style.setProperty(name, value);
             } else {
-              base.style.removeProperty(name);
+              elem.style.removeProperty(name);
             }
           });
         });
       }
     }
     collectPromises(s) {
-      const { base, promises, opts } = this;
+      const { elem, promises, opts } = this;
       const state = s ? ENTER : LEAVE;
       const duration = opts.duration?.[state] ?? opts.duration;
 
       promises.length = 0;
       let promisesEvent, promisesAnimation;
       if (isFunction(opts[state])) {
-        promisesEvent = new Promise((resolve) => opts[state](base, resolve));
+        promisesEvent = new Promise((resolve) => opts[state](elem, resolve));
       }
       let animations;
       if (opts.css) {
-        animations = base.getAnimations();
+        animations = elem.getAnimations();
         promisesAnimation =
           animations.length &&
           Promise.allSettled(animations.map(({ finished }) => finished));
@@ -1691,8 +1666,8 @@
     }
 
     async run(s, animated = true) {
-      const { base, opts } = this;
-      if (!base) return;
+      const { elem, opts } = this;
+      if (!elem) return;
 
       if (animated) {
         if (opts.css) {
@@ -1716,27 +1691,20 @@
       this.setClasses(null);
       this.isInit = false;
     }
-    static createOrUpdate(transition, base, opts, defaultOpts) {
+    static createOrUpdate(transition, elem, opts, defaultOpts) {
       if (!opts) {
         transition?.destroy();
         return;
       }
       return transition
         ? transition.update(opts, defaultOpts)
-        : new Transition(base, opts, defaultOpts);
+        : new Transition(elem, opts, defaultOpts);
     }
   }
 
-  const TELEPORT = "teleport";
-  const TELEPORT_DATA_ATTRIBUTE = kebabToCamel(UI_PREFIX + TELEPORT);
-  const TELEPORT_DATA_ATTRIBUTES = [
-    [OPTION_TO, TELEPORT],
-    [POSITION, TELEPORT + upperFirst(POSITION)],
-  ];
-
   class Teleport {
     static Default = {
-      [OPTION_TO]: false,
+      to: false,
       [POSITION]: "beforeend",
       disableAttributes: false,
     };
@@ -1745,18 +1713,18 @@
       this.update(opts, defaultOpts);
     }
     update(opts, defaultOpts = {}) {
-      const dataset = this.elem.dataset;
-      const defaultConfig = this.constructor.Default;
-      if (opts === false && !dataset[TELEPORT_DATA_ATTRIBUTE]) {
-        return this.destroy();
-      }
       opts = isObject(opts) ? opts : { to: opts };
-      opts = mergeDeep(defaultConfig, defaultOpts, opts);
+      opts = mergeDeep(
+        this.constructor.Default,
+        defaultOpts,
+        opts,
+        getDatasetValue(this.elem, TELEPORT, "to"),
+      );
 
-      if (!opts.disableAttributes) {
-        this.opts = updateOptsByData(opts, this.elem, TELEPORT_DATA_ATTRIBUTES);
-      } else {
-        this.opts = opts;
+      this.opts = opts;
+
+      if (!opts.to) {
+        return this.destroy();
       }
 
       return this;
@@ -1788,7 +1756,8 @@
       return teleport
         ? teleport.update(opts, defaultOpts)
         : opts !== false ||
-          (!opts.disableAttributes && elem.dataset[TELEPORT_DATA_ATTRIBUTE])
+          (!opts.disableAttributes &&
+            elem.getAttribute(DATA_UI_PREFIX + TELEPORT))
         ? new Teleport(elem, opts, defaultOpts)
         : null;
     }
@@ -1864,7 +1833,7 @@
 
     instance[PLACEHOLDER]?.replaceWith(base);
 
-    ["autohide", FLOATING, TRANSITION, TELEPORT$1].forEach((key) => {
+    ["autohide", FLOATING, TRANSITION, TELEPORT].forEach((key) => {
       if (instance[key]) {
         instance[key].destroy();
         instance[key] = null;
@@ -1921,11 +1890,13 @@
     }
     if (triggerFocus) {
       events.push(EVENT_FOCUSIN, EVENT_FOCUSOUT);
-      on(toggler, EVENT_MOUSEDOWN, () => {
-        isMouseDown = true;
-        clearTimeout(instance._hoverTimer);
-        requestAnimationFrame(() => (isMouseDown = false));
-      });
+
+      triggerClick &&
+        on(toggler, EVENT_MOUSEDOWN, () => {
+          isMouseDown = true;
+          clearTimeout(instance._hoverTimer);
+          requestAnimationFrame(() => (isMouseDown = false));
+        });
     }
     if (triggerHover || triggerFocus) {
       on([toggler, target], events, (event) => {
@@ -2019,16 +1990,16 @@
         topLayer === FALSE ? false : opts.topLayer || defaultTopLayerOpts;
 
       this[PLACEMENT] = placement =
-        base.getAttribute(DATA_UI_PREFIX + name + "-" + PLACEMENT) ||
+        base.getAttribute(DATA_UI_PREFIX + PLACEMENT) ||
         placement ||
         opts[PLACEMENT];
 
       this[CLASS] =
-        base.getAttribute(DATA_UI_PREFIX + name + "-" + FLOATING + "-" + CLASS) ??
+        base.getAttribute(DATA_UI_PREFIX + FLOATING + "-" + CLASS) ??
         opts.floatingClass;
 
       const mode = (this[MODE] =
-        base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) || opts[MODE]);
+        base.getAttribute(DATA_UI_PREFIX + MODE) || opts[MODE]);
 
       const usePopoverApi =
         topLayer && mode !== MODAL && opts.popoverApi && POPOVER_API_SUPPORTED;
@@ -2037,10 +2008,7 @@
         (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
         mode === MODAL;
 
-      const moveToRoot =
-        topLayer &&
-        (mode !== MODAL || topLayer.moveModal) &&
-        (!usePopoverApi || topLayer.movePopover);
+      const moveToRoot = topLayer && opts.topLayerForce;
 
       const useFocusGuards =
         (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
@@ -2064,7 +2032,6 @@
         });
       }
 
-      console.log(mode);
       if (placement === DIALOG) return this;
 
       const wrapperStyle = wrapper.style;
@@ -2245,7 +2212,7 @@
       const { target, name, anchor, opts } = this;
 
       const style = {
-        zIndex: 999,
+        zIndex: `var(${VAR_UI_PREFIX}top-layer-z-index,999)`,
         margin: 0,
         padding: 0,
         background: NONE,
@@ -2261,7 +2228,8 @@
       if (placement === DIALOG) {
         style.position = FIXED;
         style.inset = 0;
-        style.height = style.width = AUTO;
+        style.height = AUTO;
+        style.width = AUTO;
       } else {
         style.position = ABSOLUTE;
         style.inset = AUTO;
@@ -2349,7 +2317,15 @@
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-    !s && instance[FLOATING]?.wrapper.close?.();
+    const wrapper = instance[FLOATING]?.wrapper;
+
+    if (!s && wrapper?.matches(":" + MODAL)) {
+      wrapper.close();
+      if (opts.popoverApi && POPOVER_API_SUPPORTED) {
+        wrapper.popover = POPOVER_API_MODE_MANUAL;
+        wrapper.showPopover();
+      }
+    }
 
     const promise = transition?.run(s, animated);
 
@@ -2378,7 +2354,7 @@
           await promise;
         }
         if (instance.placeholder) {
-          instance[FLOATING].wrapper.replaceWith(instance.placeholder);
+          wrapper.replaceWith(instance.placeholder);
         }
         instance[FLOATING]?.destroy();
         instance[FLOATING] = null;
@@ -2406,7 +2382,9 @@
     shown &&
       show({
         animated:
-          opts.appear ?? instance._fromHTML ?? target.hasAttribute(DATA_APPEAR),
+          getBooleanDataAttrValue(target, APPEAR) ??
+          opts.appear ??
+          instance._fromHTML,
         ignoreConditions: true,
         ignoreAutofocus: !instance._fromHTML,
       });
@@ -2523,16 +2501,14 @@
     }
     _update() {
       const { base, opts } = this;
-
-      opts[HIDE_MODE] =
-        base.dataset[UI + upperFirst(HIDE_MODE)] ?? opts[HIDE_MODE];
+      updateOptsByData(opts, base, [HIDE_MODE]);
 
       addDismiss(this);
 
-      this[TELEPORT$1] = Teleport.createOrUpdate(
-        this[TELEPORT$1],
+      this[TELEPORT] = Teleport.createOrUpdate(
+        this[TELEPORT],
         base,
-        opts[TELEPORT$1],
+        opts[TELEPORT],
       )?.move(this);
 
       if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
@@ -2651,15 +2627,11 @@
   }
 
   class Dropdown extends ToggleMixin(Base, DROPDOWN) {
-    static DefaultTopLayer = {
-      ...DEFAULT_TOP_LAYER_OPTIONS,
-    };
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
       eventPrefix: getEventsPrefix(DROPDOWN),
       itemClickHide: true,
-      mode: false,
       autofocus: true,
       items: getDataSelector(DROPDOWN + "-item"),
       trigger: CLICK,
@@ -2705,24 +2677,18 @@
 
       addDismiss(this, base);
 
-      this[TELEPORT$1] = new Teleport(base, { disableAttributes: true });
+      this[TELEPORT] = new Teleport(base, { disableAttributes: true });
 
       return callShowInit(this);
     }
     _update() {
-      this.opts[HIDE_MODE] =
-        this.base.dataset[UI + upperFirst(HIDE_MODE)] ?? this.opts[HIDE_MODE];
-
-      updateModule(this, OPTION_TOP_LAYER);
       const { base, opts, on, off, hide } = this;
+      updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
 
       this[TRANSITION] = Transition.createOrUpdate(
         this[TRANSITION],
         base,
         opts[TRANSITION],
-        {
-          keepPlace: false,
-        },
       );
 
       this.updateToggler();
@@ -2877,19 +2843,7 @@
       );
   };
 
-  const DIALOG_DATA_OPTIONS = [
-    [MODAL, DIALOG + upperFirst(MODAL)],
-    [BACKDROP, DIALOG + upperFirst(BACKDROP)],
-    [OPTION_TOP_LAYER, DIALOG + upperFirst(OPTION_TOP_LAYER)],
-    [OPTION_PREVENT_SCROLL, DIALOG + upperFirst(OPTION_PREVENT_SCROLL)],
-    HIDE_MODE,
-    OPTION_GROUP,
-  ];
-
   class Dialog extends ToggleMixin(Base, DIALOG) {
-    static DefaultTopLayer = {
-      ...DEFAULT_TOP_LAYER_OPTIONS,
-    };
     static DefaultGroup = {
       name: "",
       awaitPrevious: true,
@@ -2926,6 +2880,7 @@
 
       modal: true,
       topLayer: true,
+      topLayerForce: true,
 
       popoverApi: true,
       safeModal: true,
@@ -2936,23 +2891,22 @@
     }
 
     _update() {
-      this.opts = updateOptsByData(this.opts, this.base, DIALOG_DATA_OPTIONS);
-
-      updateModule(this, OPTION_TOP_LAYER);
+      const { base, _fromHTML, opts, id, on } = this;
+      updateOptsByData(opts, base, [
+        MODAL,
+        BACKDROP,
+        OPTION_TOP_LAYER,
+        OPTION_PREVENT_SCROLL,
+        HIDE_MODE,
+        OPTION_GROUP,
+      ]);
       updateModule(this, OPTION_GROUP, NAME);
 
-      const { base, _fromHTML, opts, id, on } = this;
-
       let backdrop;
-      if (opts[BACKDROP]) {
-        if (isFunction(opts[BACKDROP])) {
-          backdrop = opts[BACKDROP](this);
-        }
-        if (isString(opts[BACKDROP])) {
-          backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
-            opts[BACKDROP],
-          );
-        }
+      if (isString(opts[BACKDROP])) {
+        backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
+          opts[BACKDROP],
+        );
       }
 
       this[BACKDROP] = backdrop;
@@ -2961,15 +2915,10 @@
 
       const isDialogElem = isDialog(base);
 
-      const moveToBody =
-        (opts.topLayer &&
-          (!opts.modal || opts.topLayer.moveModal) &&
-          (!opts.popoverApi ||
-            (opts.topLayer.movePopover && POPOVER_API_SUPPORTED))) ||
-        _fromHTML;
+      const moveToBody = (opts.topLayer && opts.topLayerForce) || _fromHTML;
 
-      this[TELEPORT$1] = Teleport.createOrUpdate(
-        this[TELEPORT$1],
+      this[TELEPORT] = Teleport.createOrUpdate(
+        this[TELEPORT],
         base,
         moveToBody ? body : false,
         {
@@ -3388,17 +3337,16 @@
       super(elem, opts);
     }
     _update() {
+      const { base, tabs, lastShownTab, opts } = this;
       const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
-      const { tablist, tabs, lastShownTab, opts } = this;
 
-      opts[HIDE_MODE] =
-        tablist.dataset[UI + upperFirst(HIDE_MODE)] ?? opts[HIDE_MODE];
+      updateOptsByData(opts, base, [HIDE_MODE]);
 
       if (a11y) {
-        setAttribute(tablist, ROLE, a11y[ROLE]);
+        setAttribute(base, ROLE, a11y[ROLE]);
         a11y[OPTION_ARIA_ORIENTRATION] &&
           setAttribute(
-            tablist,
+            base,
             ARIA_ORIENTATION,
             opts[HORIZONTAL] ? HORIZONTAL : VERTICAL,
           );
@@ -3449,7 +3397,7 @@
         );
         tabInstance.toggle(isOpen, {
           animated:
-            opts.appear ?? tabInstance[TABPANEL].hasAttribute(DATA_APPEAR),
+            getBooleanDataAttrValue(tabInstance[TABPANEL], APPEAR) ?? opts.appear,
           silent: !isOpen,
         });
       });
@@ -3599,7 +3547,7 @@
             removeClass(tabInstance[name], opts[name + CLASS_ACTIVE_SUFFIX]),
           );
           tabInstance[TRANSITION]?.destroy();
-          tabInstance[TELEPORT$1]?.destroy();
+          tabInstance[TELEPORT]?.destroy();
         }
         tabpanel.id.includes(uuid) && tabpanel.removeAttribute(ID);
         tab.id.includes(uuid) && tab.removeAttribute(ID);
@@ -3647,7 +3595,7 @@
         },
         get initialPlaceNode() {
           return (
-            tabInstance[TELEPORT$1]?.placeholder ??
+            tabInstance[TELEPORT]?.placeholder ??
             tabInstance.placeholder ??
             tabpanel
           );
@@ -4266,16 +4214,12 @@
   const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
   class Tooltip extends ToggleMixin(Base, TOOLTIP) {
-    static DefaultTopLayer = {
-      ...DEFAULT_TOP_LAYER_OPTIONS,
-    };
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
       delay: [200, 0],
       eventPrefix: getEventsPrefix(TOOLTIP),
       placement: TOP,
-      mode: false,
       template: (content) =>
         `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-arrow" data-${UI_TOOLTIP}-arrow></div><div class="${UI_TOOLTIP}-content">${content}</div></div>`,
       interactive: false,
@@ -4293,14 +4237,12 @@
       super(elem, opts);
     }
     _update() {
-      updateModule(this, OPTION_TOP_LAYER);
       const { tooltip, opts } = this;
 
       this.transition = Transition.createOrUpdate(
         this[TRANSITION],
         tooltip,
         opts[TRANSITION],
-        { keepPlace: false },
       );
 
       opts.a11y && setAttribute(tooltip, TOOLTIP);
@@ -4417,15 +4359,7 @@
     }
   }
 
-  const POPOVER_DATA_ATTRIBUTES = [
-    [TRIGGER, POPOVER + upperFirst(TRIGGER)],
-    [DELAY, POPOVER + upperFirst(DELAY)],
-    HIDE_MODE,
-  ];
   class Popover extends ToggleMixin(Base, POPOVER) {
-    static DefaultTopLayer = {
-      ...DEFAULT_TOP_LAYER_OPTIONS,
-    };
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
@@ -4433,7 +4367,6 @@
       dismiss: true,
       autofocus: true,
       trigger: CLICK,
-      mode: false,
       [TOGGLER]: null,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -4465,17 +4398,12 @@
     }
     _update() {
       const { base, opts } = this;
-      this.opts = updateOptsByData(opts, base, POPOVER_DATA_ATTRIBUTES);
-
-      updateModule(this, OPTION_TOP_LAYER);
+      updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
 
       this[TRANSITION] = Transition.createOrUpdate(
         this[TRANSITION],
         base,
         opts[TRANSITION],
-        {
-          keepPlace: false,
-        },
       );
 
       this.updateToggler();

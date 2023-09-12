@@ -130,16 +130,16 @@ export default class Floating {
       topLayer === FALSE ? false : opts.topLayer || defaultTopLayerOpts;
 
     this[PLACEMENT] = placement =
-      base.getAttribute(DATA_UI_PREFIX + name + "-" + PLACEMENT) ||
+      base.getAttribute(DATA_UI_PREFIX + PLACEMENT) ||
       placement ||
       opts[PLACEMENT];
 
     this[CLASS] =
-      base.getAttribute(DATA_UI_PREFIX + name + "-" + FLOATING + "-" + CLASS) ??
+      base.getAttribute(DATA_UI_PREFIX + FLOATING + "-" + CLASS) ??
       opts.floatingClass;
 
     const mode = (this[MODE] =
-      base.getAttribute(DATA_UI_PREFIX + name + "-" + MODE) || opts[MODE]);
+      base.getAttribute(DATA_UI_PREFIX + MODE) || opts[MODE]);
 
     const usePopoverApi =
       topLayer && mode !== MODAL && opts.popoverApi && POPOVER_API_SUPPORTED;
@@ -148,10 +148,7 @@ export default class Floating {
       (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
       mode === MODAL;
 
-    const moveToRoot =
-      topLayer &&
-      (mode !== MODAL || topLayer.moveModal) &&
-      (!usePopoverApi || topLayer.movePopover);
+    const moveToRoot = topLayer && opts.topLayerForce;
 
     const useFocusGuards =
       (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
@@ -175,7 +172,6 @@ export default class Floating {
       });
     }
 
-    console.log(mode);
     if (placement === DIALOG) return this;
 
     const wrapperStyle = wrapper.style;
@@ -356,7 +352,7 @@ export default class Floating {
     const { target, name, anchor, opts } = this;
 
     const style = {
-      zIndex: 999,
+      zIndex: `var(${VAR_UI_PREFIX}top-layer-z-index,999)`,
       margin: 0,
       padding: 0,
       background: NONE,
@@ -372,7 +368,8 @@ export default class Floating {
     if (placement === DIALOG) {
       style.position = FIXED;
       style.inset = 0;
-      style.height = style.width = AUTO;
+      style.height = AUTO;
+      style.width = AUTO;
     } else {
       style.position = ABSOLUTE;
       style.inset = AUTO;

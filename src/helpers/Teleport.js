@@ -1,22 +1,16 @@
-import { UI_PREFIX, OPTION_TO, POSITION, doc } from "./constants";
-import { isString, isObject } from "./is";
 import {
-  mergeDeep,
-  callOrReturn,
-  updateOptsByData,
-  upperFirst,
-  kebabToCamel,
-} from "./utils";
-const TELEPORT = "teleport";
-const TELEPORT_DATA_ATTRIBUTE = kebabToCamel(UI_PREFIX + TELEPORT);
-const TELEPORT_DATA_ATTRIBUTES = [
-  [OPTION_TO, TELEPORT],
-  [POSITION, TELEPORT + upperFirst(POSITION)],
-];
+  UI_PREFIX,
+  POSITION,
+  TELEPORT,
+  doc,
+  DATA_UI_PREFIX,
+} from "./constants";
+import { isString, isObject } from "./is";
+import { mergeDeep, callOrReturn, getDatasetValue } from "./utils";
 
 class Teleport {
   static Default = {
-    [OPTION_TO]: false,
+    to: false,
     [POSITION]: "beforeend",
     disableAttributes: false,
   };
@@ -25,18 +19,18 @@ class Teleport {
     this.update(opts, defaultOpts);
   }
   update(opts, defaultOpts = {}) {
-    const dataset = this.elem.dataset;
-    const defaultConfig = this.constructor.Default;
-    if (opts === false && !dataset[TELEPORT_DATA_ATTRIBUTE]) {
-      return this.destroy();
-    }
     opts = isObject(opts) ? opts : { to: opts };
-    opts = mergeDeep(defaultConfig, defaultOpts, opts);
+    opts = mergeDeep(
+      this.constructor.Default,
+      defaultOpts,
+      opts,
+      getDatasetValue(this.elem, TELEPORT, "to"),
+    );
 
-    if (!opts.disableAttributes) {
-      this.opts = updateOptsByData(opts, this.elem, TELEPORT_DATA_ATTRIBUTES);
-    } else {
-      this.opts = opts;
+    this.opts = opts;
+
+    if (!opts.to) {
+      return this.destroy();
     }
 
     return this;
@@ -68,7 +62,8 @@ class Teleport {
     return teleport
       ? teleport.update(opts, defaultOpts)
       : opts !== false ||
-        (!opts.disableAttributes && elem.dataset[TELEPORT_DATA_ATTRIBUTE])
+        (!opts.disableAttributes &&
+          elem.getAttribute(DATA_UI_PREFIX + TELEPORT))
       ? new Teleport(elem, opts, defaultOpts)
       : null;
   }

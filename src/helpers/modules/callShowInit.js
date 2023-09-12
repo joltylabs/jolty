@@ -1,5 +1,10 @@
-import { DATA_APPEAR, EVENT_INIT } from "../constants";
-import { callOrReturn, checkHash, isShown } from "../utils";
+import { APPEAR, EVENT_INIT } from "../constants";
+import {
+  callOrReturn,
+  checkHash,
+  getBooleanDataAttrValue,
+  isShown,
+} from "../utils";
 
 export default (instance, target = instance.base, stateElem = target) => {
   const { opts, show, id } = instance;
@@ -17,7 +22,9 @@ export default (instance, target = instance.base, stateElem = target) => {
   shown &&
     show({
       animated:
-        opts.appear ?? instance._fromHTML ?? target.hasAttribute(DATA_APPEAR),
+        getBooleanDataAttrValue(target, APPEAR) ??
+        opts.appear ??
+        instance._fromHTML,
       ignoreConditions: true,
       ignoreAutofocus: !instance._fromHTML,
     });
