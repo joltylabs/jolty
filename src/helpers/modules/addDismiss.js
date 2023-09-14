@@ -1,4 +1,10 @@
-import { DATA_UI_PREFIX, DISMISS, EVENT_CLICK } from "../constants";
+import {
+  CANCEL,
+  DATA_UI_PREFIX,
+  DISMISS,
+  EVENT_CLICK,
+  PRIVATE_OPTION_CANCEL_ON_HIDE,
+} from "../constants";
 import { isString } from "../is";
 const eventName = EVENT_CLICK + "." + DISMISS;
 export default function (
@@ -21,7 +27,11 @@ export default function (
       (event) => {
         event.preventDefault();
         event.stopPropagation();
-        action({ event, trigger: event.deligateTarget });
+        const eventParams = { event, trigger: event.deligateTarget };
+        action(eventParams);
+        if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
+          instance.emit(CANCEL, eventParams);
+        }
       },
     );
     instance._dismiss = true;

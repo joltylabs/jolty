@@ -307,3 +307,5 @@ export const POPOVER_API_SUPPORTED =
   HTMLElement.prototype.hasOwnProperty(POPOVER);
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
+
+export const PRIVATE_OPTION_CANCEL_ON_HIDE = "__cancelOnHide";

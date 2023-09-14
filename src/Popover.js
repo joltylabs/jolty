@@ -17,6 +17,7 @@ import {
   TRIGGER,
   HIDE_MODE,
   TRANSITION,
+  PRIVATE_OPTION_CANCEL_ON_HIDE,
 } from "./helpers/constants";
 
 import {
@@ -46,6 +47,7 @@ import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
+  static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
@@ -68,17 +70,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     if (this.isInit) return;
     this._update();
 
-    const { toggler, base } = this;
-
-    toggleOnInterection({
-      toggler,
-      target: base,
-      instance: this,
-    });
-
-    addDismiss(this, base);
-
-    this.teleport = new Teleport(base, { disableAttributes: true });
+    this.teleport = new Teleport(this.base, { disableAttributes: true });
 
     return callShowInit(this);
   }
@@ -93,6 +85,9 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     );
 
     this.updateToggler();
+
+    addDismiss(this);
+    toggleOnInterection(this);
   }
   updateToggler() {
     const { opts, id } = this;

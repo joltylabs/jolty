@@ -38,7 +38,6 @@ import {
   getOptionElems,
   getDefaultToggleSelector,
   toggleHideModeState,
-  upperFirst,
   updateOptsByData,
 } from "./helpers/utils";
 import {

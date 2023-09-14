@@ -47,7 +47,6 @@ import {
   getDefaultToggleSelector,
   getOptionElems,
   getOptionElem,
-  updateModule,
   getEventsPrefix,
   updateOptsByData,
 } from "./helpers/utils";
@@ -103,20 +102,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       }
     });
 
-    toggleOnInterection({
-      toggler,
-      target: base,
-      instance: this,
-    });
-
-    addDismiss(this, base);
-
     this[TELEPORT] = new Teleport(base, { disableAttributes: true });
 
     return callShowInit(this);
   }
   _update() {
-    const { base, opts, on, off, hide } = this;
+    const { base, opts, toggler, on, off, hide } = this;
     updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
 
     this[TRANSITION] = Transition.createOrUpdate(
@@ -135,6 +126,10 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     } else {
       off(base, EVENT_CLICK);
     }
+
+    toggleOnInterection(this);
+
+    addDismiss(this, base);
   }
   updateToggler() {
     const { opts, id } = this;

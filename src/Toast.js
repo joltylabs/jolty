@@ -92,6 +92,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
       hide,
       opts.autohide,
     );
+
+    addDismiss(this);
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
@@ -102,8 +104,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
     if (this.isInit) return;
 
     this._update();
-
-    addDismiss(this);
 
     return callShowInit(this);
   }

@@ -49,6 +49,7 @@ import {
   HIDDEN,
   TELEPORT,
   TRANSITION,
+  PRIVATE_OPTION_CANCEL_ON_HIDE,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -70,7 +71,6 @@ import {
   updateModule,
   getOptionElem,
   updateOptsByData,
-  upperFirst,
   toggleHideModeState,
 } from "./helpers/utils";
 import {
@@ -109,6 +109,7 @@ const updateBodyScrollbarWidth = () => {
 };
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
+  static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
   static DefaultGroup = {
     name: "",
     awaitPrevious: true,
@@ -218,6 +219,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       opts.popoverApi
         ? POPOVER_API_MODE_MANUAL
         : null;
+
+    addDismiss(this);
   }
   init() {
     const { opts, isInit, base, on, emit, hide, toggle } = this;
@@ -228,7 +231,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this._update();
     this.updateAriaTargets();
-    addDismiss(this);
 
     on(
       base,
