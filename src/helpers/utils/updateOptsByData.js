@@ -9,8 +9,9 @@ import {
   OPTION_HASH_NAVIGATION,
   OPTION_AUTODESTROY,
 } from "../constants";
-import { isArray } from "../is";
-import { upperFirst } from "../utils";
+import upperFirst from "./upperFirst.js";
+import isArray from "../is/isArray.js";
+
 export const OPTIONS_BOOLEAN = [
   APPEAR,
   OPTION_TOP_LAYER,

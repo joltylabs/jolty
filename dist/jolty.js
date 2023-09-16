@@ -236,6 +236,9 @@
   const CLASS_ACTIVE_SUFFIX = "ClassActive";
   const ROLE_SUFFIX = upperFirst(ROLE);
 
+  const STATUS = "status";
+  const ALERT = "alert";
+
   const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
   const DEFAULT_OPTIONS = {
     init: true,
@@ -316,29 +319,204 @@
 
   var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
 
+  var isString = (value) => typeof value === "string";
+
   var isIterable = (value) => value && !!value[Symbol.iterator] && !isString(value);
 
   var isNumber = (value) => typeof value === "number";
 
   var isObject = (value) => value && value.constructor === Object;
 
-  var isString = (value) => typeof value === "string";
-
   var isDialog = (elem) => elem?.tagName === "DIALOG";
 
+  var strToArray = (str = "", separator = " ") =>
+    str ? (isArray(str) ? str : str.split(separator)).filter(Boolean) : [];
+
+  function toggleClass(elem, classes, s) {
+    if (isArray(classes)) {
+      classes = classes.filter(Boolean).join(" ");
+    }
+    const cls = strToArray(classes);
+    if (isElement(elem)) {
+      s ??= !elem.classList.contains(cls[0]);
+      elem.classList[s ? ACTION_ADD : ACTION_REMOVE](...cls);
+    } else if (isIterable(elem)) {
+      elem.forEach((el) => toggleClass(el, cls, s));
+    }
+  }
+
   var addClass = (elem, classes) => toggleClass(elem, classes, true);
-
-  var arrayFrom = Array.from;
-
-  var arrayUnique = (array) =>
-    array.length > 1 ? arrayFrom(new Set(array)) : array;
-
-  var callOrReturn = (value, ...data) => (isFunction(value) ? value(...data) : value);
 
   const cache = {};
   var camelToKebab = (str = "") =>
     cache[str] ||
     (cache[str] = str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase());
+
+  function addStyle(elem, name, value) {
+    if (isIterable(elem)) {
+      elem.forEach((elem) => addStyle(elem, name, value));
+    } else {
+      if (isObject(name)) {
+        for (const key in name) addStyle(elem, key, name[key]);
+      } else {
+        elem.style.setProperty(camelToKebab(name), value);
+      }
+    }
+  }
+
+  var arrayFrom = Array.from;
+
+  var is = (elem, selector) =>
+    elem === selector
+      ? true
+      : isString(selector)
+      ? elem.matches(selector)
+      : isIterable(selector)
+      ? arrayFrom(selector).includes(elem)
+      : isFunction(selector) && selector(elem);
+
+  var returnArray = (elem) =>
+    elem !== undefined ? (isIterable(elem) ? arrayFrom(elem) : [elem]) : [];
+
+  var arrayUnique = (array) =>
+    array.length > 1 ? arrayFrom(new Set(array)) : array;
+
+  var fragment = (html, findSelectors) => {
+    let children = html;
+    if (isString(html)) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      if (findSelectors) {
+        return arrayFrom(doc.querySelectorAll(findSelectors));
+      }
+      children = doc.body.children;
+    }
+    return children
+      ? children.length > 1
+        ? arrayFrom(children)
+        : children[0]
+      : "";
+  };
+
+  function getElements(selector, context = doc, findSelf = false) {
+    if (isElement(selector)) {
+      return [selector];
+    }
+    let result = selector;
+    if (isString(context)) {
+      context = doc.querySelector(context);
+    }
+    if (!isElement(context) || !selector) return [];
+    if (isString(selector)) {
+      selector = selector.trim();
+      if (selector === DOCUMENT) {
+        result = doc;
+      } else if (selector === WINDOW) {
+        result = window;
+      } else if (isHTML(selector)) {
+        result = fragment(selector);
+      } else {
+        result = context.querySelectorAll(selector);
+      }
+    } else if (isIterable(selector)) {
+      result = arrayFrom(selector, (item) => getElements(item, context)).flat();
+    }
+
+    result = returnArray(result);
+
+    if (findSelf && is(context, selector)) {
+      result.unshift(context);
+    }
+    return arrayUnique(result).filter(Boolean);
+  }
+
+  var closest = (elem, selectors) =>
+    getElements(selectors).find((t) => t === elem || t.contains(elem));
+
+  var map = (elems, fn) => getElements(elems).map(fn);
+
+  var filter = (elems, selector) => {
+    const isFn = isFunction(selector);
+    elems = arrayFrom(elems);
+    return selector
+      ? elems.filter((elem, i, list) =>
+          isFn ? selector(elem, i, list) : is(elem, selector),
+        )
+      : elems;
+  };
+
+  var dir = (elem, property, selector, until) => {
+    const utilIsFn = isFunction(until);
+    return map(elem, (el) => {
+      const elems = [];
+      while (el) {
+        el = el[property];
+        if (el) {
+          if (until && (utilIsFn ? until(el) : is(el, until))) break;
+          elems.push(el);
+        }
+      }
+      return filter(elems, selector);
+    }).flat();
+  };
+
+  var each = (elems, fn) => {
+    elems = getElements(elems);
+    elems.forEach(fn);
+    return elems;
+  };
+
+  var focus = (elem, opts = { preventScroll: true }) =>
+    elem && elem.focus(opts);
+
+  var getElement = (selector, context, findSelf) =>
+    getElements(selector, context, findSelf)[0];
+
+  var inDOM = (elem) => elem && body.contains(elem);
+
+  var nextAll = (elem, selector, until) =>
+    dir(elem, "nextElementSibling", selector, until);
+
+  var next = (elem, selector) => nextAll(elem, selector)[0];
+
+  var parents = (elem, selector, until) =>
+    dir(elem, "parentElement", selector, until);
+
+  var removeAttribute = (elem, ...names) => {
+    if (isArray(elem)) {
+      elem.forEach((elem) =>
+        names.forEach((name) => elem && elem.removeAttribute(name)),
+      );
+    } else {
+      names.forEach((name) => elem && elem.removeAttribute(name));
+    }
+  };
+
+  var removeClass = (elem, classes) => toggleClass(elem, classes, false);
+
+  function setAttribute(elem, name, value) {
+    if (!elem) return;
+    if (isArray(elem)) {
+      return elem.forEach((elem) => setAttribute(elem, name, value));
+    }
+    if (isFunction(value)) {
+      value = value(elem.getAttribute(name));
+    }
+    if (value === null) {
+      elem.removeAttribute(name);
+    } else if (value !== undefined) {
+      elem.setAttribute(name, value);
+    }
+  }
+
+  var without = (source, ...values) =>
+    returnArray(source).filter((elem) => !values.includes(elem));
+
+  var getBoundingClientRect = (elem) => elem.getBoundingClientRect().toJSON();
+
+  var getPropertyValue = (style, name) => style.getPropertyValue(name).trim();
+
+  var callOrReturn = (value, ...data) => (isFunction(value) ? value(...data) : value);
 
   var checkHash = (id) => location.hash.substring(1) === id;
 
@@ -683,17 +861,8 @@
       .filter((w) => w !== word)
       .join(" ");
 
-  var returnArray = (elem) =>
-    elem !== undefined ? (isIterable(elem) ? arrayFrom(elem) : [elem]) : [];
-
-  var strToArray = (str = "", separator = " ") =>
-    str ? (isArray(str) ? str : str.split(separator)).filter(Boolean) : [];
-
   var uuidGenerator = (prefix = "") =>
     prefix + Math.random().toString(36).substring(2, 12);
-
-  var without = (source, ...values) =>
-    returnArray(source).filter((elem) => !values.includes(elem));
 
   const OPTIONS_BOOLEAN = [
     APPEAR,
@@ -742,24 +911,6 @@
     multiply ? "~" : ""
   }="${id}"],[href="#${id}"]`;
 
-  const DEFAULT_PREFIX = upperFirst(DEFAULT);
-  var updateModule = ({ opts, constructor }, name, property = false, defaults) => {
-    const defaultValue = constructor[DEFAULT_PREFIX + upperFirst(name)];
-    let value = opts[name];
-    if (defaults && value && isString(value)) {
-      value = defaults[value];
-    }
-    if (isObject(value)) {
-      opts[name] = { ...defaultValue, ...value };
-    } else if (value) {
-      opts[name] = { ...defaultValue };
-      if (property) {
-        opts[name][property] = value;
-      }
-    }
-    return opts;
-  };
-
   const registerProperty = CSS.registerProperty;
 
   var ResetFloatingCssVariables = () => {
@@ -793,6 +944,8 @@
       doc.head.appendChild(createElement(STYLE, false, `*{${css}}`));
     }
   };
+
+  var valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
 
   var collectCssVariables = (anchorStyles, targetStyles, wrapper, PREFIX) => {
     const valuesNames = [
@@ -858,63 +1011,12 @@
     return result;
   };
 
-  var valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
-
   var isShown = (elem, hideMode) => {
     return hideMode === ACTION_REMOVE
       ? inDOM(elem)
       : hideMode === CLASS
       ? !elem.classList.contains(HIDDEN_CLASS)
       : !elem.hasAttribute(hideMode);
-  };
-
-  var toggleHideModeState = (
-    s,
-    instance,
-    target = instance.base,
-    subInstance = instance,
-  ) => {
-    const opts = instance.opts;
-    const mode = opts[HIDE_MODE];
-    if (mode === ACTION_REMOVE) {
-      if (s) {
-        if (opts.keepPlace) {
-          subInstance[PLACEHOLDER]?.replaceWith(target);
-          subInstance[PLACEHOLDER] = null;
-        } else {
-          subInstance._floatingParent?.append(target);
-        }
-      } else {
-        if (opts.keepPlace) {
-          target.replaceWith(
-            (subInstance[PLACEHOLDER] ||= doc.createComment(
-              UI_PREFIX + PLACEHOLDER + ":" + target.id,
-            )),
-          );
-        } else {
-          const parent = target.parentElement;
-          if (parent) {
-            subInstance._floatingParent = parent.hasAttribute(
-              FLOATING_DATA_ATTRIBUTE,
-            )
-              ? parent.parentElement
-              : parent;
-            target.remove();
-          }
-        }
-      }
-    } else if (mode !== CLASS) {
-      target.toggleAttribute(mode, !s);
-    }
-
-    target.classList.toggle(
-      HIDDEN_CLASS,
-      !(s && mode !== ACTION_REMOVE && mode !== HIDDEN),
-    );
-
-    if (s) {
-      target[HIDDEN] = false;
-    }
   };
 
   var getBooleanDataAttrValue = (elem, name) => {
@@ -935,171 +1037,10 @@
     return property ? datasetValue : [datasetValue, isDataObject];
   };
 
-  function addStyle(elem, name, value) {
-    if (isIterable(elem)) {
-      elem.forEach((elem) => addStyle(elem, name, value));
-    } else {
-      if (isObject(name)) {
-        for (const key in name) addStyle(elem, key, name[key]);
-      } else {
-        elem.style.setProperty(camelToKebab(name), value);
-      }
-    }
-  }
-
-  var closest = (elem, selectors) =>
-    getElements(selectors).find((t) => t === elem || t.contains(elem));
-
-  var dir = (elem, property, selector, until) => {
-    const utilIsFn = isFunction(until);
-    return map(elem, (el) => {
-      const elems = [];
-      while (el) {
-        el = el[property];
-        if (el) {
-          if (until && (utilIsFn ? until(el) : is(el, until))) break;
-          elems.push(el);
-        }
-      }
-      return filter(elems, selector);
-    }).flat();
+  var awaitPromise = async (promise, callback) => {
+    await promise;
+    callback();
   };
-
-  var each = (elems, fn) => {
-    elems = getElements(elems);
-    elems.forEach(fn);
-    return elems;
-  };
-
-  var filter = (elems, selector) => {
-    const isFn = isFunction(selector);
-    elems = arrayFrom(elems);
-    return selector
-      ? elems.filter((elem, i, list) =>
-          isFn ? selector(elem, i, list) : is(elem, selector),
-        )
-      : elems;
-  };
-
-  var focus = (elem, opts = { preventScroll: true }) =>
-    elem && elem.focus(opts);
-
-  var fragment = (html, findSelectors) => {
-    let children = html;
-    if (isString(html)) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      if (findSelectors) {
-        return arrayFrom(doc.querySelectorAll(findSelectors));
-      }
-      children = doc.body.children;
-    }
-    return children
-      ? children.length > 1
-        ? arrayFrom(children)
-        : children[0]
-      : "";
-  };
-
-  var getElement = (selector, context, findSelf) =>
-    getElements(selector, context, findSelf)[0];
-
-  function getElements(selector, context = doc, findSelf = false) {
-    if (isElement(selector)) {
-      return [selector];
-    }
-    let result = selector;
-    if (isString(context)) {
-      context = getElement(context);
-    }
-    if (!isElement(context) || !selector) return [];
-    if (isString(selector)) {
-      selector = selector.trim();
-      if (selector === DOCUMENT) {
-        result = doc;
-      } else if (selector === WINDOW) {
-        result = window;
-      } else if (isHTML(selector)) {
-        result = fragment(selector);
-      } else {
-        result = context.querySelectorAll(selector);
-      }
-    } else if (isIterable(selector)) {
-      result = arrayFrom(selector, (item) => getElements(item, context)).flat();
-    }
-
-    result = returnArray(result);
-
-    if (findSelf && is(context, selector)) {
-      result.unshift(context);
-    }
-    return arrayUnique(result).filter(Boolean);
-  }
-
-  var inDOM = (elem) => elem && body.contains(elem);
-
-  var is = (elem, selector) =>
-    elem === selector
-      ? true
-      : isString(selector)
-      ? elem.matches(selector)
-      : isIterable(selector)
-      ? arrayFrom(selector).includes(elem)
-      : isFunction(selector) && selector(elem);
-
-  var map = (elems, fn) => getElements(elems).map(fn);
-
-  var next = (elem, selector) => nextAll(elem, selector)[0];
-
-  var nextAll = (elem, selector, until) =>
-    dir(elem, "nextElementSibling", selector, until);
-
-  var parents = (elem, selector, until) =>
-    dir(elem, "parentElement", selector, until);
-
-  var removeAttribute = (elem, ...names) => {
-    if (isArray(elem)) {
-      elem.forEach((elem) =>
-        names.forEach((name) => elem && elem.removeAttribute(name)),
-      );
-    } else {
-      names.forEach((name) => elem && elem.removeAttribute(name));
-    }
-  };
-
-  var removeClass = (elem, classes) => toggleClass(elem, classes, false);
-
-  function setAttribute(elem, name, value) {
-    if (!elem) return;
-    if (isArray(elem)) {
-      return elem.forEach((elem) => setAttribute(elem, name, value));
-    }
-    if (isFunction(value)) {
-      value = value(elem.getAttribute(name));
-    }
-    if (value === null) {
-      elem.removeAttribute(name);
-    } else if (value !== undefined) {
-      elem.setAttribute(name, value);
-    }
-  }
-
-  function toggleClass(elem, classes, s) {
-    if (isArray(classes)) {
-      classes = classes.filter(Boolean).join(" ");
-    }
-    const cls = strToArray(classes);
-    if (isElement(elem)) {
-      s ??= !elem.classList.contains(cls[0]);
-      elem.classList[s ? ACTION_ADD : ACTION_REMOVE](...cls);
-    } else if (isIterable(elem)) {
-      elem.forEach((el) => toggleClass(el, cls, s));
-    }
-  }
-
-  var getBoundingClientRect = (elem) => elem.getBoundingClientRect().toJSON();
-
-  var getPropertyValue = (style, name) => style.getPropertyValue(name).trim();
 
   const getOptsObj = (args, newOpts) => {
     args = arrayFrom(args);
@@ -1953,6 +1894,70 @@
     instance[PRIVATE_PREFIX + TRIGGER] = true;
   };
 
+  const FOCUS_GUARD = FOCUS + "-guard";
+
+  class FocusGuards {
+    constructor(target, opts = {}) {
+      this.target = target;
+      this.opts = opts;
+      this.init();
+    }
+    init() {
+      const { target, opts } = this;
+
+      this.onFocus = (e) => {
+        let returnElem = opts.anchor;
+        let focusFirst = false;
+        const isGuardBefore =
+          e.target.getAttribute(DATA_UI_PREFIX + FOCUS_GUARD) === BEFORE;
+
+        if (opts.focusAfterAnchor && returnElem) {
+          if (!isGuardBefore) {
+            const globalReturnElems = [
+              ...doc.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
+            ];
+            returnElem =
+              globalReturnElems[
+                globalReturnElems.findIndex((el) => el === returnElem) + 1
+              ];
+          }
+          opts.onFocusOut?.();
+          return focus(returnElem);
+        }
+
+        if (e.relatedTarget === returnElem) {
+          focusFirst = true;
+        }
+        const returnElems = target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR);
+        if (!focusFirst && isGuardBefore) {
+          returnElem = returnElems[returnElems.length - 1];
+        } else {
+          returnElem = returnElems[0];
+        }
+        focus(returnElem);
+      };
+
+      this.focusGuards = [BEFORE, AFTER].map((methodName) => {
+        const focusGuard = createElement("span", {
+          [TABINDEX]: 0,
+          [DATA_UI_PREFIX + FOCUS_GUARD]: methodName,
+          style: `outline:none;opacity:0;position:${
+          opts.strategy ?? FIXED
+        };pointer-events:none;`,
+        });
+        target[methodName](focusGuard);
+        focusGuard.addEventListener(FOCUS, this.onFocus);
+        return focusGuard;
+      });
+    }
+    destroy() {
+      this.focusGuards.forEach((focusGuard) => {
+        focusGuard.remove();
+        focusGuard.removeEventListener(FOCUS, this.onFocus);
+      });
+    }
+  }
+
   ResetFloatingCssVariables();
 
   class Floating {
@@ -2316,6 +2321,55 @@
     }
   }
 
+  var toggleHideModeState = (
+    s,
+    instance,
+    target = instance.base,
+    subInstance = instance,
+  ) => {
+    const opts = instance.opts;
+    const mode = opts[HIDE_MODE];
+    if (mode === ACTION_REMOVE) {
+      if (s) {
+        if (opts.keepPlace) {
+          subInstance[PLACEHOLDER]?.replaceWith(target);
+          subInstance[PLACEHOLDER] = null;
+        } else {
+          subInstance._floatingParent?.append(target);
+        }
+      } else {
+        if (opts.keepPlace) {
+          target.replaceWith(
+            (subInstance[PLACEHOLDER] ||= doc.createComment(
+              UI_PREFIX + PLACEHOLDER + ":" + target.id,
+            )),
+          );
+        } else {
+          const parent = target.parentElement;
+          if (parent) {
+            subInstance._floatingParent = parent.hasAttribute(
+              FLOATING_DATA_ATTRIBUTE,
+            )
+              ? parent.parentElement
+              : parent;
+            target.remove();
+          }
+        }
+      }
+    } else if (mode !== CLASS) {
+      target.toggleAttribute(mode, !s);
+    }
+
+    target.classList.toggle(
+      HIDDEN_CLASS,
+      !(s && mode !== ACTION_REMOVE && mode !== HIDDEN),
+    );
+
+    if (s) {
+      target[HIDDEN] = false;
+    }
+  };
+
   var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
     const { transition, base, opts, toggler, emit, constructor, teleport } =
       instance;
@@ -2421,75 +2475,6 @@
     return instance;
   };
 
-  var awaitPromise = async (promise, callback) => {
-    await promise;
-    callback();
-  };
-
-  const FOCUS_GUARD = FOCUS + "-guard";
-
-  class FocusGuards {
-    constructor(target, opts = {}) {
-      this.target = target;
-      this.opts = opts;
-      this.init();
-    }
-    init() {
-      const { target, opts } = this;
-
-      this.onFocus = (e) => {
-        let returnElem = opts.anchor;
-        let focusFirst = false;
-        const isGuardBefore =
-          e.target.getAttribute(DATA_UI_PREFIX + FOCUS_GUARD) === BEFORE;
-
-        if (opts.focusAfterAnchor && returnElem) {
-          if (!isGuardBefore) {
-            const globalReturnElems = [
-              ...doc.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
-            ];
-            returnElem =
-              globalReturnElems[
-                globalReturnElems.findIndex((el) => el === returnElem) + 1
-              ];
-          }
-          opts.onFocusOut?.();
-          return focus(returnElem);
-        }
-
-        if (e.relatedTarget === returnElem) {
-          focusFirst = true;
-        }
-        const returnElems = target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR);
-        if (!focusFirst && isGuardBefore) {
-          returnElem = returnElems[returnElems.length - 1];
-        } else {
-          returnElem = returnElems[0];
-        }
-        focus(returnElem);
-      };
-
-      this.focusGuards = [BEFORE, AFTER].map((methodName) => {
-        const focusGuard = createElement("span", {
-          [TABINDEX]: 0,
-          [DATA_UI_PREFIX + FOCUS_GUARD]: methodName,
-          style: `outline:none;opacity:0;position:${
-          opts.strategy ?? FIXED
-        };pointer-events:none;`,
-        });
-        target[methodName](focusGuard);
-        focusGuard.addEventListener(FOCUS, this.onFocus);
-        return focusGuard;
-      });
-    }
-    destroy() {
-      this.focusGuards.forEach((focusGuard) => {
-        focusGuard.remove();
-        focusGuard.removeEventListener(FOCUS, this.onFocus);
-      });
-    }
-  }
-
   var toggleConfirm = (s, instance) => {
     if (s) {
       instance.on(instance.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
@@ -2516,6 +2501,24 @@
       instance.off(window, EVENT_HASHCHANGE);
       instance[PRIVATE_PREFIX + OPTION_HASH_NAVIGATION] = false;
     }
+  };
+
+  const DEFAULT_PREFIX = upperFirst(DEFAULT);
+  var updateModule = ({ opts, constructor }, name, property = false, defaults) => {
+    const defaultValue = constructor[DEFAULT_PREFIX + upperFirst(name)];
+    let value = opts[name];
+    if (defaults && value && isString(value)) {
+      value = defaults[value];
+    }
+    if (isObject(value)) {
+      opts[name] = { ...defaultValue, ...value };
+    } else if (value) {
+      opts[name] = { ...defaultValue };
+      if (property) {
+        opts[name][property] = value;
+      }
+    }
+    return opts;
   };
 
   const COLLAPSE = "collapse";
@@ -4025,6 +4028,7 @@
   const positions = {};
   const wrappers = new Map();
   const _containers = {};
+
   class Toast extends ToggleMixin(Base, TOAST) {
     static _templates = {};
 
@@ -4045,6 +4049,7 @@
       keepTopLayer: true,
       popoverApi: true,
       shown: true,
+      role: STATUS,
     };
     constructor(elem, opts) {
       if (isObject(elem)) {
@@ -4075,6 +4080,16 @@
         hide,
         opts.autohide,
       );
+
+      if (opts.role === STATUS) {
+        base.setAttribute(ROLE, STATUS);
+        base.setAttribute(ARIA_LIVE, "polite");
+      } else if (opts.role === ALERT) {
+        base.setAttribute(ROLE, ALERT);
+        base.setAttribute(ARIA_LIVE, "assertive");
+      } else {
+        removeAttribute(base, ROLE, ARIA_LIVE);
+      }
 
       addDismiss(this);
     }

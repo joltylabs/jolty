@@ -1,6 +1,5 @@
 export { default as addClass } from "./addClass";
 export { default as addStyle } from "./addStyle";
-export { default as animateClass } from "./animateClass";
 export { default as closest } from "./closest";
 export { default as dir } from "./dir";
 export { default as each } from "./each";
@@ -16,11 +15,8 @@ export { default as next } from "./next";
 export { default as nextAll } from "./nextAll";
 export { default as parent } from "./parent";
 export { default as parents } from "./parents";
-export { default as prev } from "./prev";
-export { default as prevAll } from "./prevAll";
 export { default as removeAttribute } from "./removeAttribute";
 export { default as removeClass } from "./removeClass";
-export { default as repaint } from "./repaint";
 export { default as setAttribute } from "./setAttribute";
 export { default as siblings } from "./siblings";
 export { default as toggleClass } from "./toggleClass";

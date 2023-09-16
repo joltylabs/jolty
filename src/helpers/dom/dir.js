@@ -1,5 +1,7 @@
-import { isFunction } from "../is";
-import { filter, map, is } from "./index.js";
+import isFunction from "../is/isFunction.js";
+import is from "./is.js";
+import map from "./map.js";
+import filter from "./filter.js";
 
 export default (elem, property, selector, until) => {
   const utilIsFn = isFunction(until);

@@ -73,13 +73,12 @@ import {
   normalizeToggleParameters,
   getEventsPrefix,
   kebabToCamel,
-  updateModule,
   upperFirst,
   getOptionElems,
   isShown,
-  toggleHideModeState,
   getBooleanDataAttrValue,
   updateOptsByData,
+  awaitPromise,
 } from "./helpers/utils";
 import {
   toggleClass,
@@ -90,7 +89,11 @@ import {
   parents,
   setAttribute,
 } from "./helpers/dom";
-import { addDismiss, awaitPromise } from "./helpers/modules";
+import {
+  addDismiss,
+  toggleHideModeState,
+  updateModule,
+} from "./helpers/modules";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 

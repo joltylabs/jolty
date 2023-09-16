@@ -12,8 +12,8 @@ import {
   END,
   MIRROR,
 } from "../../constants/index.js";
-import { isArray } from "../../is/index.js";
-import { createInset } from "../index.js";
+import isArray from "../../is/isArray.js";
+import createInset from "./createInset.js";
 
 const { min, max } = Math;
 

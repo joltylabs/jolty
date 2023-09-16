@@ -1,6 +1,6 @@
-import { isFunction } from "../is";
-import { is } from "../dom";
-import { arrayFrom } from "../utils";
+import isFunction from "../is/isFunction.js";
+import is from "./is.js";
+import arrayFrom from "../utils/arrayFrom.js";
 
 export default (elems, selector) => {
   const isFn = isFunction(selector);

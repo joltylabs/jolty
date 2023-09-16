@@ -11,10 +11,12 @@ import {
   POPOVER_API_SUPPORTED,
   POPOVER_API_MODE_MANUAL,
 } from "../constants";
-import { getDataSelector, toggleHideModeState } from "../utils";
-import { addEscapeHide, callAutofocus } from "../modules";
+import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
 import { closest, focus } from "../dom/index.js";
+import addEscapeHide from "./addEscapeHide.js";
+import callAutofocus from "./callAutofocus.js";
+import toggleHideModeState from "./toggleHideModeState.js";
 
 export default (instance, { s, animated, silent, eventParams }) => {
   const { transition, base, opts, toggler, emit, constructor, teleport } =

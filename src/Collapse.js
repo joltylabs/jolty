@@ -37,15 +37,15 @@ import {
   getEventsPrefix,
   getOptionElems,
   getDefaultToggleSelector,
-  toggleHideModeState,
   updateOptsByData,
+  awaitPromise,
 } from "./helpers/utils";
 import {
   addDismiss,
   baseDestroy,
   callShowInit,
-  awaitPromise,
   addHashNavigation,
+  toggleHideModeState,
 } from "./helpers/modules";
 
 const COLLAPSE = "collapse";

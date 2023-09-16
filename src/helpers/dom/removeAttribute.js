@@ -1,4 +1,4 @@
-import { isArray } from "../is/index.js";
+import isArray from "../is/isArray.js";
 
 export default (elem, ...names) => {
   if (isArray(elem)) {

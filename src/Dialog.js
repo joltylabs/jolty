@@ -71,10 +71,9 @@ import {
   normalizeToggleParameters,
   getEventsPrefix,
   getDefaultToggleSelector,
-  updateModule,
   getOptionElem,
   updateOptsByData,
-  toggleHideModeState,
+  awaitPromise,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -82,9 +81,10 @@ import {
   callAutofocus,
   addEscapeHide,
   callShowInit,
-  awaitPromise,
   toggleConfirm,
   addHashNavigation,
+  toggleHideModeState,
+  updateModule,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";

@@ -6,8 +6,11 @@ import {
   OFFSET,
   PADDING,
 } from "../../constants/index.js";
-import { createInset, kebabToCamel, valuesToArray } from "../index.js";
+
 import { getPropertyValue } from "../../dom/index.js";
+import createInset from "./createInset.js";
+import valuesToArray from "../valuesToArray.js";
+import kebabToCamel from "../kebabToCamel.js";
 
 export default (anchorStyles, targetStyles, wrapper, PREFIX) => {
   const valuesNames = [

@@ -28,11 +28,11 @@ import {
   callOrReturn,
   getOptionElem,
   isShown,
-  toggleHideModeState,
+  awaitPromise,
 } from "./helpers/utils";
 import {
   addDismiss,
-  awaitPromise,
+  toggleHideModeState,
   baseDestroy,
   callShowInit,
 } from "./helpers/modules";

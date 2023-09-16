@@ -1,6 +1,6 @@
-import { DEFAULT } from "../constants";
-import { isObject, isString } from "../is";
-import { upperFirst } from "./index";
+import { DEFAULT } from "../constants/index.js";
+import { isObject, isString } from "../is/index.js";
+import { upperFirst } from "../utils/index.js";
 const DEFAULT_PREFIX = upperFirst(DEFAULT);
 export default ({ opts, constructor }, name, property = false, defaults) => {
   const defaultValue = constructor[DEFAULT_PREFIX + upperFirst(name)];

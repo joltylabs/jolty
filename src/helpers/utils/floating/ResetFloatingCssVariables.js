@@ -15,7 +15,7 @@ import {
   TOOLTIP,
   VAR_UI_PREFIX,
 } from "../../constants/index.js";
-import { createElement } from "../index.js";
+import createElement from "../createElement.js";
 
 const registerProperty = CSS.registerProperty;
 

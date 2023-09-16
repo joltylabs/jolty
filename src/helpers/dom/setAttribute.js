@@ -1,4 +1,6 @@
-import { isFunction, isArray } from "../is";
+import isArray from "../is/isArray.js";
+import isFunction from "../is/isFunction.js";
+
 export default function setAttribute(elem, name, value) {
   if (!elem) return;
   if (isArray(elem)) {

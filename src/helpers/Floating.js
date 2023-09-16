@@ -63,8 +63,9 @@ import {
   setAttribute,
   focus,
 } from "./dom";
-import { FocusGuards } from "./modules/index.js";
+
 import { isDialog } from "./is/index.js";
+import FocusGuards from "./modules/FocusGuards.js";
 
 ResetFloatingCssVariables();
 

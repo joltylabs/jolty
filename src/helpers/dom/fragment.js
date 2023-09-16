@@ -1,5 +1,6 @@
-import { isString } from "../is";
-import { arrayFrom } from "../utils";
+import isString from "../is/isString.js";
+import arrayFrom from "../utils/arrayFrom.js";
+
 export default (html, findSelectors) => {
   let children = html;
   if (isString(html)) {

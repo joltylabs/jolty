@@ -37,7 +37,6 @@ import {
   normalizeToggleParameters,
   getEventsPrefix,
   getClassActive,
-  updateModule,
 } from "./helpers/utils";
 import {
   baseDestroy,
@@ -45,6 +44,7 @@ import {
   callShowInit,
   toggleOnInterection,
   addDismiss,
+  updateModule,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 
