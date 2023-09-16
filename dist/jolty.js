@@ -229,7 +229,7 @@
   kebabToCamel(ARIA_SELECTED);
   kebabToCamel(ARIA_CONTROLS);
   const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
-  kebabToCamel(ARIA_LIVE);
+  const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
   kebabToCamel(ARIA_ATOMIC);
   const OPTION_TOP_LAYER = "topLayer";
   const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
@@ -3347,7 +3347,7 @@
 
   const TABLIST_SECONDARY_METHODS = ["getTab", "isTab", "initTab", "initTabs"];
 
-  const A11Y_DEFAULTS = {
+  const A11Y_DEFAULTS$1 = {
     [ACCORDION]: {
       [ROLE]: null,
       [OPTION_TAB_ROLE]: BUTTON,
@@ -3369,7 +3369,7 @@
   };
 
   class Tablist extends Base {
-    static DefaultA11y = { ...A11Y_DEFAULTS[ACCORDION] };
+    static DefaultA11y = { ...A11Y_DEFAULTS$1[ACCORDION] };
     static Default = {
       ...DEFAULT_OPTIONS,
       eventPrefix: getEventsPrefix(TABLIST),
@@ -3402,7 +3402,7 @@
     }
     _update() {
       const { base, tabs, lastShownTab, opts } = this;
-      const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
+      const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS$1);
 
       updateOptsByData(opts, base, [HIDE_MODE, OPTION_HASH_NAVIGATION]);
 
@@ -4029,9 +4029,20 @@
   const wrappers = new Map();
   const _containers = {};
 
+  const A11Y_DEFAULTS = {
+    [STATUS]: {
+      [ROLE]: STATUS,
+      [OPTION_ARIA_LIVE]: "polite",
+    },
+    [ALERT]: {
+      [ROLE]: ALERT,
+      [OPTION_ARIA_LIVE]: "assertive",
+    },
+  };
+
   class Toast extends ToggleMixin(Base, TOAST) {
     static _templates = {};
-
+    static DefaultA11y = { ...A11Y_DEFAULTS[STATUS] };
     static Default = {
       ...DEFAULT_OPTIONS,
       eventPrefix: getEventsPrefix(TOAST),
@@ -4049,7 +4060,7 @@
       keepTopLayer: true,
       popoverApi: true,
       shown: true,
-      role: STATUS,
+      a11y: STATUS,
     };
     constructor(elem, opts) {
       if (isObject(elem)) {
@@ -4060,6 +4071,9 @@
     }
     _update() {
       const { opts, base, autohide, hide } = this;
+
+      const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
+
       if (!opts.root && inDOM(base)) {
         this.root = base.parentElement;
       } else {
@@ -4081,14 +4095,10 @@
         opts.autohide,
       );
 
-      if (opts.role === STATUS) {
-        base.setAttribute(ROLE, STATUS);
-        base.setAttribute(ARIA_LIVE, "polite");
-      } else if (opts.role === ALERT) {
-        base.setAttribute(ROLE, ALERT);
-        base.setAttribute(ARIA_LIVE, "assertive");
-      } else {
-        removeAttribute(base, ROLE, ARIA_LIVE);
+      if (a11y) {
+        base.setAttribute(ARIA_ATOMIC, true);
+        base.setAttribute(ROLE, a11y[ROLE]);
+        base.setAttribute(ARIA_LIVE, a11y[OPTION_ARIA_LIVE]);
       }
 
       addDismiss(this);

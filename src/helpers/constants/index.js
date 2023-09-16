@@ -239,6 +239,7 @@ export const ROLE_SUFFIX = upperFirst(ROLE);
 
 export const STATUS = "status";
 export const ALERT = "alert";
+export const REGION = "region";
 
 export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 

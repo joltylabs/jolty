@@ -54,6 +54,7 @@ import {
   APPEAR,
   OPTION_HASH_NAVIGATION,
   ITEM,
+  REGION,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -116,7 +117,7 @@ const A11Y_DEFAULTS = {
   [ACCORDION]: {
     [ROLE]: null,
     [OPTION_TAB_ROLE]: BUTTON,
-    [OPTION_TABPANEL_ROLE]: "region",
+    [OPTION_TABPANEL_ROLE]: REGION,
     [OPTION_ARIA_ORIENTRATION]: true,
     [OPTION_STATE_ATTRIBUTE]: ARIA_EXPANDED,
     [TABINDEX]: false,

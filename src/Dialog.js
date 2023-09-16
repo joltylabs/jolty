@@ -214,7 +214,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     if (isDialogElem) {
       on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     } else if (opts.a11y) {
-      setAttribute(base, TABINDEX, -1);
+      base[TABINDEX] = -1;
       setAttribute(base, ROLE, DIALOG);
     }
 

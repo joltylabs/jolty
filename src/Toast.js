@@ -18,9 +18,14 @@ import {
   ARIA_LIVE,
   ALERT,
   STATUS,
+  ARIA_ATOMIC,
+  OPTION_ARIA_LIVE,
+  A11Y,
+  TABINDEX,
+  REGION,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
-import { fragment, inDOM, removeAttribute } from "./helpers/dom";
+import { fragment, inDOM } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   arrayFrom,
@@ -35,6 +40,7 @@ import {
   toggleHideModeState,
   baseDestroy,
   callShowInit,
+  updateModule,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -47,11 +53,23 @@ const positions = {};
 const wrappers = new Map();
 const _containers = {};
 
+const A11Y_DEFAULTS = {
+  [STATUS]: {
+    [ROLE]: STATUS,
+    [OPTION_ARIA_LIVE]: "polite",
+  },
+  [ALERT]: {
+    [ROLE]: ALERT,
+    [OPTION_ARIA_LIVE]: "assertive",
+  },
+};
+
 class Toast extends ToggleMixin(Base, TOAST) {
   static _templates = {};
-
+  static DefaultA11y = { ...A11Y_DEFAULTS[STATUS] };
   static Default = {
     ...DEFAULT_OPTIONS,
+    shown: true,
     eventPrefix: getEventsPrefix(TOAST),
     root: null,
     container: "",
@@ -61,13 +79,11 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limit: false,
     limitAnimateEnter: true,
     limitAnimateLeave: true,
-    autodestroy: true,
     autohide: false,
     topLayer: true,
-    keepTopLayer: true,
     popoverApi: true,
-    shown: true,
-    role: STATUS,
+    keepTopLayer: true,
+    a11y: STATUS,
   };
   constructor(elem, opts) {
     if (isObject(elem)) {
@@ -78,6 +94,9 @@ class Toast extends ToggleMixin(Base, TOAST) {
   }
   _update() {
     const { opts, base, autohide, hide } = this;
+
+    const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
+
     if (!opts.root && inDOM(base)) {
       this.root = base.parentElement;
     } else {
@@ -99,14 +118,10 @@ class Toast extends ToggleMixin(Base, TOAST) {
       opts.autohide,
     );
 
-    if (opts.role === STATUS) {
-      base.setAttribute(ROLE, STATUS);
-      base.setAttribute(ARIA_LIVE, "polite");
-    } else if (opts.role === ALERT) {
-      base.setAttribute(ROLE, ALERT);
-      base.setAttribute(ARIA_LIVE, "assertive");
-    } else {
-      removeAttribute(base, ROLE, ARIA_LIVE);
+    if (a11y) {
+      base.setAttribute(ARIA_ATOMIC, true);
+      base.setAttribute(ROLE, a11y[ROLE]);
+      base.setAttribute(ARIA_LIVE, a11y[OPTION_ARIA_LIVE]);
     }
 
     addDismiss(this);
@@ -136,7 +151,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
         topLayer,
         keepTopLayer,
         hideMode,
-        autodestroy,
       },
       autohide,
       base,
@@ -174,7 +188,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
       if (root) {
         let to = root;
         if (position) {
-          const wrapper = (to = constructor.getWrapper({
+          const wrapper = (to = constructor.getContainer({
             position,
             root,
             container,
@@ -214,7 +228,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     awaitPromise(promise, () => {
       !s && toggleHideModeState(false, this);
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
-      !s && autodestroy && this.destroy({ remove: true });
+      !s && this.destroy({ remove: true });
     });
 
     animated && (await promise);
@@ -234,10 +248,18 @@ class Toast extends ToggleMixin(Base, TOAST) {
       wrapper.remove();
     }
 
+    this.container = wrapper;
+
     return this;
   }
 
-  static getWrapper({ position, root = body, container = "", keepTopLayer }) {
+  static getContainer({
+    position,
+    root = body,
+    container = "",
+    keepTopLayer,
+    a11y,
+  }) {
     let rootWrappers = wrappers.get(root);
     if (!rootWrappers) {
       rootWrappers = new Set();
@@ -258,6 +280,11 @@ class Toast extends ToggleMixin(Base, TOAST) {
           )
         : container(containerParams),
     );
+
+    if (a11y) {
+      wrapper[TABINDEX] = -1;
+      wrapper.role = REGION;
+    }
 
     rootWrappers.add({ wrapper, container, position, root, keepTopLayer });
     return wrapper;
