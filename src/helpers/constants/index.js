@@ -5,6 +5,7 @@ export const UI = "ui";
 export const UI_PREFIX = UI + "-";
 export const UI_EVENT_PREFIX = "." + UI;
 export const VAR_UI_PREFIX = "--" + UI_PREFIX;
+export const PRIVATE_PREFIX = "_";
 export const DATA_PREFIX = "data-";
 export const DATA_UI_PREFIX = DATA_PREFIX + UI_PREFIX;
 export const ACTIVE = "active";
@@ -79,6 +80,7 @@ export const ANCHOR_HEIGHT = ANCHOR + "-" + HEIGHT;
 
 export const MODAL = "modal";
 export const CONTENT = "content";
+export const ITEM = "item";
 export const BACKDROP = "backdrop";
 export const POPOVER = "popover";
 export const TOOLTIP = "tooltip";
@@ -220,6 +222,7 @@ export const A11Y = "a11y";
 export const OPTION_GROUP = "group";
 
 export const OPTION_PREVENT_SCROLL = "preventScroll";
+export const OPTION_HASH_NAVIGATION = "hashNavigation";
 export const POSITION = "position";
 export const OPTION_ARIA_LABELLEDBY = kebabToCamel(ARIA_LABELLEDBY);
 export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
@@ -230,8 +233,12 @@ export const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
 export const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
 export const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
 export const OPTION_TOP_LAYER = "topLayer";
+export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = upperFirst(ROLE);
+
+export const STATUS = "status";
+export const ALERT = "alert";
 
 export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 
@@ -264,7 +271,6 @@ export const DEFAULT_FLOATING_OPTIONS = {
   sticky: false,
   escapeHide: true,
   outsideHide: true,
-  mode: false,
   focusTrap: false,
   topLayer: true,
   topLayerForce: true,
@@ -308,4 +314,4 @@ export const POPOVER_API_SUPPORTED =
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
 
-export const PRIVATE_OPTION_CANCEL_ON_HIDE = "__cancelOnHide";
+export const PRIVATE_OPTION_CANCEL_ON_HIDE = PRIVATE_PREFIX + "cancelOnHide";

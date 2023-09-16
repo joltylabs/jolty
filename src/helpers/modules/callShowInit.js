@@ -21,12 +21,14 @@ export default (instance, target = instance.base, stateElem = target) => {
 
   shown &&
     show({
-      animated:
+      animated: !!(
         getBooleanDataAttrValue(target, APPEAR) ??
         opts.appear ??
-        instance._fromHTML,
+        instance._fromHTML
+      ),
       ignoreConditions: true,
       ignoreAutofocus: !instance._fromHTML,
+      __initial: true,
     });
 
   return instance;

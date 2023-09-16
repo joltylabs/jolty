@@ -28,6 +28,7 @@ import {
   TELEPORT,
   TRANSITION,
   TRIGGER,
+  ITEM,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -63,10 +64,11 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
+    mode: false,
     eventPrefix: getEventsPrefix(DROPDOWN),
     itemClickHide: true,
     autofocus: true,
-    items: getDataSelector(DROPDOWN + "-item"),
+    items: getDataSelector(DROPDOWN + "-" + ITEM),
     trigger: CLICK,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -107,7 +109,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callShowInit(this);
   }
   _update() {
-    const { base, opts, toggler, on, off, hide } = this;
+    const { base, opts, on, off, hide } = this;
     updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
 
     this[TRANSITION] = Transition.createOrUpdate(

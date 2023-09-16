@@ -50,6 +50,9 @@ import {
   TELEPORT,
   TRANSITION,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
+  OPTION_HASH_NAVIGATION,
+  NONE,
+  OPTION_AUTODESTROY,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -81,6 +84,7 @@ import {
   callShowInit,
   awaitPromise,
   toggleConfirm,
+  addHashNavigation,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -120,7 +124,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     eventPrefix: getEventsPrefix(DIALOG),
     escapeHide: true,
     backdropHide: true,
-    hashNavigation: false,
+    [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
     preventHide: false,
     dismiss: true,
@@ -139,7 +143,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
 
-    autodestroy: false,
+    [OPTION_AUTODESTROY]: false,
 
     autofocus: true,
     focusTrap: true,
@@ -163,8 +167,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       BACKDROP,
       OPTION_TOP_LAYER,
       OPTION_PREVENT_SCROLL,
+      OPTION_HASH_NAVIGATION,
       HIDE_MODE,
       OPTION_GROUP,
+      OPTION_AUTODESTROY,
     ]);
     updateModule(this, OPTION_GROUP, NAME);
 
@@ -220,6 +226,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         ? POPOVER_API_MODE_MANUAL
         : null;
 
+    addHashNavigation(this);
     addDismiss(this);
   }
   init() {
@@ -343,6 +350,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       event,
       ignoreConditions,
       ignoreAutofocus,
+      __initial,
     } = normalizeToggleParameters(params);
 
     s = !!(s ?? !isOpen);
@@ -429,6 +437,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
     }
 
+    if (__initial && !animated) {
+      backdrop.style.transition = NONE;
+      backdrop.offsetWidth;
+      backdrop.style.transition = "";
+    }
+
     this.preventScroll(s);
 
     if (!s && !optReturnFocusAwait) {
@@ -461,7 +475,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
       if (!s) {
-        opts.autodestroy && this.destroy({ remove: true });
+        opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });
         this.groupClosing = false;
         groupClosingFinish?.();
       }

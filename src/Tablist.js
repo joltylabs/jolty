@@ -52,6 +52,8 @@ import {
   TELEPORT,
   ACTION_REMOVE,
   APPEAR,
+  OPTION_HASH_NAVIGATION,
+  ITEM,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -96,7 +98,6 @@ const TABLIST = "tablist";
 const TAB = "tab";
 const TABS = "tabs";
 const TABPANEL = "tabpanel";
-const ITEM = "item";
 const ACCORDION = "accordion";
 
 const ELEMS = [ITEM, TAB, TABPANEL];
@@ -141,7 +142,7 @@ class Tablist extends Base {
     awaitPrevious: false,
     keyboard: true,
     arrowActivation: false,
-    hashNavigation: true,
+    [OPTION_HASH_NAVIGATION]: false,
     rtl: false,
     focusFilter: null,
     horizontal: false,
@@ -165,7 +166,7 @@ class Tablist extends Base {
     const { base, tabs, lastShownTab, opts } = this;
     const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
 
-    updateOptsByData(opts, base, [HIDE_MODE]);
+    updateOptsByData(opts, base, [HIDE_MODE, OPTION_HASH_NAVIGATION]);
 
     if (a11y) {
       setAttribute(base, ROLE, a11y[ROLE]);

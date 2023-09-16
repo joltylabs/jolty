@@ -21,8 +21,8 @@ import {
   HIDDEN,
   TRANSITION,
   TELEPORT,
-  UI,
-  TRIGGER,
+  OPTION_HASH_NAVIGATION,
+  OPTION_AUTODESTROY,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -45,6 +45,7 @@ import {
   baseDestroy,
   callShowInit,
   awaitPromise,
+  addHashNavigation,
 } from "./helpers/modules";
 
 const COLLAPSE = "collapse";
@@ -53,8 +54,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(COLLAPSE),
-    hashNavigation: true,
+    [OPTION_HASH_NAVIGATION]: false,
     dismiss: true,
+    [OPTION_AUTODESTROY]: false,
     [TOGGLER]: ({ id }) => getDefaultToggleSelector(id, true),
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [COLLAPSE + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -74,9 +76,11 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   }
   _update() {
     const { base, opts } = this;
-    updateOptsByData(opts, base, [HIDE_MODE]);
-
-    addDismiss(this);
+    updateOptsByData(opts, base, [
+      HIDE_MODE,
+      OPTION_HASH_NAVIGATION,
+      OPTION_AUTODESTROY,
+    ]);
 
     this[TELEPORT] = Teleport.createOrUpdate(
       this[TELEPORT],
@@ -96,6 +100,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     );
 
     this.updateTriggers();
+
+    addDismiss(this);
+    addHashNavigation(this);
   }
   destroy(destroyOpts) {
     // eslint-disable-next-line prefer-const
@@ -191,6 +198,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     awaitPromise(promise, () => {
       !s && toggleHideModeState(false, this);
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      if (!s && opts[OPTION_AUTODESTROY]) {
+        opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });
+      }
     });
 
     animated && awaitAnimation && (await promise);

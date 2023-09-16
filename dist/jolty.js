@@ -17,6 +17,7 @@
   const UI_PREFIX = UI + "-";
   const UI_EVENT_PREFIX = "." + UI;
   const VAR_UI_PREFIX = "--" + UI_PREFIX;
+  const PRIVATE_PREFIX = "_";
   const DATA_PREFIX = "data-";
   const DATA_UI_PREFIX = DATA_PREFIX + UI_PREFIX;
   const ACTIVE = "active";
@@ -88,6 +89,7 @@
 
   const MODAL = "modal";
   const CONTENT = "content";
+  const ITEM = "item";
   const BACKDROP = "backdrop";
   const POPOVER = "popover";
   const TOOLTIP = "tooltip";
@@ -219,6 +221,7 @@
   const OPTION_GROUP = "group";
 
   const OPTION_PREVENT_SCROLL = "preventScroll";
+  const OPTION_HASH_NAVIGATION = "hashNavigation";
   const POSITION = "position";
   kebabToCamel(ARIA_LABELLEDBY);
   const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
@@ -229,6 +232,7 @@
   kebabToCamel(ARIA_LIVE);
   kebabToCamel(ARIA_ATOMIC);
   const OPTION_TOP_LAYER = "topLayer";
+  const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
   const CLASS_ACTIVE_SUFFIX = "ClassActive";
   const ROLE_SUFFIX = upperFirst(ROLE);
 
@@ -261,7 +265,6 @@
     sticky: false,
     escapeHide: true,
     outsideHide: true,
-    mode: false,
     focusTrap: false,
     topLayer: true,
     topLayerForce: true,
@@ -303,6 +306,8 @@
 
   const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
 
+  const PRIVATE_OPTION_CANCEL_ON_HIDE = PRIVATE_PREFIX + "cancelOnHide";
+
   var isArray = Array.isArray;
 
   var isElement = (value) => value && !!value.getElementsByClassName;
@@ -335,7 +340,7 @@
     cache[str] ||
     (cache[str] = str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase());
 
-  var checkHash = (id) => window.location.hash.substring(1) === id;
+  var checkHash = (id) => location.hash.substring(1) === id;
 
   var createElement = (type = DIV, props, ...content) => {
     const elem = doc.createElement(type);
@@ -694,7 +699,9 @@
     APPEAR,
     OPTION_TOP_LAYER,
     OPTION_PREVENT_SCROLL,
+    OPTION_HASH_NAVIGATION,
     MODAL,
+    OPTION_AUTODESTROY,
   ];
   var updateOptsByData = (opts, { dataset }, names) => {
     names.forEach((name) => {
@@ -912,7 +919,7 @@
 
   var getBooleanDataAttrValue = (elem, name) => {
     const value = elem.getAttribute(DATA_UI_PREFIX + name);
-    return value === null ? value : value && value !== FALSE;
+    return value === null ? value : value !== FALSE;
   };
 
   var getDatasetValue = (elem, name, property) => {
@@ -1199,6 +1206,9 @@
       if (!arguments.length) {
         this.removeSets(eventsSet, opts);
       } else {
+        if (elems === "*") {
+          elems = arrayFrom(eventsSet).map((set) => set.elem);
+        }
         return each(elems, (elem) => {
           if (events) {
             strToArray(events).forEach((eventFullName) => {
@@ -1763,14 +1773,15 @@
     }
   }
 
-  const eventName$1 = EVENT_CLICK + "." + DISMISS;
+  const eventName$1 = EVENT_CLICK + UI_EVENT_PREFIX + "-" + DISMISS;
   function addDismiss (
     instance,
     elem = instance.base,
     action = instance.hide,
   ) {
-    if (instance._dismiss) {
+    if (instance[PRIVATE_PREFIX + DISMISS]) {
       instance.off(elem, eventName$1);
+      instance[PRIVATE_PREFIX + DISMISS] = false;
     }
     if (instance.opts[DISMISS]) {
       instance.on(
@@ -1784,10 +1795,14 @@
         (event) => {
           event.preventDefault();
           event.stopPropagation();
-          action({ event, trigger: event.deligateTarget });
+          const eventParams = { event, trigger: event.deligateTarget };
+          action(eventParams);
+          if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
+            instance.emit(CANCEL, eventParams);
+          }
         },
       );
-      instance._dismiss = true;
+      instance[PRIVATE_PREFIX + DISMISS] = true;
     }
   }
 
@@ -1799,7 +1814,9 @@
         if (event.keyCode === KEY_ESC) {
           (instance.opts.escapeHide.stop ?? true) && event.stopPropagation();
           instance.hide({ event });
-          instance.emit(CANCEL, { event });
+          if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
+            instance.emit(CANCEL, { event });
+          }
         }
       });
     } else {
@@ -1858,46 +1875,54 @@
     return instance;
   };
 
-  var toggleOnInterection = ({
-    toggler,
-    target,
+  const PREFIX = UI_EVENT_PREFIX + "-" + TRIGGER;
+
+  var toggleOnInterection = (
     instance,
-    trigger,
-    action = instance.toggle,
-    delay,
-  }) => {
-    const { opts, on } = instance;
-    trigger ??= opts.trigger;
-    delay ??= opts.delay;
+    toggler = instance.toggler,
+    target = instance.base,
+  ) => {
+    let {
+      opts: { trigger, delay, mode },
+      toggle,
+      on,
+    } = instance;
+
+    if (instance[PRIVATE_PREFIX + TRIGGER]) {
+      instance.off("*", PREFIX);
+      instance[PRIVATE_PREFIX + TRIGGER] = false;
+    }
 
     if (!trigger) return;
 
     const triggerClick = trigger.includes(CLICK);
-    const triggerHover = trigger.includes(HOVER);
-    const triggerFocus = trigger.includes(FOCUS);
+    const triggerHover = mode !== MODAL && trigger.includes(HOVER);
+    const triggerFocus = mode !== MODAL && trigger.includes(FOCUS);
     const events = [];
     let isMouseDown = false;
-    if (triggerHover || triggerFocus) {
+    let hoverTimer;
+    if (triggerHover) {
       delay = isArray(delay) ? delay : [delay, delay];
     }
     if (triggerClick) {
-      on(toggler, EVENT_CLICK, (event) =>
-        action(null, { event, trigger: toggler }),
+      on(toggler, EVENT_CLICK + PREFIX, (event) =>
+        toggle(null, { event, trigger: toggler }),
       );
     }
     if (triggerHover) {
-      events.push(EVENT_MOUSEENTER, EVENT_MOUSELEAVE);
+      events.push(EVENT_MOUSEENTER + PREFIX, EVENT_MOUSELEAVE + PREFIX);
     }
     if (triggerFocus) {
-      events.push(EVENT_FOCUSIN, EVENT_FOCUSOUT);
+      events.push(EVENT_FOCUSIN + PREFIX, EVENT_FOCUSOUT + PREFIX);
 
       triggerClick &&
         on(toggler, EVENT_MOUSEDOWN, () => {
           isMouseDown = true;
-          clearTimeout(instance._hoverTimer);
+          clearTimeout(hoverTimer);
           requestAnimationFrame(() => (isMouseDown = false));
         });
     }
+
     if (triggerHover || triggerFocus) {
       on([toggler, target], events, (event) => {
         const { type } = event;
@@ -1913,17 +1938,19 @@
           (triggerHover && type === EVENT_MOUSEENTER) ||
           (triggerFocus && type === EVENT_FOCUSIN);
         const d = isFocus ? 0 : delay[entered ? 0 : 1];
-        clearTimeout(instance._hoverTimer);
+        clearTimeout(hoverTimer);
         if (d) {
-          instance._hoverTimer = setTimeout(
-            () => action(entered, { trigger: toggler, event }),
+          hoverTimer = setTimeout(
+            () => toggle(entered, { trigger: toggler, event }),
             d,
           );
         } else {
-          action(entered, { event, trigger: event.target });
+          toggle(entered, { event, trigger: event.target });
         }
       });
     }
+
+    instance[PRIVATE_PREFIX + TRIGGER] = true;
   };
 
   ResetFloatingCssVariables();
@@ -2381,12 +2408,14 @@
 
     shown &&
       show({
-        animated:
+        animated: !!(
           getBooleanDataAttrValue(target, APPEAR) ??
           opts.appear ??
-          instance._fromHTML,
+          instance._fromHTML
+        ),
         ignoreConditions: true,
         ignoreAutofocus: !instance._fromHTML,
+        __initial: true,
       });
 
     return instance;
@@ -2474,14 +2503,30 @@
     }
   };
 
+  const EVENT_HASHCHANGE = "hashchange" + UI_EVENT_PREFIX;
+  var addHashNavigation = (instance) => {
+    if (instance.opts[OPTION_HASH_NAVIGATION]) {
+      instance[PRIVATE_PREFIX + OPTION_HASH_NAVIGATION] = true;
+      instance.on(window, EVENT_HASHCHANGE, (event) => {
+        if (checkHash(instance.id)) {
+          instance.show({ event });
+        }
+      });
+    } else if (instance[PRIVATE_PREFIX + OPTION_HASH_NAVIGATION]) {
+      instance.off(window, EVENT_HASHCHANGE);
+      instance[PRIVATE_PREFIX + OPTION_HASH_NAVIGATION] = false;
+    }
+  };
+
   const COLLAPSE = "collapse";
 
   class Collapse extends ToggleMixin(Base, COLLAPSE) {
     static Default = {
       ...DEFAULT_OPTIONS,
       eventPrefix: getEventsPrefix(COLLAPSE),
-      hashNavigation: true,
+      [OPTION_HASH_NAVIGATION]: false,
       dismiss: true,
+      [OPTION_AUTODESTROY]: false,
       [TOGGLER]: ({ id }) => getDefaultToggleSelector(id, true),
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [COLLAPSE + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -2501,9 +2546,11 @@
     }
     _update() {
       const { base, opts } = this;
-      updateOptsByData(opts, base, [HIDE_MODE]);
-
-      addDismiss(this);
+      updateOptsByData(opts, base, [
+        HIDE_MODE,
+        OPTION_HASH_NAVIGATION,
+        OPTION_AUTODESTROY,
+      ]);
 
       this[TELEPORT] = Teleport.createOrUpdate(
         this[TELEPORT],
@@ -2523,6 +2570,9 @@
       );
 
       this.updateTriggers();
+
+      addDismiss(this);
+      addHashNavigation(this);
     }
     destroy(destroyOpts) {
       // eslint-disable-next-line prefer-const
@@ -2618,6 +2668,9 @@
       awaitPromise(promise, () => {
         !s && toggleHideModeState(false, this);
         !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+        if (!s && opts[OPTION_AUTODESTROY]) {
+          opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });
+        }
       });
 
       animated && awaitAnimation && (await promise);
@@ -2630,10 +2683,11 @@
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
+      mode: false,
       eventPrefix: getEventsPrefix(DROPDOWN),
       itemClickHide: true,
       autofocus: true,
-      items: getDataSelector(DROPDOWN + "-item"),
+      items: getDataSelector(DROPDOWN + "-" + ITEM),
       trigger: CLICK,
       [TOGGLER]: null,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -2669,14 +2723,6 @@
         }
       });
 
-      toggleOnInterection({
-        toggler,
-        target: base,
-        instance: this,
-      });
-
-      addDismiss(this, base);
-
       this[TELEPORT] = new Teleport(base, { disableAttributes: true });
 
       return callShowInit(this);
@@ -2701,6 +2747,10 @@
       } else {
         off(base, EVENT_CLICK);
       }
+
+      toggleOnInterection(this);
+
+      addDismiss(this, base);
     }
     updateToggler() {
       const { opts, id } = this;
@@ -2844,6 +2894,7 @@
   };
 
   class Dialog extends ToggleMixin(Base, DIALOG) {
+    static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
     static DefaultGroup = {
       name: "",
       awaitPrevious: true,
@@ -2854,7 +2905,7 @@
       eventPrefix: getEventsPrefix(DIALOG),
       escapeHide: true,
       backdropHide: true,
-      hashNavigation: false,
+      [OPTION_HASH_NAVIGATION]: false,
       returnFocus: true,
       preventHide: false,
       dismiss: true,
@@ -2873,7 +2924,7 @@
       [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
 
-      autodestroy: false,
+      [OPTION_AUTODESTROY]: false,
 
       autofocus: true,
       focusTrap: true,
@@ -2897,8 +2948,10 @@
         BACKDROP,
         OPTION_TOP_LAYER,
         OPTION_PREVENT_SCROLL,
+        OPTION_HASH_NAVIGATION,
         HIDE_MODE,
         OPTION_GROUP,
+        OPTION_AUTODESTROY,
       ]);
       updateModule(this, OPTION_GROUP, NAME);
 
@@ -2953,6 +3006,9 @@
         opts.popoverApi
           ? POPOVER_API_MODE_MANUAL
           : null;
+
+      addHashNavigation(this);
+      addDismiss(this);
     }
     init() {
       const { opts, isInit, base, on, emit, hide, toggle } = this;
@@ -2963,7 +3019,6 @@
 
       this._update();
       this.updateAriaTargets();
-      addDismiss(this);
 
       on(
         base,
@@ -3076,6 +3131,7 @@
         event,
         ignoreConditions,
         ignoreAutofocus,
+        __initial,
       } = normalizeToggleParameters(params);
 
       s = !!(s ?? !isOpen);
@@ -3162,6 +3218,12 @@
         toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
       }
 
+      if (__initial && !animated) {
+        backdrop.style.transition = NONE;
+        backdrop.offsetWidth;
+        backdrop.style.transition = "";
+      }
+
       this.preventScroll(s);
 
       if (!s && !optReturnFocusAwait) {
@@ -3194,7 +3256,7 @@
         !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
         if (!s) {
-          opts.autodestroy && this.destroy({ remove: true });
+          opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });
           this.groupClosing = false;
           groupClosingFinish?.();
         }
@@ -3271,7 +3333,6 @@
   const TAB = "tab";
   const TABS = "tabs";
   const TABPANEL = "tabpanel";
-  const ITEM = "item";
   const ACCORDION = "accordion";
 
   const ELEMS = [ITEM, TAB, TABPANEL];
@@ -3316,7 +3377,7 @@
       awaitPrevious: false,
       keyboard: true,
       arrowActivation: false,
-      hashNavigation: true,
+      [OPTION_HASH_NAVIGATION]: false,
       rtl: false,
       focusFilter: null,
       horizontal: false,
@@ -3340,7 +3401,7 @@
       const { base, tabs, lastShownTab, opts } = this;
       const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
 
-      updateOptsByData(opts, base, [HIDE_MODE]);
+      updateOptsByData(opts, base, [HIDE_MODE, OPTION_HASH_NAVIGATION]);
 
       if (a11y) {
         setAttribute(base, ROLE, a11y[ROLE]);
@@ -4014,6 +4075,8 @@
         hide,
         opts.autohide,
       );
+
+      addDismiss(this);
     }
     destroy(destroyOpts) {
       if (!this.isInit) return;
@@ -4024,8 +4087,6 @@
       if (this.isInit) return;
 
       this._update();
-
-      addDismiss(this);
 
       return callShowInit(this);
     }
@@ -4237,13 +4298,17 @@
       super(elem, opts);
     }
     _update() {
-      const { tooltip, opts } = this;
+      const { tooltip, base, opts } = this;
 
       this.transition = Transition.createOrUpdate(
         this[TRANSITION],
         tooltip,
         opts[TRANSITION],
       );
+
+      addDismiss(this, tooltip);
+
+      toggleOnInterection(this, base, tooltip);
 
       opts.a11y && setAttribute(tooltip, TOOLTIP);
     }
@@ -4291,14 +4356,6 @@
       );
 
       this._update();
-
-      toggleOnInterection({
-        toggler: anchor,
-        target,
-        instance: this,
-      });
-
-      addDismiss(this, target);
 
       this.teleport = new Teleport(target, { disableAttributes: true });
 
@@ -4360,9 +4417,11 @@
   }
 
   class Popover extends ToggleMixin(Base, POPOVER) {
+    static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
+      mode: false,
       eventPrefix: getEventsPrefix(POPOVER),
       dismiss: true,
       autofocus: true,
@@ -4382,17 +4441,7 @@
       if (this.isInit) return;
       this._update();
 
-      const { toggler, base } = this;
-
-      toggleOnInterection({
-        toggler,
-        target: base,
-        instance: this,
-      });
-
-      addDismiss(this, base);
-
-      this.teleport = new Teleport(base, { disableAttributes: true });
+      this.teleport = new Teleport(this.base, { disableAttributes: true });
 
       return callShowInit(this);
     }
@@ -4407,6 +4456,9 @@
       );
 
       this.updateToggler();
+
+      addDismiss(this);
+      toggleOnInterection(this);
     }
     updateToggler() {
       const { opts, id } = this;

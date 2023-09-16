@@ -6,6 +6,8 @@ import {
   MODAL,
   TRUE,
   FALSE,
+  OPTION_HASH_NAVIGATION,
+  OPTION_AUTODESTROY,
 } from "../constants";
 import { isArray } from "../is";
 import { upperFirst } from "../utils";
@@ -13,7 +15,9 @@ export const OPTIONS_BOOLEAN = [
   APPEAR,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_SCROLL,
+  OPTION_HASH_NAVIGATION,
   MODAL,
+  OPTION_AUTODESTROY,
 ];
 export default (opts, { dataset }, names) => {
   names.forEach((name) => {

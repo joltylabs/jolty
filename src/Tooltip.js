@@ -84,10 +84,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     addDismiss(this, tooltip);
 
-    toggleOnInterection(this, {
-      toggler: base,
-      tooltip,
-    });
+    toggleOnInterection(this, base, tooltip);
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }

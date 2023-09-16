@@ -14,9 +14,13 @@ import {
   ACTION_REMOVE,
   HIDDEN,
   TRANSITION,
+  ROLE,
+  ARIA_LIVE,
+  ALERT,
+  STATUS,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
-import { fragment, inDOM } from "./helpers/dom";
+import { fragment, inDOM, removeAttribute } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   arrayFrom,
@@ -42,6 +46,7 @@ const TOAST = "toast";
 const positions = {};
 const wrappers = new Map();
 const _containers = {};
+
 class Toast extends ToggleMixin(Base, TOAST) {
   static _templates = {};
 
@@ -62,6 +67,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     keepTopLayer: true,
     popoverApi: true,
     shown: true,
+    role: STATUS,
   };
   constructor(elem, opts) {
     if (isObject(elem)) {
@@ -92,6 +98,16 @@ class Toast extends ToggleMixin(Base, TOAST) {
       hide,
       opts.autohide,
     );
+
+    if (opts.role === STATUS) {
+      base.setAttribute(ROLE, STATUS);
+      base.setAttribute(ARIA_LIVE, "polite");
+    } else if (opts.role === ALERT) {
+      base.setAttribute(ROLE, ALERT);
+      base.setAttribute(ARIA_LIVE, "assertive");
+    } else {
+      removeAttribute(base, ROLE, ARIA_LIVE);
+    }
 
     addDismiss(this);
   }

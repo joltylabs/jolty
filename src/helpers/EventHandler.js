@@ -108,6 +108,9 @@ class EventHandler {
     if (!arguments.length) {
       this.removeSets(eventsSet, opts);
     } else {
+      if (elems === "*") {
+        elems = arrayFrom(eventsSet).map((set) => set.elem);
+      }
       return each(elems, (elem) => {
         if (events) {
           strToArray(events).forEach((eventFullName) => {

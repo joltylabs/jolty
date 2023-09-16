@@ -11,6 +11,7 @@ import {
   UI_EVENT_PREFIX,
   TRIGGER,
   MODAL,
+  PRIVATE_PREFIX,
 } from "../constants";
 import { isArray } from "../is";
 
@@ -18,20 +19,19 @@ const PREFIX = UI_EVENT_PREFIX + "-" + TRIGGER;
 
 export default (
   instance,
-  {
-    toggler = instance.toggler,
-    target = instance.base,
-    action = instance.toggle,
-  } = {},
+  toggler = instance.toggler,
+  target = instance.base,
 ) => {
   let {
-    // eslint-disable-next-line prefer-const
     opts: { trigger, delay, mode },
-    // eslint-disable-next-line prefer-const
+    toggle,
     on,
   } = instance;
 
-  instance.off([toggler, target], PREFIX);
+  if (instance[PRIVATE_PREFIX + TRIGGER]) {
+    instance.off("*", PREFIX);
+    instance[PRIVATE_PREFIX + TRIGGER] = false;
+  }
 
   if (!trigger) return;
 
@@ -40,12 +40,13 @@ export default (
   const triggerFocus = mode !== MODAL && trigger.includes(FOCUS);
   const events = [];
   let isMouseDown = false;
+  let hoverTimer;
   if (triggerHover) {
     delay = isArray(delay) ? delay : [delay, delay];
   }
   if (triggerClick) {
     on(toggler, EVENT_CLICK + PREFIX, (event) =>
-      action(null, { event, trigger: toggler }),
+      toggle(null, { event, trigger: toggler }),
     );
   }
   if (triggerHover) {
@@ -57,7 +58,7 @@ export default (
     triggerClick &&
       on(toggler, EVENT_MOUSEDOWN, () => {
         isMouseDown = true;
-        clearTimeout(instance._hoverTimer);
+        clearTimeout(hoverTimer);
         requestAnimationFrame(() => (isMouseDown = false));
       });
   }
@@ -77,15 +78,17 @@ export default (
         (triggerHover && type === EVENT_MOUSEENTER) ||
         (triggerFocus && type === EVENT_FOCUSIN);
       const d = isFocus ? 0 : delay[entered ? 0 : 1];
-      clearTimeout(instance._hoverTimer);
+      clearTimeout(hoverTimer);
       if (d) {
-        instance._hoverTimer = setTimeout(
-          () => action(entered, { trigger: toggler, event }),
+        hoverTimer = setTimeout(
+          () => toggle(entered, { trigger: toggler, event }),
           d,
         );
       } else {
-        action(entered, { event, trigger: event.target });
+        toggle(entered, { event, trigger: event.target });
       }
     });
   }
+
+  instance[PRIVATE_PREFIX + TRIGGER] = true;
 };
