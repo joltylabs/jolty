@@ -248,7 +248,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
-    toggleClass(toggler, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX], s);
 
     animated && awaitAnimation && (await promise);
 
