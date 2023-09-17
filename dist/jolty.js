@@ -2846,7 +2846,7 @@
     }
 
     async toggle(s, params) {
-      const { toggler, opts, emit, transition, isOpen, isAnimating } = this;
+      const { isOpen, isAnimating, toggler, base, opts, emit } = this;
       const { awaitAnimation, a11y } = opts;
       const { animated, silent, trigger, event, ignoreConditions } =
         normalizeToggleParameters(params);
@@ -2859,12 +2859,14 @@
       this.isOpen = s;
 
       if (isAnimating && !awaitAnimation) {
-        await transition.cancel();
+        await this[TRANSITION].cancel();
       }
 
       const eventParams = { event, trigger };
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+
+      a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
       const promise = floatingTransition(this, {
         s,
@@ -2873,10 +2875,8 @@
         eventParams,
       });
 
-      a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
-
       toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
-      toggleClass(toggler, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX], s);
+      toggleClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX], s);
 
       animated && awaitAnimation && (await promise);
 
@@ -2933,6 +2933,7 @@
       [TOGGLER]: true,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+      [CONTENT + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
 
       [OPTION_AUTODESTROY]: false,
@@ -3225,6 +3226,7 @@
         s,
       );
       toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
+      toggleClass(content, opts[CONTENT + CLASS_ACTIVE_SUFFIX], s);
       if (!backdropIsOpen) {
         toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
       }
@@ -4068,6 +4070,7 @@
       popoverApi: true,
       keepTopLayer: true,
       a11y: STATUS,
+      [TOAST + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     };
     constructor(elem, opts) {
       if (isObject(elem)) {
@@ -4125,17 +4128,7 @@
     async toggle(s, params) {
       const {
         transition,
-        opts: {
-          limit,
-          limitAnimateLeave,
-          limitAnimateEnter,
-          position,
-          container,
-          popoverApi,
-          topLayer,
-          keepTopLayer,
-          hideMode,
-        },
+        opts,
         autohide,
         base,
         root,
@@ -4145,6 +4138,16 @@
       } = this;
       const { animated, silent, event, trigger } =
         normalizeToggleParameters(params);
+
+      const {
+        limit,
+        position,
+        container,
+        popoverApi,
+        topLayer,
+        keepTopLayer,
+        hideMode,
+      } = opts;
 
       if (animated && transition?.isAnimating) return;
 
@@ -4162,8 +4165,8 @@
           );
           for (let i = 0; i < nots.length; i++) {
             if (i >= limit - 1) {
-              nots[i - (limit - 1)]?.hide(limitAnimateLeave);
-              if (!limitAnimateEnter) {
+              nots[i - (limit - 1)]?.hide(opts.limitAnimateLeave);
+              if (!opts.limitAnimateEnter) {
                 preventAnimation = true;
               }
             }
@@ -4208,6 +4211,8 @@
       !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
       const promise = transition?.run(s, animated && !preventAnimation);
+
+      toggleClass(base, opts[TOAST + CLASS_ACTIVE_SUFFIX], s);
 
       awaitPromise(promise, () => {
         !s && toggleHideModeState(false, this);
@@ -4331,6 +4336,7 @@
       removeTitle: true,
       tooltipClass: "",
       [ANCHOR + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
+      [TOOLTIP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       trigger: HOVER + " " + FOCUS,
       content: null,
     };
@@ -4453,6 +4459,7 @@
       }
 
       toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
+      toggleClass(tooltip, opts[TOOLTIP + CLASS_ACTIVE_SUFFIX], s);
 
       animated && awaitAnimation && (await promise);
 
@@ -4524,23 +4531,23 @@
     }
 
     async toggle(s, params) {
-      const { isShown, isAnimating, toggler, base, opts, emit } = this;
+      const { isOpen, isAnimating, toggler, base, opts, emit } = this;
       const { awaitAnimation, a11y } = opts;
-      const { animated, silent, event, ignoreConditions } =
+      const { animated, silent, trigger, event, ignoreConditions } =
         normalizeToggleParameters(params);
 
-      s ??= !isShown;
+      s ??= !isOpen;
 
-      if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
+      if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
         return;
 
-      this.isShown = s;
+      this.isOpen = s;
 
       if (isAnimating && !awaitAnimation) {
         await this[TRANSITION].cancel();
       }
 
-      const eventParams = { event, trigger: toggler };
+      const eventParams = { event, trigger };
 
       !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
