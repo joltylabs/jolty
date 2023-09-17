@@ -1,6 +1,8 @@
 import {
+  ARROW_HEIGHT,
   ARROW_OFFSET,
   ARROW_PADDING,
+  ARROW_WIDTH,
   BOUNDARY_OFFSET,
   CLIP_PATH_PROPERTY,
   OFFSET,
@@ -19,6 +21,8 @@ export default (anchorStyles, targetStyles, wrapper, PREFIX) => {
     BOUNDARY_OFFSET,
     ARROW_OFFSET,
     ARROW_PADDING,
+    ARROW_WIDTH,
+    ARROW_HEIGHT,
   ];
   const values = valuesNames
     .map((name) => {

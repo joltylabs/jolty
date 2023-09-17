@@ -9,7 +9,6 @@ import {
   PLACEHOLDER,
   UI_PREFIX,
 } from "../constants/index.js";
-import { toggleClass } from "../dom/index.js";
 
 export default (
   s,
@@ -50,10 +49,7 @@ export default (
     target.toggleAttribute(mode, !s);
   }
 
-  target.classList.toggle(
-    HIDDEN_CLASS,
-    !(s && mode !== ACTION_REMOVE && mode !== HIDDEN),
-  );
+  target.classList.toggle(HIDDEN_CLASS, s && mode === CLASS);
 
   if (s) {
     target[HIDDEN] = false;

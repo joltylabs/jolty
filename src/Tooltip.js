@@ -44,7 +44,6 @@ import {
   callShowInit,
   toggleOnInterection,
   addDismiss,
-  updateModule,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 

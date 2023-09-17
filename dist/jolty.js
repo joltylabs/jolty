@@ -113,6 +113,8 @@
   const CLIP_PATH = "clip-path";
   const ARROW_OFFSET = ARROW + "-" + OFFSET;
   const ARROW_PADDING = ARROW + "-" + PADDING;
+  const ARROW_WIDTH = ARROW + "-" + WIDTH;
+  const ARROW_HEIGHT = ARROW + "-" + HEIGHT;
   const TRUE = "true";
   const FALSE = "false";
   const TOP_LAYER = "top-layer";
@@ -238,6 +240,7 @@
 
   const STATUS = "status";
   const ALERT = "alert";
+  const REGION = "region";
 
   const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
   const DEFAULT_OPTIONS = {
@@ -954,6 +957,8 @@
       BOUNDARY_OFFSET,
       ARROW_OFFSET,
       ARROW_PADDING,
+      ARROW_WIDTH,
+      ARROW_HEIGHT,
     ];
     const values = valuesNames
       .map((name) => {
@@ -2074,6 +2079,8 @@
         boundaryOffset = opts.boundaryOffset,
         arrowPadding,
         arrowOffset,
+        arrowWidth,
+        arrowHeight,
         wrapperComputedStyle,
       } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
 
@@ -2090,8 +2097,11 @@
       });
 
       let arrowData;
-      if (arrow) {
-        arrowData = { [WIDTH]: arrow.offsetWidth, [HEIGHT]: arrow.offsetHeight };
+      if (arrow || arrowWidth || arrowHeight) {
+        arrowData = {
+          [WIDTH]: arrowWidth?.[0] || arrow?.offsetWidth,
+          [HEIGHT]: arrowHeight?.[0] || arrow?.offsetHeight,
+        };
         arrowData[PADDING] = arrowPadding ?? opts[ARROW]?.padding ?? 0;
         arrowData[OFFSET] = arrowOffset ?? opts[ARROW]?.offset ?? 0;
       }
@@ -2155,7 +2165,7 @@
           );
         }
 
-        if (arrow) {
+        if (arrowData) {
           [LEFT, TOP].forEach((dir, i) =>
             wrapperStyle.setProperty(
               PREFIX + ARROW + "-" + dir,
@@ -2360,10 +2370,7 @@
       target.toggleAttribute(mode, !s);
     }
 
-    target.classList.toggle(
-      HIDDEN_CLASS,
-      !(s && mode !== ACTION_REMOVE && mode !== HIDDEN),
-    );
+    target.classList.toggle(HIDDEN_CLASS, s && mode === CLASS);
 
     if (s) {
       target[HIDDEN] = false;
@@ -2998,7 +3005,7 @@
       if (isDialogElem) {
         on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
       } else if (opts.a11y) {
-        setAttribute(base, TABINDEX, -1);
+        base[TABINDEX] = -1;
         setAttribute(base, ROLE, DIALOG);
       }
 
@@ -3351,7 +3358,7 @@
     [ACCORDION]: {
       [ROLE]: null,
       [OPTION_TAB_ROLE]: BUTTON,
-      [OPTION_TABPANEL_ROLE]: "region",
+      [OPTION_TABPANEL_ROLE]: REGION,
       [OPTION_ARIA_ORIENTRATION]: true,
       [OPTION_STATE_ATTRIBUTE]: ARIA_EXPANDED,
       [TABINDEX]: false,
@@ -4045,6 +4052,7 @@
     static DefaultA11y = { ...A11Y_DEFAULTS[STATUS] };
     static Default = {
       ...DEFAULT_OPTIONS,
+      shown: true,
       eventPrefix: getEventsPrefix(TOAST),
       root: null,
       container: "",
@@ -4054,12 +4062,10 @@
       limit: false,
       limitAnimateEnter: true,
       limitAnimateLeave: true,
-      autodestroy: true,
       autohide: false,
       topLayer: true,
-      keepTopLayer: true,
       popoverApi: true,
-      shown: true,
+      keepTopLayer: true,
       a11y: STATUS,
     };
     constructor(elem, opts) {
@@ -4128,7 +4134,6 @@
           topLayer,
           keepTopLayer,
           hideMode,
-          autodestroy,
         },
         autohide,
         base,
@@ -4166,7 +4171,7 @@
         if (root) {
           let to = root;
           if (position) {
-            const wrapper = (to = constructor.getWrapper({
+            const wrapper = (to = constructor.getContainer({
               position,
               root,
               container,
@@ -4206,7 +4211,7 @@
       awaitPromise(promise, () => {
         !s && toggleHideModeState(false, this);
         !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
-        !s && autodestroy && this.destroy({ remove: true });
+        !s && this.destroy({ remove: true });
       });
 
       animated && (await promise);
@@ -4226,10 +4231,18 @@
         wrapper.remove();
       }
 
+      this.container = wrapper;
+
       return this;
     }
 
-    static getWrapper({ position, root = body, container = "", keepTopLayer }) {
+    static getContainer({
+      position,
+      root = body,
+      container = "",
+      keepTopLayer,
+      a11y,
+    }) {
       let rootWrappers = wrappers.get(root);
       if (!rootWrappers) {
         rootWrappers = new Set();
@@ -4250,6 +4263,11 @@
             )
           : container(containerParams),
       );
+
+      if (a11y) {
+        wrapper[TABINDEX] = -1;
+        wrapper.role = REGION;
+      }
 
       rootWrappers.add({ wrapper, container, position, root, keepTopLayer });
       return wrapper;

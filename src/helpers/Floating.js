@@ -183,6 +183,8 @@ export default class Floating {
       boundaryOffset = opts.boundaryOffset,
       arrowPadding,
       arrowOffset,
+      arrowWidth,
+      arrowHeight,
       wrapperComputedStyle,
     } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
 
@@ -199,8 +201,11 @@ export default class Floating {
     });
 
     let arrowData;
-    if (arrow) {
-      arrowData = { [WIDTH]: arrow.offsetWidth, [HEIGHT]: arrow.offsetHeight };
+    if (arrow || arrowWidth || arrowHeight) {
+      arrowData = {
+        [WIDTH]: arrowWidth?.[0] || arrow?.offsetWidth,
+        [HEIGHT]: arrowHeight?.[0] || arrow?.offsetHeight,
+      };
       arrowData[PADDING] = arrowPadding ?? opts[ARROW]?.padding ?? 0;
       arrowData[OFFSET] = arrowOffset ?? opts[ARROW]?.offset ?? 0;
     }
@@ -264,7 +269,7 @@ export default class Floating {
         );
       }
 
-      if (arrow) {
+      if (arrowData) {
         [LEFT, TOP].forEach((dir, i) =>
           wrapperStyle.setProperty(
             PREFIX + ARROW + "-" + dir,
