@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 ## [0.3.3] - 2023-09-17
 ### Fixed
   Fix dropdown dropdownActiveClass option
+### Added
+  Add toastClassActive option to the Toast component
+  Add contentClassActive option to the Dialog component
+  Add tooltipClassActive option to the Tooltip component
 ## [0.3.2] - 2023-09-17
 ### Fixed
 - fix floating in browsers that do not support Popover API
