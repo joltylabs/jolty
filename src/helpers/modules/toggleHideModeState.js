@@ -49,7 +49,7 @@ export default (
     target.toggleAttribute(mode, !s);
   }
 
-  target.classList.toggle(HIDDEN_CLASS, s && mode === CLASS);
+  target.classList.toggle(HIDDEN_CLASS, !s && mode === CLASS);
 
   if (s) {
     target[HIDDEN] = false;
