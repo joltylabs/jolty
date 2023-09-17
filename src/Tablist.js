@@ -55,6 +55,7 @@ import {
   OPTION_HASH_NAVIGATION,
   ITEM,
   REGION,
+  NONE,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -185,7 +186,7 @@ class Tablist extends Base {
     const shown = lastShownTab?.index ?? opts.shown;
 
     const tabWithState = tabs.map((tabObj, i) => {
-      const { tab, tabpanel, teleport } = tabObj;
+      const { tab, tabpanel, item, teleport } = tabObj;
 
       if (a11y) {
         removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
@@ -193,6 +194,7 @@ class Tablist extends Base {
         setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
         setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
         setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
+        setAttribute(item, ROLE, NONE);
       }
 
       tabObj.teleport = Teleport.createOrUpdate(
