@@ -218,7 +218,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 
   async toggle(s, params) {
-    const { toggler, opts, emit, transition, isOpen, isAnimating } = this;
+    const { isOpen, isAnimating, toggler, base, opts, emit } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
@@ -231,12 +231,14 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     this.isOpen = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition.cancel();
+      await this[TRANSITION].cancel();
     }
 
     const eventParams = { event, trigger };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+
+    a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     const promise = floatingTransition(this, {
       s,
@@ -244,8 +246,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       silent,
       eventParams,
     });
-
-    a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
     toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
     toggleClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX], s);

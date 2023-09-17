@@ -62,6 +62,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     removeTitle: true,
     tooltipClass: "",
     [ANCHOR + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
+    [TOOLTIP + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
     trigger: HOVER + " " + FOCUS,
     content: null,
   };
@@ -184,6 +185,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     }
 
     toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(tooltip, opts[TOOLTIP + CLASS_ACTIVE_SUFFIX], s);
 
     animated && awaitAnimation && (await promise);
 

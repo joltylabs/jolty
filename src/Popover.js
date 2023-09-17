@@ -110,23 +110,23 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const { isShown, isAnimating, toggler, base, opts, emit } = this;
+    const { isOpen, isAnimating, toggler, base, opts, emit } = this;
     const { awaitAnimation, a11y } = opts;
-    const { animated, silent, event, ignoreConditions } =
+    const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isShown;
+    s ??= !isOpen;
 
-    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
       return;
 
-    this.isShown = s;
+    this.isOpen = s;
 
     if (isAnimating && !awaitAnimation) {
       await this[TRANSITION].cancel();
     }
 
-    const eventParams = { event, trigger: toggler };
+    const eventParams = { event, trigger };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
