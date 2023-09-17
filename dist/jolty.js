@@ -2041,11 +2041,12 @@
       const usePopoverApi =
         topLayer && mode !== MODAL && opts.popoverApi && POPOVER_API_SUPPORTED;
 
+      const moveToRoot = topLayer && opts.topLayerForce;
+
       const inTopLayer =
         (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
-        mode === MODAL;
-
-      const moveToRoot = topLayer && opts.topLayerForce;
+        mode === MODAL ||
+        moveToRoot;
 
       const useFocusGuards =
         (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
