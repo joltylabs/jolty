@@ -6,11 +6,13 @@ export default (Base, NAME) =>
       return NAME;
     }
     get isAnimating() {
-      return this.transition.isAnimating;
+      return this.transition?.isAnimating;
     }
     get initialPlaceNode() {
       return (
-        this.teleport?.placeholder ?? this.transition?.placeholder ?? this.base
+        this.teleport?.placeholder ??
+        this.placeholder ??
+        this[this.constructor.NAME]
       );
     }
     hide(opts) {

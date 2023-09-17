@@ -1,9 +1,12 @@
 export { default as addDismiss } from "./addDismiss";
 export { default as addEscapeHide } from "./addEscapeHide";
 export { default as callAutofocus } from "./callAutofocus";
-export { default as addOutsideHide } from "./addOutsideHide";
 export { default as baseDestroy } from "./baseDestroy";
 export { default as toggleOnInterection } from "./toggleOnInterection";
 export { default as floatingTransition } from "./floatingTransition";
-export { default as callInitShow } from "./callInitShow";
-export { default as awaitPromise } from "./awaitPromise";
+export { default as callShowInit } from "./callShowInit.js";
+export { default as FocusGuards } from "./FocusGuards.js";
+export { default as toggleConfirm } from "./toggleConfirm.js";
+export { default as addHashNavigation } from "./addHashNavigation.js";
+export { default as toggleHideModeState } from "./toggleHideModeState.js";
+export { default as updateModule } from "./updateModule.js";

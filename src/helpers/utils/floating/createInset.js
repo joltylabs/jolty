@@ -1,4 +1,4 @@
-import { isArray, isObject, isNumber } from "../is";
+import { isArray, isObject, isNumber } from "../../is/index.js";
 export default (input, returnArray) => {
   let top = 0,
     right = 0,

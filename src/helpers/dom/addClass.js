@@ -1,2 +1,3 @@
-import { toggleClass } from "./index.js";
+import toggleClass from "./toggleClass.js";
+
 export default (elem, classes) => toggleClass(elem, classes, true);

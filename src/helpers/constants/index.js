@@ -5,6 +5,7 @@ export const UI = "ui";
 export const UI_PREFIX = UI + "-";
 export const UI_EVENT_PREFIX = "." + UI;
 export const VAR_UI_PREFIX = "--" + UI_PREFIX;
+export const PRIVATE_PREFIX = "_";
 export const DATA_PREFIX = "data-";
 export const DATA_UI_PREFIX = DATA_PREFIX + UI_PREFIX;
 export const ACTIVE = "active";
@@ -39,6 +40,7 @@ export const VERTICAL = "vertical";
 export const ABSOLUTE = "absolute";
 export const FIXED = "fixed";
 export const TRANSITION = "transition";
+export const TELEPORT = "teleport";
 
 export const DIV = "div";
 export const BUTTON = "button";
@@ -78,10 +80,13 @@ export const ANCHOR_HEIGHT = ANCHOR + "-" + HEIGHT;
 
 export const MODAL = "modal";
 export const CONTENT = "content";
+export const ITEM = "item";
 export const BACKDROP = "backdrop";
 export const POPOVER = "popover";
 export const TOOLTIP = "tooltip";
 export const TOGGLER = "toggler";
+export const TRIGGER = "trigger";
+export const DELAY = "delay";
 export const DROPDOWN = "dropdown";
 export const ARROW = "arrow";
 export const PROGRESS = "progress";
@@ -100,7 +105,11 @@ export const WEBKIT_PREFIX = "-webkit-";
 export const CLIP_PATH = "clip-path";
 export const ARROW_OFFSET = ARROW + "-" + OFFSET;
 export const ARROW_PADDING = ARROW + "-" + PADDING;
+export const ARROW_WIDTH = ARROW + "-" + WIDTH;
+export const ARROW_HEIGHT = ARROW + "-" + HEIGHT;
 export const TRUE = "true";
+export const FALSE = "false";
+export const TOP_LAYER = "top-layer";
 
 export const doc = document;
 export const body = doc.body;
@@ -143,10 +152,13 @@ export const INERT = "inert";
 export const AUTOFOCUS = "autofocus";
 export const TABINDEX = "tabindex";
 export const DISABLED = "disabled";
+export const AUTO = "auto";
 export const POPOVER_DATA_ATTRIBUTE = DATA_UI_PREFIX + POPOVER + "-wrapper";
 export const FLOATING_DATA_ATTRIBUTE = DATA_UI_PREFIX + FLOATING;
 export const DATA_PREVENT_INERT = DATA_UI_PREFIX + ACTION_PREVENT + "-" + INERT;
-export const DATA_APPEAR = DATA_UI_PREFIX + APPEAR;
+export const POPOVER_API_MODE_MANUAL = "manual";
+
+export const PLACEHOLDER = "placeholder";
 
 export const EVENT_INIT = ACTION_INIT;
 export const EVENT_BEFORE_INIT = BEFORE + upperFirst(EVENT_INIT);
@@ -210,11 +222,10 @@ export const KEY_ARROW_DOWN = 40;
 
 export const A11Y = "a11y";
 export const OPTION_GROUP = "group";
-export const OPTION_APPEAR = APPEAR;
-export const OPTION_KEEP_PLACE = "keepPlace";
+
 export const OPTION_PREVENT_SCROLL = "preventScroll";
-export const OPTION_POSITION = "position";
-export const OPTION_TO = "to";
+export const OPTION_HASH_NAVIGATION = "hashNavigation";
+export const POSITION = "position";
 export const OPTION_ARIA_LABELLEDBY = kebabToCamel(ARIA_LABELLEDBY);
 export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
 export const OPTION_ARIA_EXPANDED = kebabToCamel(ARIA_EXPANDED);
@@ -223,36 +234,53 @@ export const OPTION_ARIA_CONTROLS = kebabToCamel(ARIA_CONTROLS);
 export const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
 export const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
 export const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
+export const OPTION_TOP_LAYER = "topLayer";
+export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = upperFirst(ROLE);
 
-export const OPTIONS_BOOLEAN = [OPTION_APPEAR, OPTION_KEEP_PLACE];
+export const STATUS = "status";
+export const ALERT = "alert";
+export const REGION = "region";
+
+export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
 export const DEFAULT_OPTIONS = {
-  [ACTION_INIT]: true,
-  [ACTION_DESTROY]: false,
+  init: true,
+  destroy: false,
   data: "",
   on: null,
-  [APPEAR]: null,
+  appear: null,
   eventDispatch: true,
   eventBubble: true,
   shown: null,
   a11y: true,
+  hideMode: HIDDEN,
+  keepPlace: true,
+  transition: true,
+  awaitAnimation: false,
 };
+
 export const DEFAULT_FLOATING_OPTIONS = {
   awaitAnimation: false,
   placement: BOTTOM,
-  offset: 10,
+  offset: 0,
   padding: 0,
-  delay: [200, 0],
+  delay: 200,
   boundaryOffset: 0,
   shrink: false,
-  flip: false,
+  flip: true,
   sticky: false,
   escapeHide: true,
   outsideHide: true,
-  mode: FIXED,
+  focusTrap: false,
+  topLayer: true,
+  topLayerForce: true,
+  popoverApi: true,
+  safeModal: true,
+  floatingClass: "",
+  shown: false,
   arrow: {
     height: null,
     width: null,
@@ -264,10 +292,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
 export const SELECTOR_AUTOFOCUS = `[${AUTOFOCUS}]`;
 export const SELECTOR_DISABLED = `[${DISABLED}]`;
 export const SELECTOR_INERT = `[${INERT}]`;
-export const SELECTOR_DATA_AUTOFOCUS = `[${DATA_UI_PREFIX + AUTOFOCUS}]`;
-export const SELECTOR_DATA_CONFIRM = `[${DATA_UI_PREFIX + CONFIRM}]`;
-export const SELECTOR_DATA_CANCEL = `[${DATA_UI_PREFIX + CANCEL}]`;
-export const DEFAULT_AUTOFOCUS = `${SELECTOR_AUTOFOCUS},${SELECTOR_DATA_AUTOFOCUS}`;
+
 export const SELECTOR_ROOT = ":" + ROOT;
 
 export const MIRROR = {
@@ -282,3 +307,14 @@ export const MIRROR = {
   x: "y",
   y: "x",
 };
+
+export const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
+  ? CLIP_PATH
+  : WEBKIT_PREFIX + CLIP_PATH;
+
+export const POPOVER_API_SUPPORTED =
+  HTMLElement.prototype.hasOwnProperty(POPOVER);
+
+export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
+
+export const PRIVATE_OPTION_CANCEL_ON_HIDE = PRIVATE_PREFIX + "cancelOnHide";

@@ -6,7 +6,6 @@ import {
   DEFAULT_OPTIONS,
   EVENT_BEFORE_INIT,
   EVENT_BEFORE_DESTROY,
-  EVENT_DESTROY,
   EVENT_BEFORE_SHOW,
   EVENT_SHOW,
   EVENT_SHOWN,
@@ -17,6 +16,13 @@ import {
   CLASS_ACTIVE,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
+  HIDE_MODE,
+  ACTION_REMOVE,
+  HIDDEN,
+  TRANSITION,
+  TELEPORT,
+  OPTION_HASH_NAVIGATION,
+  OPTION_AUTODESTROY,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -31,12 +37,15 @@ import {
   getEventsPrefix,
   getOptionElems,
   getDefaultToggleSelector,
+  updateOptsByData,
+  awaitPromise,
 } from "./helpers/utils";
 import {
   addDismiss,
   baseDestroy,
-  callInitShow,
-  awaitPromise,
+  callShowInit,
+  addHashNavigation,
+  toggleHideModeState,
 } from "./helpers/modules";
 
 const COLLAPSE = "collapse";
@@ -45,8 +54,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(COLLAPSE),
-    hashNavigation: true,
+    [OPTION_HASH_NAVIGATION]: false,
     dismiss: true,
+    [OPTION_AUTODESTROY]: false,
     [TOGGLER]: ({ id }) => getDefaultToggleSelector(id, true),
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [COLLAPSE + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -55,26 +65,44 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   constructor(elem, opts) {
     super(elem, opts);
   }
+  init() {
+    if (this.isInit) return;
+
+    this.emit(EVENT_BEFORE_INIT);
+
+    this._update();
+
+    return callShowInit(this);
+  }
   _update() {
-    const { base, opts, transition, teleport } = this;
+    const { base, opts } = this;
+    updateOptsByData(opts, base, [
+      HIDE_MODE,
+      OPTION_HASH_NAVIGATION,
+      OPTION_AUTODESTROY,
+    ]);
 
-    addDismiss(this);
-
-    this.teleport = Teleport.createOrUpdate(
-      teleport,
+    this[TELEPORT] = Teleport.createOrUpdate(
+      this[TELEPORT],
       base,
-      opts.teleport,
+      opts[TELEPORT],
     )?.move(this);
 
-    this.transition = Transition.createOrUpdate(
-      transition,
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+
+    this[TRANSITION] = Transition.createOrUpdate(
+      this[TRANSITION],
       base,
-      opts.transition,
+      opts[TRANSITION],
+      { cssVariables: true },
     );
 
     this.updateTriggers();
 
-    return this;
+    addDismiss(this);
+    addHashNavigation(this);
   }
   destroy(destroyOpts) {
     // eslint-disable-next-line prefer-const
@@ -101,23 +129,13 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       }
     }
 
-    opts.a11y &&
-      removeAttribute(togglers, [ARIA_CONTROLS, ARIA_EXPANDED, ROLE]);
+    opts.a11y && removeAttribute(togglers, ARIA_CONTROLS, ARIA_EXPANDED, ROLE);
 
     baseDestroy(this, destroyOpts);
 
     return this;
   }
 
-  init() {
-    if (this.isInit) return;
-
-    this.emit(EVENT_BEFORE_INIT);
-
-    this._update();
-
-    return callInitShow(this);
-  }
   updateTriggers() {
     const { opts, id } = this;
 
@@ -135,7 +153,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
           toggleClass(
             toggler,
             opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-            !!this.isShown,
+            !!this.isOpen,
           );
           this.on(toggler, EVENT_CLICK, (event) => {
             event.preventDefault();
@@ -147,41 +165,43 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     ));
   }
   async toggle(s, params) {
-    const { base, transition, togglers, opts, emit, isShown, isAnimating } =
-      this;
+    const { base, togglers, opts, emit, isOpen, isAnimating } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isShown;
+    s ??= !isOpen;
 
-    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isShown))
+    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
       return;
 
-    this.isShown = s;
+    this.isOpen = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition.cancel();
+      await this[TRANSITION].cancel();
     }
 
     const eventParams = { trigger, event };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
+    s && toggleHideModeState(true, this);
+
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+    const promise = this[TRANSITION]?.run(s, animated);
+
     a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
     toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
     toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
-    const promise = transition.run(s, animated, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams),
-      [EVENT_DESTROY]: () =>
-        this.destroy({ remove: true, destroyTransition: false }),
+    awaitPromise(promise, () => {
+      !s && toggleHideModeState(false, this);
+      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      if (!s && opts[OPTION_AUTODESTROY]) {
+        opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });
+      }
     });
-
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
 
     animated && awaitAnimation && (await promise);
 

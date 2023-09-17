@@ -12,7 +12,11 @@ export default (type = DIV, props, ...content) => {
       if (name === CLASS) {
         addClass(elem, value);
       } else if (name === STYLE) {
-        addStyle(elem, value);
+        if (isString(value)) {
+          elem.style = value;
+        } else {
+          addStyle(elem, value);
+        }
       } else {
         setAttribute(elem, camelToKebab(name), value);
       }

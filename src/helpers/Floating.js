@@ -11,8 +11,6 @@ import {
   AVAILABLE_WIDTH,
   AVAILABLE_HEIGHT,
   body,
-  DATA_PREFIX,
-  UI_PREFIX,
   EVENT_SCROLL,
   EVENT_RESIZE,
   FLOATING_DATA_ATTRIBUTE,
@@ -20,7 +18,6 @@ import {
   INERT,
   DIALOG,
   ABSOLUTE,
-  FIXED,
   CANCEL,
   FLIP,
   SHRINK,
@@ -28,205 +25,170 @@ import {
   PLACEMENT,
   PADDING,
   OFFSET,
-  BOUNDARY_OFFSET,
   ARROW,
-  WEBKIT_PREFIX,
-  CLIP_PATH,
-  ARROW_OFFSET,
-  ARROW_PADDING,
   TRUE,
-  TOOLTIP,
-  DROPDOWN,
   POPOVER,
-  STYLE,
-  doc,
-  RIGHT,
-  BOTTOM,
   MODAL,
+  MODE,
+  POPOVER_API_SUPPORTED,
+  TOP_LAYER,
+  FIXED,
+  EVENT_KEYDOWN,
+  FOCUSABLE_ELEMENTS_SELECTOR,
+  KEY_TAB,
+  POPOVER_API_MODE_MANUAL,
+  UI_EVENT_PREFIX,
+  FALSE,
+  FLOATING,
+  CLASS,
+  CENTER,
+  AUTO,
+  CONTENT,
 } from "./constants";
 import {
   createElement,
-  kebabToCamel,
-  createInset,
   getPosition,
   returnArray,
   isOverflowElement,
   observeResize,
   resizeObserver,
+  ResetFloatingCssVariables,
+  collectCssVariables,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
-import { parents, setAttribute } from "./dom";
+import {
+  getBoundingClientRect,
+  getPropertyValue,
+  parents,
+  setAttribute,
+  focus,
+} from "./dom";
 
-const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
-  ? CLIP_PATH
-  : WEBKIT_PREFIX + CLIP_PATH;
-const valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
-const registerProperty = CSS.registerProperty;
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-const getBoundingClientRect = (elem, useScale) => {
-  const rect = elem.getBoundingClientRect().toJSON();
+import { isDialog } from "./is/index.js";
+import FocusGuards from "./modules/FocusGuards.js";
 
-  if (!useScale) return rect;
-
-  const vV = visualViewport;
-  const hasScale = vV.scale > 1.01 || vV.scale < 0.99;
-  const iosScale = window.innerWidth / document.documentElement.clientWidth;
-  const hasIosScale = iosScale > 1.01 || iosScale < 0.99;
-  const keyboardOpen = vV.height !== window.innerHeight;
-
-  if (
-    (!hasScale && hasIosScale) ||
-    (keyboardOpen && hasScale && hasIosScale) ||
-    (!hasScale && keyboardOpen && isIOS)
-  ) {
-    rect[TOP] += vV.offsetTop;
-    rect[LEFT] += vV.offsetLeft;
-    rect[RIGHT] = rect[LEFT] + rect[WIDTH];
-    rect[BOTTOM] = rect[TOP] + rect[HEIGHT];
-  }
-
-  return rect;
-};
-
-let css = "";
-[TOOLTIP, DROPDOWN, POPOVER].forEach((name) => {
-  const PREFIX = VAR_UI_PREFIX + name + "-";
-  [
-    STICKY,
-    FLIP,
-    SHRINK,
-    PLACEMENT,
-    PADDING,
-    OFFSET,
-    BOUNDARY_OFFSET,
-    ARROW_OFFSET,
-    ARROW_PADDING,
-  ].forEach((prop) => {
-    if (registerProperty) {
-      registerProperty({
-        name: PREFIX + prop,
-        syntax: "*",
-        inherits: false,
-      });
-    } else {
-      css += PREFIX + prop + ":;";
-    }
-  });
-});
-if (!registerProperty) {
-  doc.head.appendChild(createElement(STYLE, false, `*{${css}}`));
-}
-
-const DIALOG_MODE = MODAL + "-" + POPOVER;
+ResetFloatingCssVariables();
 
 export default class Floating {
-  constructor({ target, anchor, arrow, opts, root = body, name = "" }) {
+  constructor({
+    target,
+    anchor,
+    arrow,
+    opts,
+    name = "",
+    base,
+    onTopLayer,
+    defaultTopLayerOpts,
+    hide,
+    teleport,
+  }) {
     const { on, off } = new EventHandler();
-    Object.assign(this, { target, anchor, arrow, opts, root, name, on, off });
+
+    Object.assign(this, {
+      target,
+      anchor,
+      arrow,
+      opts,
+      name,
+      on,
+      off,
+      base,
+      onTopLayer,
+      defaultTopLayerOpts,
+      hide,
+      teleport,
+    });
   }
-  recalculate() {
-    const { target, anchor, arrow, opts, name } = this;
-    const anchorScrollParents = parents(anchor, isOverflowElement);
-    const targetStyles = getComputedStyle(target);
-    const anchorStyles = getComputedStyle(anchor);
+  init() {
+    const { target, anchor, arrow, opts, name, base, on, defaultTopLayerOpts } =
+      this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
-    let pendingUpdate = false;
 
-    const minHeight = parseFloat(targetStyles.minHeight);
-    const minWidth = parseFloat(targetStyles.minWidth);
+    const anchorScrollParents = parents(anchor, isOverflowElement);
+    const anchorStyles = getComputedStyle(anchor);
+    const targetStyles = getComputedStyle(target);
 
-    let [sticky, flip, shrink, placement] = [
+    let [flip, sticky, shrink, placement, topLayer] = [
       STICKY,
       FLIP,
       SHRINK,
       PLACEMENT,
+      TOP_LAYER,
     ].map(
       (name) =>
-        anchorStyles.getPropertyValue(PREFIX + name).trim() ||
-        targetStyles.getPropertyValue(PREFIX + name).trim(),
+        getPropertyValue(anchorStyles, PREFIX + name) ||
+        getPropertyValue(targetStyles, PREFIX + name),
     );
 
     flip = flip
       ? flip.split(" ").map((v) => v === TRUE)
       : returnArray(opts[FLIP]);
+
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
-    placement ||= opts[PLACEMENT];
+    this.topLayer = topLayer =
+      topLayer === FALSE ? false : opts.topLayer || defaultTopLayerOpts;
 
-    const absolute = opts.mode === ABSOLUTE;
-    const valuesNames = [
-      PADDING,
-      OFFSET,
-      BOUNDARY_OFFSET,
-      ARROW_OFFSET,
-      ARROW_PADDING,
-    ];
-    const values = valuesNames
-      .map((name) => {
-        let value =
-          anchorStyles.getPropertyValue(PREFIX + name).trim() ||
-          targetStyles.getPropertyValue(PREFIX + name).trim();
-        if (!value) return;
-        value = value.split(" ");
-        if (name === BOUNDARY_OFFSET) {
-          value = createInset(value, true);
-        } else {
-          value[1] ??= value[0];
-        }
-        return { name, value };
-      })
-      .filter(Boolean);
+    this[PLACEMENT] = placement =
+      base.getAttribute(DATA_UI_PREFIX + PLACEMENT) ||
+      placement ||
+      opts[PLACEMENT];
 
-    const polygonValues = values
-      .map(({ name, value }) => {
-        if (name === BOUNDARY_OFFSET) {
-          const valueEnd = value.splice(2).join(" ");
-          value = value.join(" ");
-          return [value, valueEnd].join(",");
-        }
-        return value.join(" ");
-      })
-      .join(",");
+    this[CLASS] =
+      base.getAttribute(DATA_UI_PREFIX + FLOATING + "-" + CLASS) ??
+      opts.floatingClass;
+
+    const mode = (this[MODE] =
+      base.getAttribute(DATA_UI_PREFIX + MODE) || opts[MODE]);
+
+    const usePopoverApi =
+      topLayer && mode !== MODAL && opts.popoverApi && POPOVER_API_SUPPORTED;
+
+    const inTopLayer =
+      (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
+      mode === MODAL;
+
+    const moveToRoot = topLayer && opts.topLayerForce;
+
+    const useFocusGuards =
+      (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
 
     const wrapper = this.createWrapper(
-      values.length
-        ? { [CLIP_PATH_PROPERTY]: `polygon(${polygonValues})` }
-        : {},
+      placement,
+      mode,
+      moveToRoot,
+      usePopoverApi,
     );
-    const wrapperComputedStyle = getComputedStyle(this.wrapper);
-    const wrapperStyle = wrapper.style;
 
-    const computedValues = wrapperComputedStyle[CLIP_PATH_PROPERTY].slice(8, -1)
-      .split(",")
-      .values();
+    if (moveToRoot && mode !== MODAL && !opts.focusTrap) {
+      on(anchor, EVENT_KEYDOWN, (e) => {
+        if (e.keyCode === KEY_TAB && !e.shiftKey) {
+          const focusElem = target.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
+          if (focusElem) {
+            e.preventDefault();
+            focus(focusElem);
+          }
+        }
+      });
+    }
+
+    if (placement === DIALOG) return this;
+
+    const wrapperStyle = wrapper.style;
 
     const {
       padding,
       offset = opts.offset,
       boundaryOffset = opts.boundaryOffset,
-      arrowPadding = opts[ARROW]?.padding ?? 0,
-      arrowOffset = opts[ARROW]?.offset ?? 0,
-    } = values.length
-      ? Object.fromEntries(
-          values.map(({ name }) => {
-            let value = valuesToArray(computedValues.next());
-            if (name === BOUNDARY_OFFSET) {
-              value = [...value, ...valuesToArray(computedValues.next())];
-            } else if (name === OFFSET || name === ARROW_OFFSET) {
-              value = value[0];
-            }
-            return [kebabToCamel(name), value];
-          }),
-        )
-      : {};
+      arrowPadding,
+      arrowOffset,
+      arrowWidth,
+      arrowHeight,
+      wrapperComputedStyle,
+    } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
 
-    if (values.length) {
-      wrapperStyle.removeProperty(CLIP_PATH_PROPERTY);
-    }
-
-    const arrowRect = arrow && getBoundingClientRect(arrow);
-    let anchorRect = getBoundingClientRect(arrow, !absolute);
+    let anchorRect = getBoundingClientRect(anchor);
 
     const targetRect = {};
     [WIDTH, HEIGHT].forEach((size) => {
@@ -238,48 +200,67 @@ export default class Floating {
       );
     });
 
-    const arrowData = arrow && {
-      [WIDTH]: arrowRect[WIDTH],
-      [HEIGHT]: arrowRect[HEIGHT],
-      [PADDING]: arrowPadding,
-      [OFFSET]: arrowOffset,
-    };
+    let arrowData;
+    if (arrow || arrowWidth || arrowHeight) {
+      arrowData = {
+        [WIDTH]: arrowWidth?.[0] || arrow?.offsetWidth,
+        [HEIGHT]: arrowHeight?.[0] || arrow?.offsetHeight,
+      };
+      arrowData[PADDING] = arrowPadding ?? opts[ARROW]?.padding ?? 0;
+      arrowData[OFFSET] = arrowOffset ?? opts[ARROW]?.offset ?? 0;
+    }
 
     const params = {
       anchorRect,
       targetRect,
       arrow: arrowData,
       placement,
-      absolute,
+      inTopLayer,
       flip,
       sticky,
       shrink,
       offset,
       boundaryOffset,
       padding,
-      minHeight,
-      minWidth,
+      minHeight: parseFloat(targetStyles.minHeight) || 0,
+      minWidth: parseFloat(targetStyles.minWidth) || 0,
     };
 
+    let prevTop = 0;
+    let pendingUpdate = false;
     const updatePosition = () => {
       if (pendingUpdate) return;
       pendingUpdate = true;
 
-      anchorRect = getBoundingClientRect(anchor, !absolute);
+      anchorRect = getBoundingClientRect(anchor);
 
-      if (absolute) {
-        anchorRect.left = anchor.offsetLeft;
-        anchorRect.top = anchor.offsetTop;
+      if (!inTopLayer) {
+        anchorRect.left = anchorRect.x = anchor.offsetLeft;
+        anchorRect.top = anchorRect.y = anchor.offsetTop;
         anchorRect.right = anchor.offsetLeft + anchorRect.width;
         anchorRect.bottom = anchor.offsetTop + anchorRect.height;
       }
 
       const position = getPosition({ ...params, anchorRect });
 
+      if (inTopLayer) {
+        position.top += window.scrollY;
+        position.left += window.scrollX;
+      }
+
+      if (prevTop && Math.abs(prevTop - position.top) > 50) {
+        prevTop = position.top;
+        requestAnimationFrame(() => {
+          pendingUpdate = false;
+        });
+        return updatePosition();
+      }
+      prevTop = position.top;
+
       setAttribute(
         wrapper,
         DATA_UI_PREFIX + "current-" + PLACEMENT,
-        position.placement,
+        position[PLACEMENT],
       );
 
       if (shrink) {
@@ -287,7 +268,8 @@ export default class Floating {
           wrapperStyle.setProperty(PREFIX + name, position[name] + PX),
         );
       }
-      if (arrow) {
+
+      if (arrowData) {
         [LEFT, TOP].forEach((dir, i) =>
           wrapperStyle.setProperty(
             PREFIX + ARROW + "-" + dir,
@@ -297,14 +279,10 @@ export default class Floating {
       }
       wrapperStyle.setProperty(
         PREFIX + "transform-origin",
-        position.transformOrigin[0] +
-          PX +
-          " " +
-          position.transformOrigin[1] +
-          PX,
+        `${position.transformOrigin[0]}px ${position.transformOrigin[1]}px`,
       );
 
-      wrapperStyle.transform = `translate3d(${position.left}px,${position.top}px,0)`;
+      wrapperStyle.translate = `${position.left}px ${position.top}px 0`;
 
       requestAnimationFrame(() => {
         pendingUpdate = false;
@@ -319,87 +297,140 @@ export default class Floating {
 
     updatePosition();
 
-    this.on(
-      anchorScrollParents,
-      EVENT_SCROLL,
-      () => {
-        updatePosition();
-      },
-      {
-        passive: true,
-      },
-    );
-    this.on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
-      passive: false,
+    this._toggleApi(useFocusGuards);
+
+    on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
+      passive: true,
     });
-    this.on(window, EVENT_SCROLL, updatePosition, {
+    on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
+      passive: true,
+    });
+    on(window, EVENT_SCROLL, updatePosition, {
       passive: true,
     });
     this.updatePosition = updatePosition.bind(this);
     return this;
   }
 
-  createWrapper(style = {}) {
-    const {
-      target,
-      root,
-      name,
-      on,
-      off,
+  _toggleApi(useFocusGuards) {
+    const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
+    const wrapperIsDialog = isDialog(wrapper);
+    const isModal =
+      mode === MODAL && (!opts.safeModal || POPOVER_API_SUPPORTED);
+    const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
 
-      opts: { mode, interactive, focusTrap, escapeHide },
-    } = this;
-    const attributes = {
-      style: {
-        position: mode === ABSOLUTE ? ABSOLUTE : FIXED,
-        top: 0,
-        left: 0,
-        zIndex: 999,
-        margin: 0,
-        padding: 0,
-        background: NONE,
-        maxWidth: NONE,
-        maxHeight: NONE,
-        willChange: "transform",
-        width: "fit-content",
-        height: "fit-content",
-        minWidth: "max-content",
-        display: "block",
-        overflow: "unset",
-        ...style,
-      },
-      [FLOATING_DATA_ATTRIBUTE]: "",
-      [DATA_PREFIX + UI_PREFIX + name + "-wrapper"]: "",
+    if (wrapperIsDialog) {
+      if (isModal) {
+        if (wrapper.open) wrapper.close();
+        wrapper.showModal();
+        onTopLayer?.(MODAL);
+      } else {
+        if (isPopover) {
+          wrapper.showPopover();
+          wrapper.open = true;
+          onTopLayer?.(POPOVER);
+        } else {
+          wrapper.show();
+        }
+      }
+      this.on(wrapper, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
+    } else if (isPopover) {
+      wrapper.showPopover();
+      onTopLayer?.(POPOVER);
+    }
+
+    if (useFocusGuards) {
+      this.focusGuards = new FocusGuards(target, {
+        focusAfterAnchor: !opts.focusTrap,
+        anchor,
+        topLayer,
+        strategy: ABSOLUTE,
+        onFocusOut: () => {
+          if (wrapperIsDialog) {
+            this.hide?.();
+          }
+        },
+      });
+    }
+  }
+
+  createWrapper(placement, mode, moveToRoot, usePopoverApi) {
+    const { target, name, anchor, opts } = this;
+
+    const style = {
+      zIndex: `var(${VAR_UI_PREFIX}top-layer-z-index,999)`,
+      margin: 0,
+      padding: 0,
+      background: NONE,
+      maxWidth: NONE,
+      maxHeight: NONE,
+      overflow: "unset",
+      pointerEvents: NONE,
+      display: "flex",
+      justifyContent: CENTER,
+      alignItems: CENTER,
     };
 
-    if (interactive !== undefined && !interactive) {
+    if (placement === DIALOG) {
+      style.position = FIXED;
+      style.inset = 0;
+      style.height = AUTO;
+      style.width = AUTO;
+    } else {
+      style.position = ABSOLUTE;
+      style.inset = AUTO;
+      style.left = 0;
+      style.top = 0;
+      style.height = style.width = "fit-" + CONTENT;
+      style.willChange = "transform";
+      style.minWidth = "max-" + CONTENT;
+    }
+
+    const attributes = {
+      style,
+      class: this.class,
+      [FLOATING_DATA_ATTRIBUTE]: name,
+      [DATA_UI_PREFIX + FLOATING + "-" + MODE]: mode,
+    };
+
+    if (usePopoverApi) {
+      attributes[POPOVER] = POPOVER_API_MODE_MANUAL;
+    }
+
+    if (opts.interactive !== undefined && !opts.interactive) {
       attributes[INERT] = "";
       attributes.style.pointerEvents = NONE;
+    } else {
+      target.style.pointerEvents = AUTO;
     }
+
     const wrapper = (this.wrapper = createElement(
-      mode === DIALOG_MODE ? DIALOG : DIV,
+      mode === MODAL || mode === DIALOG ? DIALOG : DIV,
       attributes,
-      target,
     ));
-    root.append(wrapper);
-    if (mode === DIALOG_MODE) {
-      if (focusTrap) {
-        wrapper.showModal();
-      } else {
-        wrapper.show();
-      }
-      if (escapeHide) {
-        on(wrapper, CANCEL, (e) => e.preventDefault());
-      } else {
-        off(wrapper, CANCEL);
-      }
+
+    if (this.teleport) {
+      this.teleport.opts.to = wrapper;
+      this.teleport.move();
     }
+
+    if (moveToRoot) {
+      body.append(wrapper);
+    } else {
+      anchor.after(wrapper);
+    }
+
     return wrapper;
   }
   destroy() {
     this.off();
     resizeObserver.unobserve(this.target);
     this.wrapper.close?.();
+    if (this.wrapper.popover && POPOVER_API_SUPPORTED) {
+      this.wrapper.hidePopover();
+    }
+    this.focusGuards?.destroy();
     this.wrapper.remove();
+    this.teleport.reset();
   }
 }

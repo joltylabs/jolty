@@ -2,13 +2,10 @@ import {
   EVENT_BEFORE_INIT,
   EVENT_BEFORE_DESTROY,
   EVENT_BEFORE_SHOW,
-  EVENT_SHOWN,
   EVENT_BEFORE_HIDE,
-  EVENT_HIDDEN,
   CLASS,
   HOVER,
   FOCUS,
-  ACTION_REMOVE,
   TOP,
   ANCHOR,
   TARGET,
@@ -21,11 +18,8 @@ import {
   TITLE,
   CONTENT,
   TOOLTIP,
-  body,
   CLASS_ACTIVE_SUFFIX,
-  HIDE_MODE,
-  MODE,
-  ABSOLUTE,
+  TRANSITION,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -45,13 +39,13 @@ import {
   getClassActive,
 } from "./helpers/utils";
 import {
-  addDismiss,
   baseDestroy,
-  toggleOnInterection,
   floatingTransition,
-  callInitShow,
-  awaitPromise,
+  callShowInit,
+  toggleOnInterection,
+  addDismiss,
 } from "./helpers/modules";
+import Teleport from "./helpers/Teleport.js";
 
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
@@ -59,6 +53,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
+    delay: [200, 0],
     eventPrefix: getEventsPrefix(TOOLTIP),
     placement: TOP,
     template: (content) =>
@@ -78,18 +73,17 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     super(elem, opts);
   }
   _update() {
-    const { tooltip, opts, transition } = this;
+    const { tooltip, base, opts } = this;
 
     this.transition = Transition.createOrUpdate(
-      transition,
+      this[TRANSITION],
       tooltip,
-      opts.transition,
-      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
+      opts[TRANSITION],
     );
 
-    opts[MODE] =
-      this[ANCHOR].getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + MODE) ??
-      opts[MODE];
+    addDismiss(this, tooltip);
+
+    toggleOnInterection(this, base, tooltip);
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
@@ -138,47 +132,43 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     this._update();
 
-    toggleOnInterection({ anchor, target, instance: this });
+    this.teleport = new Teleport(target, { disableAttributes: true });
 
-    addDismiss(this, target);
-
-    return callInitShow(this, target);
+    return callShowInit(this, target);
   }
 
   async toggle(s, params) {
-    const {
-      transition,
-      anchor,
-      tooltip,
-      id,
-      opts,
-      emit,
-      _cache,
-      isShown,
-      isAnimating,
-    } = this;
+    const { anchor, tooltip, id, opts, emit, _cache, isOpen, isAnimating } =
+      this;
     const awaitAnimation = opts.awaitAnimation;
     const { animated, trigger, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
-    s ??= !isShown;
+    s ??= !isOpen;
 
     if (
       (!ignoreConditions &&
-        ((awaitAnimation && isAnimating) || s === isShown)) ||
+        ((awaitAnimation && isAnimating) || s === isOpen)) ||
       (!s && !inDOM(tooltip))
     )
       return;
 
-    this.isShown = s;
+    this.isOpen = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition.cancel();
+      await this[TRANSITION].cancel();
     }
 
     const eventParams = { event, trigger };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+
+    const promise = floatingTransition(this, {
+      s,
+      animated,
+      silent,
+      eventParams,
+    });
 
     if (opts.a11y) {
       setAttribute(
@@ -194,23 +184,6 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     }
 
     toggleClass(anchor, opts[ANCHOR + CLASS_ACTIVE_SUFFIX], s);
-
-    if (s) {
-      opts.mode === ABSOLUTE
-        ? anchor.after(tooltip)
-        : body.appendChild(tooltip);
-    }
-
-    const promise = floatingTransition(this, {
-      s,
-      animated,
-      silent,
-      eventParams,
-    });
-
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
 
     animated && awaitAnimation && (await promise);
 

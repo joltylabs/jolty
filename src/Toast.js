@@ -1,5 +1,4 @@
 import {
-  EVENT_DESTROY,
   EVENT_BEFORE_SHOW,
   EVENT_SHOW,
   EVENT_SHOWN,
@@ -8,8 +7,22 @@ import {
   EVENT_HIDDEN,
   body,
   DEFAULT_OPTIONS,
-  ACTION_DESTROY,
   HIDE_MODE,
+  POPOVER_API_SUPPORTED,
+  POPOVER_API_MODE_MANUAL,
+  POPOVER,
+  ACTION_REMOVE,
+  HIDDEN,
+  TRANSITION,
+  ROLE,
+  ARIA_LIVE,
+  ALERT,
+  STATUS,
+  ARIA_ATOMIC,
+  OPTION_ARIA_LIVE,
+  A11Y,
+  TABINDEX,
+  REGION,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
 import { fragment, inDOM } from "./helpers/dom";
@@ -19,12 +32,15 @@ import {
   getEventsPrefix,
   callOrReturn,
   getOptionElem,
+  isShown,
+  awaitPromise,
 } from "./helpers/utils";
 import {
   addDismiss,
-  awaitPromise,
+  toggleHideModeState,
   baseDestroy,
-  callInitShow,
+  callShowInit,
+  updateModule,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -36,11 +52,24 @@ const TOAST = "toast";
 const positions = {};
 const wrappers = new Map();
 const _containers = {};
+
+const A11Y_DEFAULTS = {
+  [STATUS]: {
+    [ROLE]: STATUS,
+    [OPTION_ARIA_LIVE]: "polite",
+  },
+  [ALERT]: {
+    [ROLE]: ALERT,
+    [OPTION_ARIA_LIVE]: "assertive",
+  },
+};
+
 class Toast extends ToggleMixin(Base, TOAST) {
   static _templates = {};
-
+  static DefaultA11y = { ...A11Y_DEFAULTS[STATUS] };
   static Default = {
     ...DEFAULT_OPTIONS,
+    shown: true,
     eventPrefix: getEventsPrefix(TOAST),
     root: null,
     container: "",
@@ -51,6 +80,10 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limitAnimateEnter: true,
     limitAnimateLeave: true,
     autohide: false,
+    topLayer: true,
+    popoverApi: true,
+    keepTopLayer: true,
+    a11y: STATUS,
   };
   constructor(elem, opts) {
     if (isObject(elem)) {
@@ -61,14 +94,23 @@ class Toast extends ToggleMixin(Base, TOAST) {
   }
   _update() {
     const { opts, base, autohide, hide } = this;
+
+    const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
+
     if (!opts.root && inDOM(base)) {
       this.root = base.parentElement;
     } else {
       this.root = opts.root ? getOptionElem(this, opts.root) : body;
     }
-    this.transition = new Transition(base, opts.transition, {
-      [HIDE_MODE]: ACTION_DESTROY,
-    });
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+
+    this[TRANSITION] = Transition.createOrUpdate(
+      this[TRANSITION],
+      base,
+      opts[TRANSITION],
+    );
     this.autohide = Autoaction.createOrUpdate(
       autohide,
       base,
@@ -76,11 +118,17 @@ class Toast extends ToggleMixin(Base, TOAST) {
       opts.autohide,
     );
 
-    return this;
+    if (a11y) {
+      base.setAttribute(ARIA_ATOMIC, true);
+      base.setAttribute(ROLE, a11y[ROLE]);
+      base.setAttribute(ARIA_LIVE, a11y[OPTION_ARIA_LIVE]);
+    }
+
+    addDismiss(this);
   }
-  destroy(opts) {
+  destroy(destroyOpts) {
     if (!this.isInit) return;
-    baseDestroy(this, { remove: true, ...opts });
+    baseDestroy(this, { remove: true, ...destroyOpts });
     return this;
   }
   init() {
@@ -88,9 +136,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     this._update();
 
-    addDismiss(this);
-
-    return callInitShow(this);
+    return callShowInit(this);
   }
   async toggle(s, params) {
     const {
@@ -101,6 +147,10 @@ class Toast extends ToggleMixin(Base, TOAST) {
         limitAnimateEnter,
         position,
         container,
+        popoverApi,
+        topLayer,
+        keepTopLayer,
+        hideMode,
       },
       autohide,
       base,
@@ -108,14 +158,13 @@ class Toast extends ToggleMixin(Base, TOAST) {
       instances,
       constructor,
       emit,
-      destroy,
     } = this;
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
 
-    if (animated && transition.isAnimating) return;
+    if (animated && transition?.isAnimating) return;
 
-    s ??= !transition.isShown;
+    s ??= !isShown(base, hideMode);
 
     let preventAnimation;
 
@@ -139,13 +188,25 @@ class Toast extends ToggleMixin(Base, TOAST) {
       if (root) {
         let to = root;
         if (position) {
-          const wrapper = (to = constructor.getWrapper({
+          const wrapper = (to = constructor.getContainer({
             position,
             root,
             container,
+            keepTopLayer,
           }));
+
+          if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+            wrapper[POPOVER] = POPOVER_API_MODE_MANUAL;
+          } else {
+            wrapper[POPOVER] = null;
+          }
+
           if (wrapper && wrapper.parentElement !== root) {
             root.append(wrapper);
+          }
+          if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+            wrapper.hidePopover();
+            wrapper.showPopover();
           }
         }
         to.append(base);
@@ -158,16 +219,17 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     autohide && autohide.toggleInterections(s);
 
-    const promise = transition.run(s, animated && !preventAnimation, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams),
-      [EVENT_DESTROY]: () =>
-        destroy({ remove: true, destroyTransition: false }),
-    });
+    s && toggleHideModeState(true, this);
 
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+    const promise = transition?.run(s, animated && !preventAnimation);
+
+    awaitPromise(promise, () => {
+      !s && toggleHideModeState(false, this);
+      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      !s && this.destroy({ remove: true });
+    });
 
     animated && (await promise);
 
@@ -186,10 +248,18 @@ class Toast extends ToggleMixin(Base, TOAST) {
       wrapper.remove();
     }
 
+    this.container = wrapper;
+
     return this;
   }
 
-  static getWrapper({ position, root = body, container = "" }) {
+  static getContainer({
+    position,
+    root = body,
+    container = "",
+    keepTopLayer,
+    a11y,
+  }) {
     let rootWrappers = wrappers.get(root);
     if (!rootWrappers) {
       rootWrappers = new Set();
@@ -211,7 +281,12 @@ class Toast extends ToggleMixin(Base, TOAST) {
         : container(containerParams),
     );
 
-    rootWrappers.add({ wrapper, container, position, root });
+    if (a11y) {
+      wrapper[TABINDEX] = -1;
+      wrapper.role = REGION;
+    }
+
+    rootWrappers.add({ wrapper, container, position, root, keepTopLayer });
     return wrapper;
   }
   static addPosition(position, container = "") {
@@ -239,6 +314,21 @@ class Toast extends ToggleMixin(Base, TOAST) {
     if (!opts) return _containers[name];
     _containers[name] = opts;
     return this;
+  }
+  static forceTopLayer() {
+    [...wrappers.values()].forEach((set) => {
+      set.forEach(({ wrapper, root, keepTopLayer }) => {
+        if (
+          keepTopLayer &&
+          POPOVER_API_SUPPORTED &&
+          wrapper.popover &&
+          root.contains(wrapper)
+        ) {
+          wrapper.hidePopover();
+          wrapper.showPopover();
+        }
+      });
+    });
   }
 }
 

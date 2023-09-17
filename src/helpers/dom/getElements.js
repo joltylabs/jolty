@@ -1,8 +1,13 @@
-import { isElement, isString, isIterable, isHTML } from "../is";
-import { arrayUnique, returnArray, arrayFrom } from "../utils";
-import { getElement, is } from "../dom";
-import { WINDOW, DOCUMENT, doc } from "../constants";
-import { fragment } from "./index.js";
+import { doc, DOCUMENT, WINDOW } from "../constants/index.js";
+import isElement from "../is/isElement.js";
+import isString from "../is/isString.js";
+import isHTML from "../is/isHTML.js";
+import isIterable from "../is/isIterable.js";
+import is from "./is.js";
+import arrayFrom from "../utils/arrayFrom.js";
+import returnArray from "../utils/returnArray.js";
+import arrayUnique from "../utils/arrayUnique.js";
+import fragment from "./fragment.js";
 
 export default function getElements(selector, context = doc, findSelf = false) {
   if (isElement(selector)) {
@@ -10,7 +15,7 @@ export default function getElements(selector, context = doc, findSelf = false) {
   }
   let result = selector;
   if (isString(context)) {
-    context = getElement(context);
+    context = doc.querySelector(context);
   }
   if (!isElement(context) || !selector) return [];
   if (isString(selector)) {

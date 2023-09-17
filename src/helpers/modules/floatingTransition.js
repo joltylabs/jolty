@@ -1,59 +1,96 @@
-import { EVENT_SHOW, EVENT_HIDE, ARROW, doc } from "../constants";
+import {
+  EVENT_SHOW,
+  EVENT_HIDE,
+  ARROW,
+  doc,
+  EVENT_SHOWN,
+  EVENT_HIDDEN,
+  FLOATING,
+  EVENT_ACTION_OUTSIDE,
+  MODAL,
+  POPOVER_API_SUPPORTED,
+  POPOVER_API_MODE_MANUAL,
+} from "../constants";
 import { getDataSelector } from "../utils";
-import { addOutsideHide, addEscapeHide } from "../modules";
 import Floating from "../Floating.js";
+import { closest, focus } from "../dom/index.js";
+import addEscapeHide from "./addEscapeHide.js";
+import callAutofocus from "./callAutofocus.js";
+import toggleHideModeState from "./toggleHideModeState.js";
 
 export default (instance, { s, animated, silent, eventParams }) => {
-  const { transition, base, opts, toggler, emit, constructor } = instance;
+  const { transition, base, opts, toggler, emit, constructor, teleport } =
+    instance;
   const name = constructor.NAME;
   const target = instance[name];
-  const transitionParams = { allowRemove: false };
-  transition.parent = null;
+  const anchor = toggler ?? base;
 
-  if (!silent && !s) {
-    emit(EVENT_HIDE, eventParams);
+  s && toggleHideModeState(true, instance, target);
+
+  if (s) {
+    instance[FLOATING] = new Floating({
+      teleport,
+      base,
+      anchor,
+      target,
+      arrow: target.querySelector(getDataSelector(name, ARROW)),
+      opts,
+      hide: instance.hide,
+      defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
+      name,
+      onTopLayer(type) {
+        constructor.dispatchTopLayer(type);
+      },
+    }).init();
+  }
+
+  !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+
+  const wrapper = instance[FLOATING]?.wrapper;
+
+  if (!s && wrapper?.matches(":" + MODAL)) {
+    wrapper.close();
+    if (opts.popoverApi && POPOVER_API_SUPPORTED) {
+      wrapper.popover = POPOVER_API_MODE_MANUAL;
+      wrapper.showPopover();
+    }
+  }
+
+  const promise = transition?.run(s, animated);
+
+  if (s && opts.outsideHide) {
+    instance.on(
+      doc,
+      EVENT_ACTION_OUTSIDE,
+      (event) =>
+        !closest(event.target, [toggler ?? base, target]) &&
+        instance.hide({ event }),
+    );
+  } else {
+    instance.off(doc, EVENT_ACTION_OUTSIDE);
   }
 
   if (s) {
-    transitionParams[EVENT_SHOW] = () => {
-      const root = target.parentNode;
-      const arrow = target.querySelector(getDataSelector(name, ARROW));
-
-      instance.floating = new Floating({
-        anchor: toggler ?? base,
-        target,
-        arrow,
-        opts,
-        root,
-        name,
-      }).recalculate();
-
-      if (!silent) {
-        emit(EVENT_SHOW, eventParams);
-      }
-    };
-  }
-
-  !s && instance?.floating?.wrapper.close?.();
-
-  const promise = transition.run(s, animated, transitionParams);
-
-  if (s) {
-    opts.outsideHide && addOutsideHide(instance, s, [toggler ?? base, target]);
     opts.escapeHide && addEscapeHide(instance, s, doc);
+    opts.autofocus && callAutofocus(instance);
+  } else {
+    !s && target.contains(doc.activeElement) && focus(toggler);
   }
 
-  !s &&
-    (async () => {
+  (async () => {
+    if (!s) {
       if (animated) {
         await promise;
       }
-      if (transition.placeholder) {
-        instance.floating.wrapper.replaceWith(transition.placeholder);
+      if (instance.placeholder) {
+        wrapper.replaceWith(instance.placeholder);
       }
-      instance.floating?.destroy();
-      instance.floating = null;
-    })();
+      instance[FLOATING]?.destroy();
+      instance[FLOATING] = null;
+      toggleHideModeState(false, instance, target);
+    }
+    emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+  })();
 
   return promise;
 };

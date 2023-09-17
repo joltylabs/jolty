@@ -11,23 +11,23 @@ import {
   CENTER,
   END,
   MIRROR,
-} from "../constants";
-import { isArray } from "../is";
-import { createInset } from "./index.js";
+} from "../../constants/index.js";
+import isArray from "../../is/isArray.js";
+import createInset from "./createInset.js";
 
 const { min, max } = Math;
 
 export default function ({
-  absolute,
   anchorRect,
   targetRect,
   arrow,
   placement,
+  inTopLayer,
   boundaryOffset = 0,
   offset = 0,
   padding = 0,
   shrink = false,
-  flip = true,
+  flip = false,
   sticky = false,
   minWidth = 0,
   minHeight = 0,
@@ -36,17 +36,17 @@ export default function ({
 
   const viewRect = visualViewport;
 
-  if (absolute) {
-    flip = false;
-    shrink = false;
-    sticky = false;
-  }
-
   flip = isArray(flip) ? flip : [flip];
   flip[1] ??= flip[0];
 
   padding = isArray(padding) ? padding : [padding];
   padding[1] ??= padding[0];
+
+  if (!inTopLayer) {
+    shrink = false;
+    flip = false;
+    sticky = false;
+  }
 
   const [baseM, baseS = CENTER] = placement.split("-");
   const hor = baseM === LEFT || baseM === RIGHT;
@@ -75,8 +75,8 @@ export default function ({
     const anchorSpace = {
       [TOP]: anchorRect[TOP],
       [LEFT]: anchorRect[LEFT],
-      [RIGHT]: viewRect[WIDTH] - anchorRect[RIGHT],
-      [BOTTOM]: viewRect[HEIGHT] - anchorRect[BOTTOM],
+      [RIGHT]: viewRect[WIDTH] - anchorRect[LEFT] - anchorRect[WIDTH],
+      [BOTTOM]: viewRect[HEIGHT] - anchorRect[TOP] - anchorRect[HEIGHT],
     };
 
     anchorSpace[m] -= offset + boundaryOffset[m];
@@ -185,6 +185,7 @@ export default function ({
 
     let arrowPosition = {};
     if (arrow) {
+      // eslint-disable-next-line prefer-const
       let { padding = 0, offset = 0 } = arrow;
       padding = isArray(padding) ? padding : [padding];
       padding[1] ??= padding[0];
@@ -199,7 +200,8 @@ export default function ({
       }
 
       so += shift + max(0, -currentSize[mirrorSize] / 2);
-      let mo = -arrow[mirrorSize] / 2 + offset;
+
+      let mo = -arrow[mirrorSize] / 2 + (isMainDir ? -offset : offset);
       if (isMainDir) {
         mo += currentSize[size];
       }

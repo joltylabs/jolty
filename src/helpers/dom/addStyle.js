@@ -1,5 +1,7 @@
-import { isIterable, isObject } from "../is";
-import { camelToKebab } from "../utils";
+import isIterable from "../is/isIterable.js";
+import isObject from "../is/isObject.js";
+import camelToKebab from "../utils/camelToKebab.js";
+
 export default function addStyle(elem, name, value) {
   if (isIterable(elem)) {
     elem.forEach((elem) => addStyle(elem, name, value));

@@ -1,6 +1,7 @@
-import { returnArray, callOrReturn } from "./index.js";
-import { isString } from "../is";
 import { doc } from "../constants";
+import isString from "../is/isString.js";
+import returnArray from "./returnArray.js";
+import callOrReturn from "./callOrReturn.js";
 
 export default function (multiply, instance, option, root = doc, ...params) {
   if (!option) return;

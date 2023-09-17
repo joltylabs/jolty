@@ -1,6 +1,8 @@
-import { isElement, isIterable, isArray } from "../is";
-import { strToArray } from "../utils";
 import { ACTION_ADD, ACTION_REMOVE } from "../constants";
+import isArray from "../is/isArray.js";
+import isElement from "../is/isElement.js";
+import isIterable from "../is/isIterable.js";
+import strToArray from "../utils/strToArray.js";
 
 export default function toggleClass(elem, classes, s) {
   if (isArray(classes)) {

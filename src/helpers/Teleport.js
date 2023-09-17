@@ -1,56 +1,49 @@
 import {
   UI_PREFIX,
-  OPTION_TO,
-  OPTION_POSITION,
-  OPTION_KEEP_PLACE,
+  POSITION,
+  TELEPORT,
   doc,
+  DATA_UI_PREFIX,
 } from "./constants";
 import { isString, isObject } from "./is";
-import {
-  mergeDeep,
-  callOrReturn,
-  updateOptsByData,
-  upperFirst,
-  kebabToCamel,
-} from "./utils";
-const TELEPORT = "teleport";
-const TELEPORT_DATA_ATTRIBUTE = kebabToCamel(UI_PREFIX + TELEPORT);
-const TELEPORT_DATA_ATTRIBUTES = [
-  [OPTION_TO, TELEPORT],
-  [OPTION_POSITION, TELEPORT + upperFirst(OPTION_POSITION)],
-  [OPTION_KEEP_PLACE, TELEPORT + upperFirst(OPTION_KEEP_PLACE)],
-];
+import { mergeDeep, callOrReturn, getDatasetValue } from "./utils";
 
 class Teleport {
   static Default = {
-    [OPTION_TO]: false,
-    [OPTION_POSITION]: "beforeend",
-    [OPTION_KEEP_PLACE]: true,
+    to: false,
+    [POSITION]: "beforeend",
+    disableAttributes: false,
   };
   constructor(elem, opts = {}, defaultOpts) {
     this.elem = elem;
     this.update(opts, defaultOpts);
   }
   update(opts, defaultOpts = {}) {
-    const dataset = this.elem.dataset;
-    const defaultConfig = this.constructor.Default;
-    if (opts === false && !dataset[TELEPORT_DATA_ATTRIBUTE]) {
+    opts = isObject(opts) ? opts : { to: opts };
+    opts = mergeDeep(
+      this.constructor.Default,
+      defaultOpts,
+      opts,
+      getDatasetValue(this.elem, TELEPORT, "to"),
+    );
+
+    this.opts = opts;
+
+    if (!opts.to) {
       return this.destroy();
     }
-    opts = isObject(opts) ? opts : { to: opts };
-    opts = mergeDeep(defaultConfig, defaultOpts, opts);
-    this.opts = updateOptsByData(opts, dataset, TELEPORT_DATA_ATTRIBUTES);
+
     return this;
   }
   move(...toParameters) {
     const { opts, elem } = this;
-    const { position, keepPlace } = opts;
+    const { position } = opts;
     let to = callOrReturn(opts.to, ...toParameters);
     to = isString(to) ? doc.querySelector(to) : to;
+
     if (!to) return;
-    this.placeholder ||= keepPlace
-      ? doc.createComment(UI_PREFIX + TELEPORT + ":" + elem.id)
-      : null;
+    this.placeholder = doc.createComment(UI_PREFIX + TELEPORT + ":" + elem.id);
+
     if (this.placeholder) {
       elem.before(this.placeholder);
     }
@@ -68,7 +61,9 @@ class Teleport {
   static createOrUpdate(teleport, elem, opts, defaultOpts) {
     return teleport
       ? teleport.update(opts, defaultOpts)
-      : opts !== false || elem.dataset[TELEPORT_DATA_ATTRIBUTE]
+      : opts !== false ||
+        (!opts.disableAttributes &&
+          elem.getAttribute(DATA_UI_PREFIX + TELEPORT))
       ? new Teleport(elem, opts, defaultOpts)
       : null;
   }

@@ -12,6 +12,9 @@ import {
   ACTION_EMIT,
   ACTION_ONCE,
   doc,
+  POPOVER_API_SUPPORTED,
+  UI_PREFIX,
+  POPOVER,
 } from "./constants";
 import { isArray, isFunction, isHTML, isObject, isString } from "./is";
 import { getElement, fragment } from "./dom";
@@ -21,9 +24,14 @@ import {
   callOrReturn,
   getDataSelector,
   arrayFrom,
+  getDatasetValue,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import Breakpoints from "./Breakpoints";
+
+if (!POPOVER_API_SUPPORTED) {
+  document.documentElement.classList.add(UI_PREFIX + "no-" + POPOVER);
+}
 
 function getDataValue(_data, dataName, elem) {
   const value = callOrReturn(_data[dataName], elem);
@@ -35,6 +43,7 @@ function getDataValue(_data, dataName, elem) {
 
 class Base {
   static allInstances = new Map();
+  static components = {};
   constructor(elem, opts) {
     if (isFunction(opts)) {
       opts = opts(elem);
@@ -42,10 +51,12 @@ class Base {
     opts ??= {};
     const { NAME, BASE_NODE_NAME, Default, _data, _templates, allInstances } =
       this.constructor;
+
+    Base.components[NAME] = this.constructor;
+
     const baseElemName = BASE_NODE_NAME ?? NAME;
 
     let dataName = opts.data;
-    let datasetValue, isDataObject;
 
     if (elem == null) {
       opts = mergeDeep(Default, getDataValue(_data, dataName, elem), opts);
@@ -60,11 +71,10 @@ class Base {
       } else if (isString(elem)) {
         elem = doc.querySelector(elem);
       }
-      datasetValue = elem.getAttribute(DATA_UI_PREFIX + NAME)?.trim() || "";
-      isDataObject = datasetValue[0] === "{";
-      dataName ||= !isDataObject && datasetValue;
 
-      datasetValue = isDataObject ? JSON.parse(datasetValue) : {};
+      const [datasetValue, isDataObject] = getDatasetValue(elem, NAME);
+
+      dataName ||= !isDataObject && datasetValue;
 
       if (dataName && !_data[dataName]) return;
 
@@ -83,7 +93,7 @@ class Base {
 
     this.baseOpts = this.opts = opts;
 
-    this.id = elem.id ||= this.uuid = uuidGenerator(NAME + "-");
+    this.id = elem.id ||= this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
     const eventHandler = new EventHandler();
     [ACTION_ON, ACTION_OFF, ACTION_ONCE].forEach((name) => {
       this[name] = (...params) => {
@@ -204,6 +214,12 @@ class Base {
     if (!opts) return this._data[name];
     this._data[name] = opts;
     return this;
+  }
+  static dispatchTopLayer(type) {
+    const Toast = this.components.toast;
+    if (Toast) {
+      Toast.forceTopLayer(type);
+    }
   }
 }
 export default Base;

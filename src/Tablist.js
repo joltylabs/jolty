@@ -38,7 +38,6 @@ import {
   ACTION_SHOW,
   ACTION_TOGGLE,
   DEFAULT_OPTIONS,
-  DATA_APPEAR,
   ID,
   HORIZONTAL,
   VERTICAL,
@@ -48,6 +47,14 @@ import {
   ROLE_SUFFIX,
   doc,
   UI_PREFIX,
+  HIDE_MODE,
+  TRANSITION,
+  TELEPORT,
+  ACTION_REMOVE,
+  APPEAR,
+  OPTION_HASH_NAVIGATION,
+  ITEM,
+  REGION,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -67,9 +74,12 @@ import {
   normalizeToggleParameters,
   getEventsPrefix,
   kebabToCamel,
-  updateModule,
   upperFirst,
   getOptionElems,
+  isShown,
+  getBooleanDataAttrValue,
+  updateOptsByData,
+  awaitPromise,
 } from "./helpers/utils";
 import {
   toggleClass,
@@ -80,7 +90,11 @@ import {
   parents,
   setAttribute,
 } from "./helpers/dom";
-import { addDismiss, awaitPromise } from "./helpers/modules";
+import {
+  addDismiss,
+  toggleHideModeState,
+  updateModule,
+} from "./helpers/modules";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 
@@ -88,7 +102,6 @@ const TABLIST = "tablist";
 const TAB = "tab";
 const TABS = "tabs";
 const TABPANEL = "tabpanel";
-const ITEM = "item";
 const ACCORDION = "accordion";
 
 const ELEMS = [ITEM, TAB, TABPANEL];
@@ -104,7 +117,7 @@ const A11Y_DEFAULTS = {
   [ACCORDION]: {
     [ROLE]: null,
     [OPTION_TAB_ROLE]: BUTTON,
-    [OPTION_TABPANEL_ROLE]: "region",
+    [OPTION_TABPANEL_ROLE]: REGION,
     [OPTION_ARIA_ORIENTRATION]: true,
     [OPTION_STATE_ATTRIBUTE]: ARIA_EXPANDED,
     [TABINDEX]: false,
@@ -133,7 +146,7 @@ class Tablist extends Base {
     awaitPrevious: false,
     keyboard: true,
     arrowActivation: false,
-    hashNavigation: true,
+    [OPTION_HASH_NAVIGATION]: false,
     rtl: false,
     focusFilter: null,
     horizontal: false,
@@ -154,14 +167,16 @@ class Tablist extends Base {
     super(elem, opts);
   }
   _update() {
+    const { base, tabs, lastShownTab, opts } = this;
     const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
-    const { tablist, tabs, lastShownTab, opts } = this;
+
+    updateOptsByData(opts, base, [HIDE_MODE, OPTION_HASH_NAVIGATION]);
 
     if (a11y) {
-      setAttribute(tablist, ROLE, a11y[ROLE]);
+      setAttribute(base, ROLE, a11y[ROLE]);
       a11y[OPTION_ARIA_ORIENTRATION] &&
         setAttribute(
-          tablist,
+          base,
           ARIA_ORIENTATION,
           opts[HORIZONTAL] ? HORIZONTAL : VERTICAL,
         );
@@ -170,10 +185,10 @@ class Tablist extends Base {
     const shown = lastShownTab?.index ?? opts.shown;
 
     const tabWithState = tabs.map((tabObj, i) => {
-      const { tab, tabpanel, teleport, transition } = tabObj;
+      const { tab, tabpanel, teleport } = tabObj;
 
       if (a11y) {
-        removeAttribute(tab, [ARIA_SELECTED, ARIA_EXPANDED]);
+        removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
         setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
         setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
         setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
@@ -186,32 +201,36 @@ class Tablist extends Base {
         opts.teleport,
       )?.move(this, tabObj);
 
-      let isShown;
+      let isOpenTabpanel;
       if (isFunction(shown)) {
-        isShown = shown(tabObj);
+        isOpenTabpanel = shown(tabObj);
       } else if (isArray(shown)) {
-        isShown = shown.some((val) => val === i || val === tabpanel.id);
+        isOpenTabpanel = shown.some((val) => val === i || val === tabpanel.id);
       } else if (shown !== null) {
-        isShown = tabpanel.id === shown || i === shown;
+        isOpenTabpanel = tabpanel.id === shown || i === shown;
       } else {
-        isShown = transition.isShown;
+        isOpenTabpanel = isShown(tabpanel, opts.hideMode);
       }
 
-      return [isShown, tabObj];
+      return [isOpenTabpanel, tabObj];
     });
-    const hasSelected = tabWithState.find(([isShown]) => isShown);
+    const hasSelected = tabWithState.find(([isOpen]) => isOpen);
     if (opts.alwaysExpanded && !hasSelected) {
       tabWithState[0][0] = true;
     }
-    tabWithState.forEach(([isShown, tab]) => {
-      tab.transition.updateConfig(opts.transition);
-      tab.toggle(isShown, {
-        animated: opts.appear ?? tab.tabpanel.hasAttribute(DATA_APPEAR),
-        silent: !isShown,
+    tabWithState.forEach(([isOpen, tabInstance]) => {
+      tabInstance[TRANSITION] = Transition.createOrUpdate(
+        tabInstance[TRANSITION],
+        tabInstance[TABPANEL],
+        opts[TRANSITION],
+        { cssVariables: true },
+      );
+      tabInstance.toggle(isOpen, {
+        animated:
+          getBooleanDataAttrValue(tabInstance[TABPANEL], APPEAR) ?? opts.appear,
+        silent: !isOpen,
       });
     });
-
-    return this;
   }
   init() {
     const { id, instances, isInit, emit } = this;
@@ -257,10 +276,11 @@ class Tablist extends Base {
     off(tabs);
 
     if (a11y) {
-      removeAttribute(tablist, [
+      removeAttribute(
+        tablist,
         a11y[ROLE] && ROLE,
         a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
-      ]);
+      );
     }
     tablist.id.includes(uuid) && tablist.removeAttribute(ID);
 
@@ -313,12 +333,12 @@ class Tablist extends Base {
     const id = (tabpanel.id ||= TABPANEL + "-" + uuid);
     tab.id ||= TAB + "-" + uuid;
 
-    let isShown;
+    let isOpen;
     if (shownTabs.length && !opts.multiExpand) {
-      isShown = false;
+      isOpen = false;
     }
     if (opts.hashNavigation && checkHash(id)) {
-      isShown = true;
+      isOpen = true;
     }
 
     on(tab, EVENT_FOCUS, (e) => this._onTabFocus(e));
@@ -332,20 +352,22 @@ class Tablist extends Base {
       const opts = this.opts;
       const a11y = opts.a11y;
       if (a11y) {
-        removeAttribute(tab, [
+        removeAttribute(
+          tab,
           ROLE,
           a11y[TABINDEX] && TABINDEX,
           ARIA_CONTROLS,
           a11y[OPTION_STATE_ATTRIBUTE],
-        ]);
-        removeAttribute(tabpanel, [
+        );
+        removeAttribute(
+          tabpanel,
           ROLE,
           a11y[OPTION_TABPANEL_TABINDEX] && TABINDEX,
           ARIA_LABELLEDBY,
           a11y[OPTION_ARIA_HIDDEN] && ARIA_HIDDEN,
           HIDDEN,
           INERT,
-        ]);
+        );
       }
 
       off(elems);
@@ -354,8 +376,8 @@ class Tablist extends Base {
         ELEMS.forEach((name) =>
           removeClass(tabInstance[name], opts[name + CLASS_ACTIVE_SUFFIX]),
         );
-        tabInstance.transition?.destroy();
-        tabInstance.teleport?.destroy();
+        tabInstance[TRANSITION]?.destroy();
+        tabInstance[TELEPORT]?.destroy();
       }
       tabpanel.id.includes(uuid) && tabpanel.removeAttribute(ID);
       tab.id.includes(uuid) && tab.removeAttribute(ID);
@@ -383,8 +405,6 @@ class Tablist extends Base {
       return !disabled;
     };
 
-    const transition = new Transition(tabpanel, opts.transition);
-
     const elems = [tab, item, tabpanel];
     const tabInstance = {
       id,
@@ -394,17 +414,19 @@ class Tablist extends Base {
       tabpanel,
       elems,
       index,
-      transition,
+      transition: opts[TRANSITION]
+        ? new Transition(tabpanel, opts[TRANSITION])
+        : undefined,
       destroy: destroy.bind(this),
       toggleDisabled: toggleDisabled.bind(this),
-      isShown,
+      isOpen,
       get isDisabled() {
         return tab.hasAttribute(DISABLED);
       },
       get initialPlaceNode() {
         return (
-          tabInstance.teleport?.placeholder ??
-          tabInstance.transition?.placeholder ??
+          tabInstance[TELEPORT]?.placeholder ??
+          tabInstance.placeholder ??
           tabpanel
         );
       },
@@ -416,6 +438,10 @@ class Tablist extends Base {
     tabInstance.is = this.isTab.bind(this, tabInstance);
 
     addDismiss(this, tabpanel, tabInstance.hide);
+
+    if (opts[HIDE_MODE] === ACTION_REMOVE && tabpanel[HIDDEN]) {
+      toggleHideModeState(false, this, tabpanel, tabInstance);
+    }
 
     tabs.push(tabInstance);
     return tabInstance;
@@ -440,7 +466,7 @@ class Tablist extends Base {
     const tabInstance = this.getTab(currentTarget);
     if (!tabInstance || !this.focusFilter(tabInstance)) return;
 
-    this.opts.arrowActivation && !tabInstance.isShown && tabInstance.show();
+    this.opts.arrowActivation && !tabInstance.isOpen && tabInstance.show();
 
     this.currentTabIndex = tabInstance.index;
   }
@@ -514,7 +540,7 @@ class Tablist extends Base {
     );
   }
   get shownTabs() {
-    return this.tabs.filter(({ isShown }) => isShown);
+    return this.tabs.filter(({ isOpen }) => isOpen);
   }
   get firstActiveTabIndex() {
     return this.tabs.find((tab) => this.focusFilter(tab))?.index;
@@ -532,23 +558,23 @@ class Tablist extends Base {
 
     const { opts, shownTabs, emit } = this;
     const { a11y, multiExpand, awaitAnimation } = opts;
-    const { tab, isShown, transition, index } = tabInstance;
+    const { tab, isOpen, transition, index, tabpanel } = tabInstance;
 
-    s = !!(s ?? !isShown);
+    s = !!(s ?? !isOpen);
 
     s && this._updateTabIndex(index);
 
     if (
-      s === isShown ||
+      s === isOpen ||
       (awaitAnimation &&
-        transition.isAnimating &&
+        transition?.isAnimating &&
         ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
-      (isShown && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
+      (isOpen && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
       (s && !this.focusFilter(tabInstance))
     )
       return;
 
-    if (transition.isAnimating && !awaitAnimation) {
+    if (transition?.isAnimating && !awaitAnimation) {
       await transition.cancel();
     }
 
@@ -557,18 +583,24 @@ class Tablist extends Base {
     !silent &&
       emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, tabInstance, eventParams);
 
-    tabInstance.isShown = s;
+    tabInstance.isOpen = s;
 
     if (!multiExpand && s) {
       for (const shownTab of shownTabs) {
-        if (tabInstance !== shownTab && shownTab.isShown) {
+        if (tabInstance !== shownTab && shownTab.isOpen) {
           shownTab.hide(animated);
-          if (opts.awaitPrevious) await shownTab.transition.getAwaitPromise();
+          if (opts.awaitPrevious) await shownTab.transition?.getAwaitPromise();
         }
       }
     }
 
-    if (s && !tabInstance.isShown) return;
+    if (s && !tabInstance.isOpen) return;
+
+    s && toggleHideModeState(true, this, tabpanel, tabInstance);
+
+    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams);
+
+    const promise = transition?.run(s, animated);
 
     ELEMS.forEach((elemName) =>
       toggleClass(
@@ -583,21 +615,15 @@ class Tablist extends Base {
         setAttribute(tab, a11y[OPTION_STATE_ATTRIBUTE], s);
     }
 
-    const promise = transition.run(s, animated, {
-      [s ? EVENT_SHOW : EVENT_HIDE]: () =>
-        !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams),
-      [EVENT_DESTROY]: () =>
-        tabInstance.destroy({ remove: true, destroyTransition: false }),
-    });
-
     if (s) {
       this.lastShownTab = tabInstance;
       this.currentTabIndex ??= index;
     }
 
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams),
-    );
+    awaitPromise(promise, () => {
+      !s && toggleHideModeState(false, this, tabpanel, tabInstance);
+      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams);
+    });
 
     animated && opts.awaitAnimation && (await promise);
 
@@ -629,6 +655,7 @@ Tablist.data(UI_PREFIX + TABS, {
   alwaysExpanded: true,
   horizontal: true,
   arrowActivation: true,
+  awaitPrevious: true,
   a11y: TABS,
 });
 

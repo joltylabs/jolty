@@ -1,3 +1,4 @@
-import { getElements } from "./index.js";
+import getElements from "./getElements.js";
+
 export default (selector, context, findSelf) =>
   getElements(selector, context, findSelf)[0];

@@ -1,8 +1,26 @@
-import { UI, OPTIONS_BOOLEAN } from "../constants";
-import { isArray } from "../is";
-import { upperFirst } from "../utils";
+import {
+  UI,
+  APPEAR,
+  OPTION_TOP_LAYER,
+  OPTION_PREVENT_SCROLL,
+  MODAL,
+  TRUE,
+  FALSE,
+  OPTION_HASH_NAVIGATION,
+  OPTION_AUTODESTROY,
+} from "../constants";
+import upperFirst from "./upperFirst.js";
+import isArray from "../is/isArray.js";
 
-export default (opts, dataset, names) => {
+export const OPTIONS_BOOLEAN = [
+  APPEAR,
+  OPTION_TOP_LAYER,
+  OPTION_PREVENT_SCROLL,
+  OPTION_HASH_NAVIGATION,
+  MODAL,
+  OPTION_AUTODESTROY,
+];
+export default (opts, { dataset }, names) => {
   names.forEach((name) => {
     let optionName = name;
     let attributeName = name;
@@ -14,11 +32,19 @@ export default (opts, dataset, names) => {
     const hasAttribute = value !== undefined;
     if (hasAttribute) {
       if (OPTIONS_BOOLEAN.includes(optionName)) {
-        value = hasAttribute;
+        value =
+          value === "" || value === TRUE
+            ? true
+            : value === FALSE
+            ? false
+            : undefined;
       } else if (value && value[0] === "{") {
         value = JSON.parse(value);
       }
-      opts[optionName] = value;
+
+      if (value !== undefined) {
+        opts[optionName] = value;
+      }
     }
   });
   return opts;

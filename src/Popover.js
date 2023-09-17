@@ -1,72 +1,67 @@
 import {
   EVENT_BEFORE_DESTROY,
   EVENT_BEFORE_SHOW,
-  EVENT_SHOWN,
   EVENT_BEFORE_HIDE,
-  EVENT_HIDDEN,
   CLASS_ACTIVE,
   ARIA_CONTROLS,
   ARIA_EXPANDED,
-  ACTION_REMOVE,
   POPOVER,
   CLICK,
-  DEFAULT_AUTOFOCUS,
   DEFAULT_FLOATING_OPTIONS,
   DEFAULT_OPTIONS,
-  AUTOFOCUS,
-  DATA_UI_PREFIX,
-  MODE,
-  body,
-  doc,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
+  OPTION_TOP_LAYER,
+  DATA_UI_PREFIX,
+  CONFIRM,
+  TRIGGER,
   HIDE_MODE,
-  ABSOLUTE,
+  TRANSITION,
+  PRIVATE_OPTION_CANCEL_ON_HIDE,
 } from "./helpers/constants";
 
 import {
   toggleClass,
   removeClass,
   setAttribute,
-  focus,
   removeAttribute,
 } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   getDefaultToggleSelector,
-  updateModule,
   getOptionElem,
+  getEventsPrefix,
+  updateOptsByData,
 } from "./helpers/utils";
 import {
   addDismiss,
   baseDestroy,
-  callAutofocus,
   toggleOnInterection,
   floatingTransition,
-  callInitShow,
-  awaitPromise,
+  callShowInit,
+  toggleConfirm,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
-
-// modes POPOVER, DIALOG, FIXED, ABSOLUTE
+import Teleport from "./helpers/Teleport.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
-  static DefaultAutofocus = {
-    elem: DEFAULT_AUTOFOCUS,
-    required: true,
-  };
+  static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    focusTrap: true,
-    returnFocus: true,
+    mode: false,
+    eventPrefix: getEventsPrefix(POPOVER),
     dismiss: true,
     autofocus: true,
     trigger: CLICK,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [POPOVER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
+      DATA_UI_PREFIX + CONFIRM
+    }="${POPOVER}"]`,
   };
 
   constructor(elem, opts) {
@@ -76,29 +71,24 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     if (this.isInit) return;
     this._update();
 
-    const { toggler, popover } = this;
+    this.teleport = new Teleport(this.base, { disableAttributes: true });
 
-    toggleOnInterection({ anchor: toggler, target: popover, instance: this });
-    addDismiss(this, popover);
-
-    return callInitShow(this);
+    return callShowInit(this);
   }
   _update() {
-    const { base, opts, transition } = this;
+    const { base, opts } = this;
+    updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
 
-    updateModule(this, AUTOFOCUS);
-
-    this.transition = Transition.createOrUpdate(
-      transition,
+    this[TRANSITION] = Transition.createOrUpdate(
+      this[TRANSITION],
       base,
-      opts.transition,
-      { [HIDE_MODE]: ACTION_REMOVE, keepPlace: false },
+      opts[TRANSITION],
     );
 
     this.updateToggler();
 
-    opts[MODE] =
-      base.getAttribute(DATA_UI_PREFIX + POPOVER + "-" + MODE) ?? opts[MODE];
+    addDismiss(this);
+    toggleOnInterection(this);
   }
   updateToggler() {
     const { opts, id } = this;
@@ -120,10 +110,9 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const { transition, isShown, isAnimating, toggler, base, opts, emit } =
-      this;
-    const { awaitAnimation, a11y, returnFocus, autofocus } = opts;
-    const { animated, silent, event, ignoreAutofocus, ignoreConditions } =
+    const { isShown, isAnimating, toggler, base, opts, emit } = this;
+    const { awaitAnimation, a11y } = opts;
+    const { animated, silent, event, ignoreConditions } =
       normalizeToggleParameters(params);
 
     s ??= !isShown;
@@ -134,20 +123,16 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     this.isShown = s;
 
     if (isAnimating && !awaitAnimation) {
-      await transition.cancel();
+      await this[TRANSITION].cancel();
     }
 
-    if (s) {
-      opts[MODE] === ABSOLUTE ? toggler.after(base) : body.appendChild(base);
-    }
-
-    const eventParams = { event };
+    const eventParams = { event, trigger: toggler };
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
 
-    toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+    toggleConfirm(s, this);
 
     const promise = floatingTransition(this, {
       s,
@@ -156,13 +141,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       eventParams,
     });
 
-    !s && returnFocus && base.contains(doc.activeElement) && focus(toggler);
-
-    s && !ignoreAutofocus && autofocus && callAutofocus(this);
-
-    awaitPromise(promise, () =>
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams),
-    );
+    toggleClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX], s);
 
     animated && awaitAnimation && (await promise);
 
