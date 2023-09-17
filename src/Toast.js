@@ -23,9 +23,11 @@ import {
   A11Y,
   TABINDEX,
   REGION,
+  CLASS_ACTIVE_SUFFIX,
+  CLASS_ACTIVE,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
-import { fragment, inDOM } from "./helpers/dom";
+import { fragment, inDOM, toggleClass } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   arrayFrom,
@@ -84,6 +86,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     popoverApi: true,
     keepTopLayer: true,
     a11y: STATUS,
+    [TOAST + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
   constructor(elem, opts) {
     if (isObject(elem)) {
@@ -141,17 +144,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
   async toggle(s, params) {
     const {
       transition,
-      opts: {
-        limit,
-        limitAnimateLeave,
-        limitAnimateEnter,
-        position,
-        container,
-        popoverApi,
-        topLayer,
-        keepTopLayer,
-        hideMode,
-      },
+      opts,
       autohide,
       base,
       root,
@@ -161,6 +154,16 @@ class Toast extends ToggleMixin(Base, TOAST) {
     } = this;
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
+
+    const {
+      limit,
+      position,
+      container,
+      popoverApi,
+      topLayer,
+      keepTopLayer,
+      hideMode,
+    } = opts;
 
     if (animated && transition?.isAnimating) return;
 
@@ -178,8 +181,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
         );
         for (let i = 0; i < nots.length; i++) {
           if (i >= limit - 1) {
-            nots[i - (limit - 1)]?.hide(limitAnimateLeave);
-            if (!limitAnimateEnter) {
+            nots[i - (limit - 1)]?.hide(opts.limitAnimateLeave);
+            if (!opts.limitAnimateEnter) {
               preventAnimation = true;
             }
           }
@@ -224,6 +227,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
     const promise = transition?.run(s, animated && !preventAnimation);
+
+    toggleClass(base, opts[TOAST + CLASS_ACTIVE_SUFFIX], s);
 
     awaitPromise(promise, () => {
       !s && toggleHideModeState(false, this);

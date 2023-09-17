@@ -20,6 +20,7 @@ import {
   TOOLTIP,
   CLASS_ACTIVE_SUFFIX,
   TRANSITION,
+  CLASS_ACTIVE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -62,7 +63,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     removeTitle: true,
     tooltipClass: "",
     [ANCHOR + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
-    [TOOLTIP + CLASS_ACTIVE_SUFFIX]: getClassActive(TOOLTIP),
+    [TOOLTIP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     trigger: HOVER + " " + FOCUS,
     content: null,
   };

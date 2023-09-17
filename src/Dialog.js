@@ -141,6 +141,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [TOGGLER]: true,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [CONTENT + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
 
     [OPTION_AUTODESTROY]: false,
@@ -433,6 +434,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       s,
     );
     toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(content, opts[CONTENT + CLASS_ACTIVE_SUFFIX], s);
     if (!backdropIsOpen) {
       toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
     }
