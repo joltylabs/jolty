@@ -598,14 +598,23 @@ class Tablist extends Base {
 
     if (!multiExpand && s) {
       for (const shownTab of shownTabs) {
-        if (tabInstance !== shownTab && shownTab.isOpen) {
+        if (tabInstance !== shownTab) {
+          if (shownTab._awaiting) {
+            shownTab.isOpen = false;
+            shownTab._awaiting.transition.cancel();
+            continue;
+          }
           shownTab.hide(animated);
-          if (opts.awaitPrevious) await shownTab.transition?.getAwaitPromise();
+          if (opts.awaitPrevious) {
+            tabInstance._awaiting = shownTab;
+            await shownTab.transition?.getAwaitPromise();
+            tabInstance._awaiting = false;
+          }
         }
       }
     }
 
-    if (s && !tabInstance.isOpen) return;
+    if (s !== tabInstance.isOpen) return;
 
     s && toggleHideModeState(true, this, tabpanel, tabInstance);
 
