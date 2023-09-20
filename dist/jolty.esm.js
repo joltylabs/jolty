@@ -2249,7 +2249,7 @@ class Floating {
     const { target, name, anchor, opts } = this;
 
     const style = {
-      zIndex: `var(${VAR_UI_PREFIX}top-layer-z-index,999)`,
+      zIndex: `var(${VAR_UI_PREFIX}floating-top-layer,999)`,
       margin: 0,
       padding: 0,
       background: NONE,
@@ -3356,7 +3356,7 @@ const A11Y_DEFAULTS$1 = {
     [ROLE]: null,
     [OPTION_TAB_ROLE]: BUTTON,
     [OPTION_TABPANEL_ROLE]: REGION,
-    [OPTION_ARIA_ORIENTRATION]: true,
+    [OPTION_ARIA_ORIENTRATION]: false,
     [OPTION_STATE_ATTRIBUTE]: ARIA_EXPANDED,
     [TABINDEX]: false,
     [OPTION_TABPANEL_TABINDEX]: false,
@@ -3423,7 +3423,7 @@ class Tablist extends Base {
     const shown = lastShownTab?.index ?? opts.shown;
 
     const tabWithState = tabs.map((tabObj, i) => {
-      const { tab, tabpanel, teleport } = tabObj;
+      const { tab, tabpanel, item, teleport } = tabObj;
 
       if (a11y) {
         removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
@@ -3431,6 +3431,7 @@ class Tablist extends Base {
         setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
         setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
         setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
+        setAttribute(item, ROLE, NONE);
       }
 
       tabObj.teleport = Teleport.createOrUpdate(
@@ -3579,8 +3580,15 @@ class Tablist extends Base {
       isOpen = true;
     }
 
-    on(tab, EVENT_FOCUS, (e) => this._onTabFocus(e));
+    let isMouseDown;
+    on(tab, EVENT_FOCUS, (e) => {
+      !isMouseDown && this._onTabFocus(e);
+    });
     on(tab, EVENT_KEYDOWN, (e) => this._onTabKeydown(e));
+    on(tab, EVENT_MOUSEDOWN, () => {
+      isMouseDown = true;
+      requestAnimationFrame(() => (isMouseDown = false));
+    });
     on(tab, EVENT_CLICK, (event) => {
       event.preventDefault();
       this.toggle(event.currentTarget, null, { event, trigger: tab });
@@ -3606,6 +3614,7 @@ class Tablist extends Base {
           HIDDEN,
           INERT,
         );
+        removeAttribute(item, ROLE);
       }
 
       off(elems);
@@ -3825,14 +3834,23 @@ class Tablist extends Base {
 
     if (!multiExpand && s) {
       for (const shownTab of shownTabs) {
-        if (tabInstance !== shownTab && shownTab.isOpen) {
+        if (tabInstance !== shownTab) {
+          if (shownTab._awaiting) {
+            shownTab.isOpen = false;
+            shownTab._awaiting.transition.cancel();
+            continue;
+          }
           shownTab.hide(animated);
-          if (opts.awaitPrevious) await shownTab.transition?.getAwaitPromise();
+          if (opts.awaitPrevious) {
+            tabInstance._awaiting = shownTab;
+            await shownTab.transition?.getAwaitPromise();
+            tabInstance._awaiting = false;
+          }
         }
       }
     }
 
-    if (s && !tabInstance.isOpen) return;
+    if (s !== tabInstance.isOpen) return;
 
     s && toggleHideModeState(true, this, tabpanel, tabInstance);
 

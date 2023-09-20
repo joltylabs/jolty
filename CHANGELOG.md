@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2023-09-17
+### Fixed
+- update build
 ## [0.3.4] - 2023-09-17
 ### Fixed
 - Fix tablist awaitAnimation and arrowActivation options
