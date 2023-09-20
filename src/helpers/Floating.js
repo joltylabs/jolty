@@ -359,7 +359,7 @@ export default class Floating {
     const { target, name, anchor, opts } = this;
 
     const style = {
-      zIndex: `var(${VAR_UI_PREFIX}top-layer-z-index,999)`,
+      zIndex: `var(${VAR_UI_PREFIX}floating-top-layer,999)`,
       margin: 0,
       padding: 0,
       background: NONE,
