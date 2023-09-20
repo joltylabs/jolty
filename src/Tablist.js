@@ -56,6 +56,7 @@ import {
   ITEM,
   REGION,
   NONE,
+  EVENT_MOUSEDOWN,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -343,8 +344,15 @@ class Tablist extends Base {
       isOpen = true;
     }
 
-    on(tab, EVENT_FOCUS, (e) => this._onTabFocus(e));
+    let isMouseDown;
+    on(tab, EVENT_FOCUS, (e) => {
+      !isMouseDown && this._onTabFocus(e);
+    });
     on(tab, EVENT_KEYDOWN, (e) => this._onTabKeydown(e));
+    on(tab, EVENT_MOUSEDOWN, () => {
+      isMouseDown = true;
+      requestAnimationFrame(() => (isMouseDown = false));
+    });
     on(tab, EVENT_CLICK, (event) => {
       event.preventDefault();
       this.toggle(event.currentTarget, null, { event, trigger: tab });
