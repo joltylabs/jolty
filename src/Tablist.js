@@ -585,7 +585,10 @@ class Tablist extends Base {
     )
       return;
 
-    if (transition?.isAnimating && !awaitAnimation) {
+    if (
+      transition?.isAnimating &&
+      (awaitAnimation || !(opts.alwaysExpanded && !multiExpand))
+    ) {
       await transition.cancel();
     }
 
