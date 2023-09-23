@@ -578,17 +578,14 @@ class Tablist extends Base {
     if (
       s === isOpen ||
       (awaitAnimation &&
-        transition?.isAnimating &&
+        transition.isAnimating &&
         ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
       (isOpen && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
       (s && !this.focusFilter(tabInstance))
     )
       return;
 
-    if (
-      transition?.isAnimating &&
-      (awaitAnimation || !(opts.alwaysExpanded && !multiExpand))
-    ) {
+    if (transition.isAnimating && !awaitAnimation) {
       await transition.cancel();
     }
 
@@ -600,24 +597,23 @@ class Tablist extends Base {
     tabInstance.isOpen = s;
 
     if (!multiExpand && s) {
-      for (const shownTab of shownTabs) {
-        if (tabInstance !== shownTab) {
-          if (shownTab._awaiting) {
-            shownTab.isOpen = false;
-            shownTab._awaiting.transition.cancel();
-            continue;
-          }
-          shownTab.hide(animated);
-          if (opts.awaitPrevious) {
-            tabInstance._awaiting = shownTab;
-            await shownTab.transition?.getAwaitPromise();
-            tabInstance._awaiting = false;
-          }
+      const animatedOrShownTabs = this.tabs.filter(
+        (tab) =>
+          tab !== tabInstance && (tab.transition.isAnimating || tab.isOpen),
+      );
+      for (const tab of animatedOrShownTabs) {
+        if (tab.isOpen && tab.transition.isAnimating) {
+          tab.hide(false);
+          tab.transition.cancel();
+          continue;
+        }
+        tab.hide(animated);
+        if (opts.awaitPrevious) {
+          await tab.transition?.getAwaitPromise();
         }
       }
+      if (s !== tabInstance.isOpen) return;
     }
-
-    if (s !== tabInstance.isOpen) return;
 
     s && toggleHideModeState(true, this, tabpanel, tabInstance);
 
