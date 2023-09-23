@@ -8,7 +8,6 @@ export default [
     output: {
       file: "dist/jolty.esm.js",
       format: "esm",
-      minify: false,
       sourcemap: true,
     },
     plugins: [resolve(), commonjs()],
@@ -18,7 +17,6 @@ export default [
     output: {
       file: "dist/jolty.esm.min.js",
       format: "esm",
-      minify: false,
       sourcemap: true,
     },
     plugins: [resolve(), commonjs(), terser()],
