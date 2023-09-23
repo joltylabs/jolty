@@ -1,7 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-
+## [0.3.6] - 2023-09-23
+### Fixed
+- fix Tablist awaitAnimation
+- fix trigger with hover and click behavior
+### Changed
+- changed itemClickHide option to accept CSSSelector, HTMLElements or function
 ## [0.3.5] - 2023-09-17
 ### Fixed
 - update build
