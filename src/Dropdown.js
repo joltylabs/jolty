@@ -39,6 +39,7 @@ import {
   removeAttribute,
   setAttribute,
   closest,
+  is,
 } from "./helpers/dom";
 import Transition from "./helpers/Transition.js";
 import {
@@ -59,6 +60,7 @@ import {
   callShowInit,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
+import { isFunction } from "./helpers/is/index.js";
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static Default = {
@@ -121,9 +123,17 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     this.updateToggler();
 
     if (opts.itemClickHide) {
-      on(base, EVENT_CLICK, (event) => {
+      on(base, EVENT_CLICK, async (event) => {
         const trigger = closest(event.target, this.focusableElems);
-        trigger && hide({ event, trigger });
+        if (
+          !trigger ||
+          (opts.itemClickHide !== true &&
+            (isFunction(opts.itemClickHide)
+              ? await !opts.itemClickHide(trigger, this)
+              : !is(trigger, opts.itemClickHide)))
+        )
+          return;
+        hide({ event, trigger });
       });
     } else {
       off(base, EVENT_CLICK);
