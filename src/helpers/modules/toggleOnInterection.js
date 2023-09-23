@@ -45,9 +45,10 @@ export default (
     delay = isArray(delay) ? delay : [delay, delay];
   }
   if (triggerClick) {
-    on(toggler, EVENT_CLICK + PREFIX, (event) =>
-      toggle(null, { event, trigger: toggler }),
-    );
+    on(toggler, EVENT_CLICK + PREFIX, (event) => {
+      if (instance.isOpen && instance.transition.isAnimating) return;
+      toggle(null, { event, trigger: toggler });
+    });
   }
   if (triggerHover) {
     events.push(EVENT_MOUSEENTER + PREFIX, EVENT_MOUSELEAVE + PREFIX);

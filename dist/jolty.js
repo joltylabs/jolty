@@ -1851,9 +1851,10 @@
       delay = isArray(delay) ? delay : [delay, delay];
     }
     if (triggerClick) {
-      on(toggler, EVENT_CLICK + PREFIX, (event) =>
-        toggle(null, { event, trigger: toggler }),
-      );
+      on(toggler, EVENT_CLICK + PREFIX, (event) => {
+        if (instance.isOpen && instance.transition.isAnimating) return;
+        toggle(null, { event, trigger: toggler });
+      });
     }
     if (triggerHover) {
       events.push(EVENT_MOUSEENTER + PREFIX, EVENT_MOUSELEAVE + PREFIX);
@@ -2751,9 +2752,17 @@
       this.updateToggler();
 
       if (opts.itemClickHide) {
-        on(base, EVENT_CLICK, (event) => {
+        on(base, EVENT_CLICK, async (event) => {
           const trigger = closest(event.target, this.focusableElems);
-          trigger && hide({ event, trigger });
+          if (
+            !trigger ||
+            (opts.itemClickHide !== true &&
+              (isFunction(opts.itemClickHide)
+                ? await !opts.itemClickHide(trigger, this)
+                : !is(trigger, opts.itemClickHide)))
+          )
+            return;
+          hide({ event, trigger });
         });
       } else {
         off(base, EVENT_CLICK);
@@ -3827,7 +3836,10 @@
       )
         return;
 
-      if (transition?.isAnimating && !awaitAnimation) {
+      if (
+        transition?.isAnimating &&
+        (awaitAnimation || !(opts.alwaysExpanded && !multiExpand))
+      ) {
         await transition.cancel();
       }
 
