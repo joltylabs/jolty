@@ -112,7 +112,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   _update() {
     const { base, opts, on, off, hide } = this;
-    updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
+    updateOptsByData(
+      opts,
+      base,
+      [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
+      [OPTION_TOP_LAYER],
+    );
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
@@ -129,7 +134,11 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
           !trigger ||
           (opts.itemClickHide !== true &&
             (isFunction(opts.itemClickHide)
-              ? await !opts.itemClickHide(trigger, this)
+              ? await !opts.itemClickHide({
+                  trigger,
+                  dropdown: this,
+                  event,
+                })
               : !is(trigger, opts.itemClickHide)))
         )
           return;

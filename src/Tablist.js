@@ -65,6 +65,7 @@ import {
   isNumber,
   isFunction,
   isArray,
+  isIterable,
 } from "./helpers/is";
 import {
   isUnfocusable,
@@ -112,8 +113,18 @@ const OPTION_TABPANEL_ROLE = TABPANEL + ROLE_SUFFIX;
 const OPTION_TABPANEL_TABINDEX = TABPANEL + upperFirst(TABINDEX);
 const OPTION_ARIA_ORIENTRATION = kebabToCamel(ARIA_ORIENTATION);
 const OPTION_STATE_ATTRIBUTE = "stateAttribute";
+const OPTION_ALWAYS_EXPANDED = "alwaysExpanded";
+const OPTION_MULTI_EXPAND = "multiExpand";
 
 const TABLIST_SECONDARY_METHODS = ["getTab", "isTab", "initTab", "initTabs"];
+
+const DEFAULT_ACCORDION_OPTIONS = {
+  [OPTION_ALWAYS_EXPANDED]: false,
+  [HORIZONTAL]: false,
+  arrowActivation: false,
+  awaitPrevious: false,
+  a11y: ACCORDION,
+};
 
 const A11Y_DEFAULTS = {
   [ACCORDION]: {
@@ -142,16 +153,12 @@ class Tablist extends Base {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(TABLIST),
     siblings: true,
-    alwaysExpanded: false,
-    multiExpand: false,
+    [OPTION_MULTI_EXPAND]: false,
     awaitAnimation: false,
-    awaitPrevious: false,
     keyboard: true,
-    arrowActivation: false,
-    [OPTION_HASH_NAVIGATION]: false,
+    [OPTION_HASH_NAVIGATION]: true,
     rtl: false,
     focusFilter: null,
-    horizontal: false,
     dismiss: false,
     [TAB]: getDataSelector(TABLIST, TAB),
     [TABPANEL]: getDataSelector(TABLIST, TABPANEL),
@@ -159,6 +166,7 @@ class Tablist extends Base {
     [TAB + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [ITEM + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [TABPANEL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    ...DEFAULT_ACCORDION_OPTIONS,
   };
   static _data = {};
   static instances = new Map();
@@ -172,7 +180,23 @@ class Tablist extends Base {
     const { base, tabs, lastShownTab, opts } = this;
     const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS);
 
-    updateOptsByData(opts, base, [HIDE_MODE, OPTION_HASH_NAVIGATION]);
+    updateOptsByData(
+      opts,
+      base,
+      [
+        HIDE_MODE,
+        OPTION_HASH_NAVIGATION,
+        OPTION_ALWAYS_EXPANDED,
+        OPTION_MULTI_EXPAND,
+        HORIZONTAL,
+      ],
+      [
+        OPTION_HASH_NAVIGATION,
+        OPTION_ALWAYS_EXPANDED,
+        OPTION_MULTI_EXPAND,
+        HORIZONTAL,
+      ],
+    );
 
     if (a11y) {
       setAttribute(base, ROLE, a11y[ROLE]);
@@ -218,7 +242,7 @@ class Tablist extends Base {
       return [isOpenTabpanel, tabObj];
     });
     const hasSelected = tabWithState.find(([isOpen]) => isOpen);
-    if (opts.alwaysExpanded && !hasSelected) {
+    if (opts[OPTION_ALWAYS_EXPANDED] && !hasSelected) {
       tabWithState[0][0] = true;
     }
     tabWithState.forEach(([isOpen, tabInstance]) => {
@@ -321,13 +345,18 @@ class Tablist extends Base {
       : callOrReturn(opts[ITEM], { tablist, tab, index });
 
     const tabpanelId = tab.getAttribute(DATA_UI_PREFIX + TABLIST + "-" + TAB);
-    let tabpanel = tabpanelId && doc.getElementById(tabpanelId);
 
-    if (!tabpanel && isFunction(opts[TABPANEL])) {
+    let tabpanel;
+    if (tabpanelId) {
+      tabpanel = doc.getElementById(tabpanelId);
+    } else if (isString(opts[TABPANEL])) {
+      if (opts.siblings) {
+        tabpanel = next(tab, opts[TABPANEL]);
+      }
+    } else if (isIterable(opts[TABPANEL])) {
+      tabpanel = opts[TABPANEL][index];
+    } else if (isFunction(opts[TABPANEL])) {
       tabpanel = opts[TABPANEL]({ tablist, tab, index });
-    }
-    if (!tabpanel && opts.siblings) {
-      tabpanel = next(tab, opts[TABPANEL]);
     }
 
     if (!tabpanel) return;
@@ -337,7 +366,7 @@ class Tablist extends Base {
     tab.id ||= TAB + "-" + uuid;
 
     let isOpen;
-    if (shownTabs.length && !opts.multiExpand) {
+    if (shownTabs.length && !opts[OPTION_MULTI_EXPAND]) {
       isOpen = false;
     }
     if (opts.hashNavigation && checkHash(id)) {
@@ -403,7 +432,7 @@ class Tablist extends Base {
 
       disabled && tabInstance.hide(false);
 
-      if (this.opts.alwaysExpanded) {
+      if (this.opts[OPTION_ALWAYS_EXPANDED]) {
         const shownTabs = this.shownTabs;
         if (
           !shownTabs.length ||
@@ -568,7 +597,7 @@ class Tablist extends Base {
     if (!tabInstance) return;
 
     const { opts, shownTabs, emit } = this;
-    const { a11y, multiExpand, awaitAnimation } = opts;
+    const { a11y, awaitAnimation } = opts;
     const { tab, isOpen, transition, index, tabpanel } = tabInstance;
 
     s = !!(s ?? !isOpen);
@@ -578,17 +607,15 @@ class Tablist extends Base {
     if (
       s === isOpen ||
       (awaitAnimation &&
-        transition?.isAnimating &&
-        ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
-      (isOpen && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
+        transition.isAnimating &&
+        ((shownTabs.length <= 1 && !opts[OPTION_MULTI_EXPAND]) ||
+          opts[OPTION_MULTI_EXPAND])) ||
+      (isOpen && opts[OPTION_ALWAYS_EXPANDED] && !s && shownTabs.length < 2) ||
       (s && !this.focusFilter(tabInstance))
     )
       return;
 
-    if (
-      transition?.isAnimating &&
-      (awaitAnimation || !(opts.alwaysExpanded && !multiExpand))
-    ) {
+    if (transition.isAnimating && !awaitAnimation) {
       await transition.cancel();
     }
 
@@ -599,25 +626,24 @@ class Tablist extends Base {
 
     tabInstance.isOpen = s;
 
-    if (!multiExpand && s) {
-      for (const shownTab of shownTabs) {
-        if (tabInstance !== shownTab) {
-          if (shownTab._awaiting) {
-            shownTab.isOpen = false;
-            shownTab._awaiting.transition.cancel();
-            continue;
-          }
-          shownTab.hide(animated);
-          if (opts.awaitPrevious) {
-            tabInstance._awaiting = shownTab;
-            await shownTab.transition?.getAwaitPromise();
-            tabInstance._awaiting = false;
-          }
+    if (!opts[OPTION_MULTI_EXPAND] && s) {
+      const animatedOrShownTabs = this.tabs.filter(
+        (tab) =>
+          tab !== tabInstance && (tab.transition.isAnimating || tab.isOpen),
+      );
+      for (const tab of animatedOrShownTabs) {
+        if (tab.isOpen && tab.transition.isAnimating) {
+          tab.hide(false);
+          tab.transition.cancel();
+          continue;
+        }
+        tab.hide(animated);
+        if (opts.awaitPrevious) {
+          await tab.transition?.getAwaitPromise();
         }
       }
+      if (s !== tabInstance.isOpen) return;
     }
-
-    if (s !== tabInstance.isOpen) return;
 
     s && toggleHideModeState(true, this, tabpanel, tabInstance);
 
@@ -675,11 +701,13 @@ class Tablist extends Base {
 }
 
 Tablist.data(UI_PREFIX + TABS, {
-  alwaysExpanded: true,
+  [OPTION_ALWAYS_EXPANDED]: true,
   horizontal: true,
   arrowActivation: true,
   awaitPrevious: true,
   a11y: TABS,
 });
+
+Tablist.data(UI_PREFIX + ACCORDION, DEFAULT_ACCORDION_OPTIONS);
 
 export default Tablist;

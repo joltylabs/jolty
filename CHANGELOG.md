@@ -1,6 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.3.7] - 2023-09-24
+### Fixed
+- fix Tablist transition
+- fix floating zoom
+- opts property for all components
+### Changed
+- changed Tablist tabpanel option to accept HTMLElements
+### Added
+- allow to inherit options from the data option
 ## [0.3.6] - 2023-09-23
 ### Fixed
 - fix Tablist awaitAnimation

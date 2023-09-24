@@ -163,16 +163,21 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
   _update() {
     const { base, _fromHTML, opts, id, on } = this;
-    updateOptsByData(opts, base, [
-      MODAL,
-      BACKDROP,
-      OPTION_TOP_LAYER,
-      OPTION_PREVENT_SCROLL,
-      OPTION_HASH_NAVIGATION,
-      HIDE_MODE,
-      OPTION_GROUP,
-      OPTION_AUTODESTROY,
-    ]);
+    updateOptsByData(
+      opts,
+      base,
+      [
+        MODAL,
+        BACKDROP,
+        OPTION_TOP_LAYER,
+        OPTION_PREVENT_SCROLL,
+        OPTION_HASH_NAVIGATION,
+        HIDE_MODE,
+        OPTION_GROUP,
+        OPTION_AUTODESTROY,
+      ],
+      [OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL, OPTION_HASH_NAVIGATION],
+    );
     updateModule(this, OPTION_GROUP, NAME);
 
     let backdrop;
@@ -385,7 +390,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         : opts.preventHide)
     ) {
       this.groupClosing = false;
-      return emit(EVENT_HIDE_PREVENTED);
+      return emit(EVENT_HIDE_PREVENTED, eventParams);
     }
 
     this.isOpen = s;

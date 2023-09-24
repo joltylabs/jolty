@@ -34,8 +34,6 @@ export default function ({
 }) {
   boundaryOffset = createInset(boundaryOffset);
 
-  const viewRect = visualViewport;
-
   flip = isArray(flip) ? flip : [flip];
   flip[1] ??= flip[0];
 
@@ -60,6 +58,11 @@ export default function ({
   let useFlipM = null;
   let useFlipS = null;
 
+  const viewRect = visualViewport;
+
+  const hasScale =
+    viewRect.scale !== 1 && Math.abs(window.innerWidth - viewRect.width) > 2;
+
   function calculate() {
     const m = (useFlipM && MIRROR[baseM]) || baseM;
     const s = (useFlipS && MIRROR[baseS]) || baseS;
@@ -78,6 +81,13 @@ export default function ({
       [RIGHT]: viewRect[WIDTH] - anchorRect[LEFT] - anchorRect[WIDTH],
       [BOTTOM]: viewRect[HEIGHT] - anchorRect[TOP] - anchorRect[HEIGHT],
     };
+
+    if (hasScale) {
+      anchorSpace[TOP] -= viewRect.offsetTop;
+      anchorSpace[LEFT] -= viewRect.offsetLeft;
+      anchorSpace[RIGHT] += viewRect.offsetLeft;
+      anchorSpace[BOTTOM] += viewRect.offsetTop;
+    }
 
     anchorSpace[m] -= offset + boundaryOffset[m];
     anchorSpace[MIRROR[m]] -= boundaryOffset[dirS] + boundaryOffset[mirrorDirS];

@@ -76,11 +76,12 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   }
   _update() {
     const { base, opts } = this;
-    updateOptsByData(opts, base, [
-      HIDE_MODE,
-      OPTION_HASH_NAVIGATION,
-      OPTION_AUTODESTROY,
-    ]);
+    updateOptsByData(
+      opts,
+      base,
+      [HIDE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
+      [OPTION_HASH_NAVIGATION],
+    );
 
     this[TELEPORT] = Teleport.createOrUpdate(
       this[TELEPORT],
