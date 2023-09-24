@@ -385,7 +385,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         : opts.preventHide)
     ) {
       this.groupClosing = false;
-      return emit(EVENT_HIDE_PREVENTED);
+      return emit(EVENT_HIDE_PREVENTED, eventParams);
     }
 
     this.isOpen = s;
