@@ -77,7 +77,12 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   _update() {
     const { base, opts } = this;
-    updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
+    updateOptsByData(
+      opts,
+      base,
+      [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
+      [OPTION_TOP_LAYER],
+    );
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
