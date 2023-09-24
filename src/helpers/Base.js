@@ -1,5 +1,4 @@
 import {
-  DATA_UI_PREFIX,
   EVENT_BREAKPOINT,
   ACTION_TOGGLE,
   ACTION_SHOW,
@@ -81,7 +80,7 @@ class Base {
       opts = mergeDeep(
         Default,
         getDataValue(_data, dataName, elem),
-        datasetValue,
+        isDataObject && datasetValue,
         opts,
       );
     }
