@@ -617,8 +617,6 @@
   }) {
     boundaryOffset = createInset(boundaryOffset);
 
-    const viewRect = visualViewport;
-
     flip = isArray(flip) ? flip : [flip];
     flip[1] ??= flip[0];
 
@@ -643,6 +641,11 @@
     let useFlipM = null;
     let useFlipS = null;
 
+    const viewRect = visualViewport;
+
+    const hasScale =
+      viewRect.scale !== 1 && Math.abs(window.innerWidth - viewRect.width) > 2;
+
     function calculate() {
       const m = (useFlipM && MIRROR[baseM]) || baseM;
       const s = (useFlipS && MIRROR[baseS]) || baseS;
@@ -661,6 +664,13 @@
         [RIGHT]: viewRect[WIDTH] - anchorRect[LEFT] - anchorRect[WIDTH],
         [BOTTOM]: viewRect[HEIGHT] - anchorRect[TOP] - anchorRect[HEIGHT],
       };
+
+      if (hasScale) {
+        anchorSpace[TOP] -= viewRect.offsetTop;
+        anchorSpace[LEFT] -= viewRect.offsetLeft;
+        anchorSpace[RIGHT] += viewRect.offsetLeft;
+        anchorSpace[BOTTOM] += viewRect.offsetTop;
+      }
 
       anchorSpace[m] -= offset + boundaryOffset[m];
       anchorSpace[MIRROR[m]] -= boundaryOffset[dirS] + boundaryOffset[mirrorDirS];
@@ -867,15 +877,7 @@
   var uuidGenerator = (prefix = "") =>
     prefix + Math.random().toString(36).substring(2, 12);
 
-  const OPTIONS_BOOLEAN = [
-    APPEAR,
-    OPTION_TOP_LAYER,
-    OPTION_PREVENT_SCROLL,
-    OPTION_HASH_NAVIGATION,
-    MODAL,
-    OPTION_AUTODESTROY,
-  ];
-  var updateOptsByData = (opts, { dataset }, names) => {
+  var updateOptsByData = (opts, { dataset }, names, booleanOptions) => {
     names.forEach((name) => {
       let optionName = name;
       let attributeName = name;
@@ -886,7 +888,7 @@
       let value = dataset[UI + upperFirst(attributeName)];
       const hasAttribute = value !== undefined;
       if (hasAttribute) {
-        if (OPTIONS_BOOLEAN.includes(optionName)) {
+        if (booleanOptions?.includes(optionName)) {
           value =
             value === "" || value === TRUE
               ? true
@@ -1288,7 +1290,7 @@
         opts = mergeDeep(
           Default,
           getDataValue(_data, dataName, elem),
-          datasetValue,
+          isDataObject && datasetValue,
           opts,
         );
       }
@@ -1335,6 +1337,15 @@
         {
           onUpdate: (breakpoint, opts) => {
             this.emit(EVENT_BREAKPOINT, breakpoint, this.breakpoint);
+            if (breakpoint[0].data) {
+              const dataValue = getDataValue(
+                this.constructor._data,
+                breakpoint[0].data,
+              );
+              if (dataValue) {
+                breakpoint[0] = { ...breakpoint[0], ...dataValue };
+              }
+            }
             this.opts = breakpoint[1]
               ? mergeDeep(opts, breakpoint[0])
               : { ...opts };
@@ -2006,8 +2017,8 @@
       const targetStyles = getComputedStyle(target);
 
       let [flip, sticky, shrink, placement, topLayer] = [
-        STICKY,
         FLIP,
+        STICKY,
         SHRINK,
         PLACEMENT,
         TOP_LAYER,
@@ -2558,11 +2569,12 @@
     }
     _update() {
       const { base, opts } = this;
-      updateOptsByData(opts, base, [
-        HIDE_MODE,
-        OPTION_HASH_NAVIGATION,
-        OPTION_AUTODESTROY,
-      ]);
+      updateOptsByData(
+        opts,
+        base,
+        [HIDE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
+        [OPTION_HASH_NAVIGATION],
+      );
 
       this[TELEPORT] = Teleport.createOrUpdate(
         this[TELEPORT],
@@ -2741,7 +2753,12 @@
     }
     _update() {
       const { base, opts, on, off, hide } = this;
-      updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
+      updateOptsByData(
+        opts,
+        base,
+        [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
+        [OPTION_TOP_LAYER],
+      );
 
       this[TRANSITION] = Transition.createOrUpdate(
         this[TRANSITION],
@@ -2758,7 +2775,11 @@
             !trigger ||
             (opts.itemClickHide !== true &&
               (isFunction(opts.itemClickHide)
-                ? await !opts.itemClickHide(trigger, this)
+                ? await !opts.itemClickHide({
+                    trigger,
+                    dropdown: this,
+                    event,
+                  })
                 : !is(trigger, opts.itemClickHide)))
           )
             return;
@@ -2964,16 +2985,21 @@
 
     _update() {
       const { base, _fromHTML, opts, id, on } = this;
-      updateOptsByData(opts, base, [
-        MODAL,
-        BACKDROP,
-        OPTION_TOP_LAYER,
-        OPTION_PREVENT_SCROLL,
-        OPTION_HASH_NAVIGATION,
-        HIDE_MODE,
-        OPTION_GROUP,
-        OPTION_AUTODESTROY,
-      ]);
+      updateOptsByData(
+        opts,
+        base,
+        [
+          MODAL,
+          BACKDROP,
+          OPTION_TOP_LAYER,
+          OPTION_PREVENT_SCROLL,
+          OPTION_HASH_NAVIGATION,
+          HIDE_MODE,
+          OPTION_GROUP,
+          OPTION_AUTODESTROY,
+        ],
+        [OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL, OPTION_HASH_NAVIGATION],
+      );
       updateModule(this, OPTION_GROUP, NAME);
 
       let backdrop;
@@ -3186,7 +3212,7 @@
           : opts.preventHide)
       ) {
         this.groupClosing = false;
-        return emit(EVENT_HIDE_PREVENTED);
+        return emit(EVENT_HIDE_PREVENTED, eventParams);
       }
 
       this.isOpen = s;
@@ -3363,8 +3389,18 @@
   const OPTION_TABPANEL_TABINDEX = TABPANEL + upperFirst(TABINDEX);
   const OPTION_ARIA_ORIENTRATION = kebabToCamel(ARIA_ORIENTATION);
   const OPTION_STATE_ATTRIBUTE = "stateAttribute";
+  const OPTION_ALWAYS_EXPANDED = "alwaysExpanded";
+  const OPTION_MULTI_EXPAND = "multiExpand";
 
   const TABLIST_SECONDARY_METHODS = ["getTab", "isTab", "initTab", "initTabs"];
+
+  const DEFAULT_ACCORDION_OPTIONS = {
+    [OPTION_ALWAYS_EXPANDED]: false,
+    [HORIZONTAL]: false,
+    arrowActivation: false,
+    awaitPrevious: false,
+    a11y: ACCORDION,
+  };
 
   const A11Y_DEFAULTS$1 = {
     [ACCORDION]: {
@@ -3393,16 +3429,12 @@
       ...DEFAULT_OPTIONS,
       eventPrefix: getEventsPrefix(TABLIST),
       siblings: true,
-      alwaysExpanded: false,
-      multiExpand: false,
+      [OPTION_MULTI_EXPAND]: false,
       awaitAnimation: false,
-      awaitPrevious: false,
       keyboard: true,
-      arrowActivation: false,
-      [OPTION_HASH_NAVIGATION]: false,
+      [OPTION_HASH_NAVIGATION]: true,
       rtl: false,
       focusFilter: null,
-      horizontal: false,
       dismiss: false,
       [TAB]: getDataSelector(TABLIST, TAB),
       [TABPANEL]: getDataSelector(TABLIST, TABPANEL),
@@ -3410,6 +3442,7 @@
       [TAB + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [ITEM + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [TABPANEL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+      ...DEFAULT_ACCORDION_OPTIONS,
     };
     static _data = {};
     static instances = new Map();
@@ -3423,7 +3456,23 @@
       const { base, tabs, lastShownTab, opts } = this;
       const { a11y } = updateModule(this, A11Y, false, A11Y_DEFAULTS$1);
 
-      updateOptsByData(opts, base, [HIDE_MODE, OPTION_HASH_NAVIGATION]);
+      updateOptsByData(
+        opts,
+        base,
+        [
+          HIDE_MODE,
+          OPTION_HASH_NAVIGATION,
+          OPTION_ALWAYS_EXPANDED,
+          OPTION_MULTI_EXPAND,
+          HORIZONTAL,
+        ],
+        [
+          OPTION_HASH_NAVIGATION,
+          OPTION_ALWAYS_EXPANDED,
+          OPTION_MULTI_EXPAND,
+          HORIZONTAL,
+        ],
+      );
 
       if (a11y) {
         setAttribute(base, ROLE, a11y[ROLE]);
@@ -3469,7 +3518,7 @@
         return [isOpenTabpanel, tabObj];
       });
       const hasSelected = tabWithState.find(([isOpen]) => isOpen);
-      if (opts.alwaysExpanded && !hasSelected) {
+      if (opts[OPTION_ALWAYS_EXPANDED] && !hasSelected) {
         tabWithState[0][0] = true;
       }
       tabWithState.forEach(([isOpen, tabInstance]) => {
@@ -3572,13 +3621,18 @@
         : callOrReturn(opts[ITEM], { tablist, tab, index });
 
       const tabpanelId = tab.getAttribute(DATA_UI_PREFIX + TABLIST + "-" + TAB);
-      let tabpanel = tabpanelId && doc.getElementById(tabpanelId);
 
-      if (!tabpanel && isFunction(opts[TABPANEL])) {
+      let tabpanel;
+      if (tabpanelId) {
+        tabpanel = doc.getElementById(tabpanelId);
+      } else if (isString(opts[TABPANEL])) {
+        if (opts.siblings) {
+          tabpanel = next(tab, opts[TABPANEL]);
+        }
+      } else if (isIterable(opts[TABPANEL])) {
+        tabpanel = opts[TABPANEL][index];
+      } else if (isFunction(opts[TABPANEL])) {
         tabpanel = opts[TABPANEL]({ tablist, tab, index });
-      }
-      if (!tabpanel && opts.siblings) {
-        tabpanel = next(tab, opts[TABPANEL]);
       }
 
       if (!tabpanel) return;
@@ -3588,7 +3642,7 @@
       tab.id ||= TAB + "-" + uuid;
 
       let isOpen;
-      if (shownTabs.length && !opts.multiExpand) {
+      if (shownTabs.length && !opts[OPTION_MULTI_EXPAND]) {
         isOpen = false;
       }
       if (opts.hashNavigation && checkHash(id)) {
@@ -3654,7 +3708,7 @@
 
         disabled && tabInstance.hide(false);
 
-        if (this.opts.alwaysExpanded) {
+        if (this.opts[OPTION_ALWAYS_EXPANDED]) {
           const shownTabs = this.shownTabs;
           if (
             !shownTabs.length ||
@@ -3819,7 +3873,7 @@
       if (!tabInstance) return;
 
       const { opts, shownTabs, emit } = this;
-      const { a11y, multiExpand, awaitAnimation } = opts;
+      const { a11y, awaitAnimation } = opts;
       const { tab, isOpen, transition, index, tabpanel } = tabInstance;
 
       s = !!(s ?? !isOpen);
@@ -3829,17 +3883,15 @@
       if (
         s === isOpen ||
         (awaitAnimation &&
-          transition?.isAnimating &&
-          ((shownTabs.length <= 1 && !multiExpand) || multiExpand)) ||
-        (isOpen && opts.alwaysExpanded && !s && shownTabs.length < 2) ||
+          transition.isAnimating &&
+          ((shownTabs.length <= 1 && !opts[OPTION_MULTI_EXPAND]) ||
+            opts[OPTION_MULTI_EXPAND])) ||
+        (isOpen && opts[OPTION_ALWAYS_EXPANDED] && !s && shownTabs.length < 2) ||
         (s && !this.focusFilter(tabInstance))
       )
         return;
 
-      if (
-        transition?.isAnimating &&
-        (awaitAnimation || !(opts.alwaysExpanded && !multiExpand))
-      ) {
+      if (transition.isAnimating && !awaitAnimation) {
         await transition.cancel();
       }
 
@@ -3850,25 +3902,24 @@
 
       tabInstance.isOpen = s;
 
-      if (!multiExpand && s) {
-        for (const shownTab of shownTabs) {
-          if (tabInstance !== shownTab) {
-            if (shownTab._awaiting) {
-              shownTab.isOpen = false;
-              shownTab._awaiting.transition.cancel();
-              continue;
-            }
-            shownTab.hide(animated);
-            if (opts.awaitPrevious) {
-              tabInstance._awaiting = shownTab;
-              await shownTab.transition?.getAwaitPromise();
-              tabInstance._awaiting = false;
-            }
+      if (!opts[OPTION_MULTI_EXPAND] && s) {
+        const animatedOrShownTabs = this.tabs.filter(
+          (tab) =>
+            tab !== tabInstance && (tab.transition.isAnimating || tab.isOpen),
+        );
+        for (const tab of animatedOrShownTabs) {
+          if (tab.isOpen && tab.transition.isAnimating) {
+            tab.hide(false);
+            tab.transition.cancel();
+            continue;
+          }
+          tab.hide(animated);
+          if (opts.awaitPrevious) {
+            await tab.transition?.getAwaitPromise();
           }
         }
+        if (s !== tabInstance.isOpen) return;
       }
-
-      if (s !== tabInstance.isOpen) return;
 
       s && toggleHideModeState(true, this, tabpanel, tabInstance);
 
@@ -3926,12 +3977,14 @@
   }
 
   Tablist.data(UI_PREFIX + TABS, {
-    alwaysExpanded: true,
+    [OPTION_ALWAYS_EXPANDED]: true,
     horizontal: true,
     arrowActivation: true,
     awaitPrevious: true,
     a11y: TABS,
   });
+
+  Tablist.data(UI_PREFIX + ACCORDION, DEFAULT_ACCORDION_OPTIONS);
 
   class Autoaction {
     static Default = {
@@ -4528,7 +4581,12 @@
     }
     _update() {
       const { base, opts } = this;
-      updateOptsByData(opts, base, [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE]);
+      updateOptsByData(
+        opts,
+        base,
+        [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
+        [OPTION_TOP_LAYER],
+      );
 
       this[TRANSITION] = Transition.createOrUpdate(
         this[TRANSITION],
