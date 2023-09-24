@@ -109,8 +109,8 @@ export default class Floating {
     const targetStyles = getComputedStyle(target);
 
     let [flip, sticky, shrink, placement, topLayer] = [
-      STICKY,
       FLIP,
+      STICKY,
       SHRINK,
       PLACEMENT,
       TOP_LAYER,
