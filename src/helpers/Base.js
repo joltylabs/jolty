@@ -127,6 +127,15 @@ class Base {
       {
         onUpdate: (breakpoint, opts) => {
           this.emit(EVENT_BREAKPOINT, breakpoint, this.breakpoint);
+          if (breakpoint[0].data) {
+            const dataValue = getDataValue(
+              this.constructor._data,
+              breakpoint[0].data,
+            );
+            if (dataValue) {
+              breakpoint[0] = { ...breakpoint[0], ...dataValue };
+            }
+          }
           this.opts = breakpoint[1]
             ? mergeDeep(opts, breakpoint[0])
             : { ...opts };
