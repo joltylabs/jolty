@@ -1,19 +1,16 @@
 import {
   ACTION_REMOVE,
-  CLASS,
+  CLASS_HIDDEN_MODE,
+  CLASS_SHOWN_MODE,
   doc,
   FLOATING_DATA_ATTRIBUTE,
   HIDDEN,
   HIDDEN_CLASS,
   HIDE_MODE,
   PLACEHOLDER,
-  SHOWN,
   SHOWN_CLASS,
   UI_PREFIX,
 } from "../constants/index.js";
-
-const CLASS_SHOWN_MODE = CLASS + "-" + SHOWN;
-const CLASS_HIDDEN_MODE = CLASS + "-" + HIDDEN;
 
 export default (
   s,
