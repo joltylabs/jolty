@@ -148,7 +148,7 @@ export default class Floating {
     const moveToRoot = topLayer && opts.topLayerForce;
 
     const inTopLayer =
-      (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
+      (topLayer && opts.popoverApi && POPOVER_API_SUPPORTED) ||
       mode === MODAL ||
       moveToRoot;
 
