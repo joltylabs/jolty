@@ -70,8 +70,14 @@ export default (instance, { s, animated, silent, eventParams }) => {
     instance.off(doc, EVENT_ACTION_OUTSIDE);
   }
 
+  opts.escapeHide &&
+    addEscapeHide(
+      instance,
+      s,
+      instance.toggler ? [instance.toggler, instance.base] : doc,
+    );
+
   if (s) {
-    opts.escapeHide && addEscapeHide(instance, s, doc);
     opts.autofocus && callAutofocus(instance);
   } else {
     !s && target.contains(doc.activeElement) && focus(toggler);

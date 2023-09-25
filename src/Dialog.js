@@ -463,7 +463,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       this.returnFocus();
     }
 
-    opts.escapeHide && addEscapeHide(this, s);
+    opts.escapeHide && addEscapeHide(this, s, base);
 
     if (s) {
       !ignoreAutofocus && opts.autofocus && callAutofocus(this);
