@@ -7,8 +7,13 @@ import {
   HIDDEN_CLASS,
   HIDE_MODE,
   PLACEHOLDER,
+  SHOWN,
+  SHOWN_CLASS,
   UI_PREFIX,
 } from "../constants/index.js";
+
+const CLASS_SHOWN_MODE = CLASS + "-" + SHOWN;
+const CLASS_HIDDEN_MODE = CLASS + "-" + HIDDEN;
 
 export default (
   s,
@@ -45,11 +50,13 @@ export default (
         }
       }
     }
-  } else if (mode !== CLASS) {
+  } else if (mode !== CLASS_HIDDEN_MODE && mode !== CLASS_SHOWN_MODE) {
     target.toggleAttribute(mode, !s);
   }
 
-  target.classList.toggle(HIDDEN_CLASS, !s && mode === CLASS);
+  console.log(mode, mode === CLASS_SHOWN_MODE);
+  target.classList.toggle(HIDDEN_CLASS, !s && mode === CLASS_HIDDEN_MODE);
+  target.classList.toggle(SHOWN_CLASS, s && mode === CLASS_SHOWN_MODE);
 
   if (s) {
     target[HIDDEN] = false;

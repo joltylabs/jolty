@@ -244,6 +244,7 @@ export const ALERT = "alert";
 export const REGION = "region";
 
 export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
+export const SHOWN_CLASS = UI_PREFIX + SHOWN;
 
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
 export const DEFAULT_OPTIONS = {
