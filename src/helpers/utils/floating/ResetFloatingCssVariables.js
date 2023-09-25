@@ -1,6 +1,8 @@
 import {
+  ARROW_HEIGHT,
   ARROW_OFFSET,
   ARROW_PADDING,
+  ARROW_WIDTH,
   BOUNDARY_OFFSET,
   doc,
   DROPDOWN,
@@ -33,6 +35,8 @@ export default () => {
       BOUNDARY_OFFSET,
       ARROW_OFFSET,
       ARROW_PADDING,
+      ARROW_WIDTH,
+      ARROW_HEIGHT,
     ].forEach((prop) => {
       if (registerProperty) {
         registerProperty({

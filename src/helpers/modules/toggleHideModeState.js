@@ -54,7 +54,6 @@ export default (
     target.toggleAttribute(mode, !s);
   }
 
-  console.log(mode, mode === CLASS_SHOWN_MODE);
   target.classList.toggle(HIDDEN_CLASS, !s && mode === CLASS_HIDDEN_MODE);
   target.classList.toggle(SHOWN_CLASS, s && mode === CLASS_SHOWN_MODE);
 

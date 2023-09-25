@@ -29,6 +29,7 @@ export default (anchorStyles, targetStyles, wrapper, PREFIX) => {
       let value =
         getPropertyValue(anchorStyles, PREFIX + name) ||
         getPropertyValue(targetStyles, PREFIX + name);
+
       if (!value) return;
       value = value.split(" ");
       if (name === BOUNDARY_OFFSET) {
