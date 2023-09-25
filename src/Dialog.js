@@ -444,7 +444,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
     }
 
-    if (__initial && !animated) {
+    if (__initial && !animated && backdrop) {
       backdrop.style.transition = NONE;
       backdrop.offsetWidth;
       backdrop.style.transition = "";
