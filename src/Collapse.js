@@ -80,7 +80,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       opts,
       base,
       [HIDE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
-      [OPTION_HASH_NAVIGATION],
+      [OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
     );
 
     this[TELEPORT] = Teleport.createOrUpdate(

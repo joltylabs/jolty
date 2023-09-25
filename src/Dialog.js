@@ -176,7 +176,13 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         OPTION_GROUP,
         OPTION_AUTODESTROY,
       ],
-      [OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL, OPTION_HASH_NAVIGATION],
+      [
+        MODAL,
+        OPTION_TOP_LAYER,
+        OPTION_PREVENT_SCROLL,
+        OPTION_HASH_NAVIGATION,
+        OPTION_AUTODESTROY,
+      ],
     );
     updateModule(this, OPTION_GROUP, NAME);
 
