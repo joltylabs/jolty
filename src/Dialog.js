@@ -53,6 +53,7 @@ import {
   OPTION_HASH_NAVIGATION,
   NONE,
   OPTION_AUTODESTROY,
+  OPTION_MOVE_TO_ROOT,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -151,10 +152,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     modal: true,
     topLayer: true,
-    topLayerForce: true,
-
-    popoverApi: true,
-    safeModal: true,
+    moveToRoot: true,
   };
 
   constructor(elem, opts) {
@@ -162,7 +160,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   _update() {
-    const { base, _fromHTML, opts, id, on } = this;
+    const { base, opts, id, on } = this;
     updateOptsByData(
       opts,
       base,
@@ -175,10 +173,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         HIDE_MODE,
         OPTION_GROUP,
         OPTION_AUTODESTROY,
+        OPTION_MOVE_TO_ROOT,
       ],
       [
         MODAL,
         OPTION_TOP_LAYER,
+        OPTION_MOVE_TO_ROOT,
         OPTION_PREVENT_SCROLL,
         OPTION_HASH_NAVIGATION,
         OPTION_AUTODESTROY,
@@ -199,12 +199,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     const isDialogElem = isDialog(base);
 
-    const moveToBody = (opts.topLayer && opts.topLayerForce) || _fromHTML;
-
     this[TELEPORT] = Teleport.createOrUpdate(
       this[TELEPORT],
       base,
-      moveToBody ? body : false,
+      opts.moveToRoot ? body : false,
       {
         disableAttributes: true,
       },
@@ -231,10 +229,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     base.popover =
-      opts.topLayer &&
-      (!isDialogElem || !opts.modal) &&
-      POPOVER_API_SUPPORTED &&
-      opts.popoverApi
+      opts.topLayer && (!isDialogElem || !opts.modal) && POPOVER_API_SUPPORTED
         ? POPOVER_API_MODE_MANUAL
         : null;
 
@@ -502,12 +497,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     const { base, opts } = this;
     const baseIsDialog = isDialog(base);
     if (s) {
-      const isModal =
-        baseIsDialog &&
-        (!opts.safeModal || POPOVER_API_SUPPORTED) &&
-        opts.modal;
-      const isPopover =
-        opts.topLayer && POPOVER_API_SUPPORTED && opts.popoverApi;
+      const isModal = baseIsDialog && opts.modal;
+      const isPopover = opts.topLayer && POPOVER_API_SUPPORTED;
 
       if (baseIsDialog) {
         if (isModal) {
