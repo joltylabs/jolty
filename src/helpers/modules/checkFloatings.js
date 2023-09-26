@@ -1,37 +1,34 @@
-function collectFloatings(child) {
-  const result = [];
-  if (child?.floatings) {
-    result.push(...child.floatings);
-    for (const floating of child.floatings) {
-      result.push(...collectFloatings(floating));
-    }
-  }
-  return result;
-}
+import { arrayFrom } from "../utils/index.js";
 
+const FLOATING_IS_INTERACTED = ":hover,:focus-within";
 export default function (instance, s) {
-  if (s && instance?.floating?.parentFloating?.instance?.isOpen === false)
-    return true;
+  const floating = instance.floating;
 
-  if (!s && instance.floating) {
-    const parentFloating = instance.floating.parentFloating;
+  if (!floating) return;
+  let parentFloating = floating.parentFloating;
 
+  if (s) {
+    while (parentFloating) {
+      parentFloating.instance.show();
+      parentFloating = parentFloating.parentFloating;
+    }
+  } else {
     if (
       parentFloating &&
-      !parentFloating.base.matches(":hover,:focus-within")
+      !parentFloating.base.matches(FLOATING_IS_INTERACTED)
     ) {
-      parentFloating.hide();
+      parentFloating.instance.hide();
     }
 
-    const allChildFloatings = collectFloatings(instance.floating);
-
-    if (
-      allChildFloatings.some((childFloating) =>
-        childFloating?.base?.matches(":hover,:focus-within"),
-      )
-    ) {
-      instance.isOpen = true;
-      return true;
+    let floatings = arrayFrom(floating.floatings);
+    while (floatings.length) {
+      for (const childFloating of floatings) {
+        if (childFloating.base.matches(FLOATING_IS_INTERACTED)) {
+          instance.isOpen = true;
+          return true;
+        }
+        floatings = arrayFrom(childFloating.floatings);
+      }
     }
   }
 }

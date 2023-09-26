@@ -35,12 +35,8 @@ export default (instance, { s, animated, silent, eventParams }) => {
       target,
       arrow: target.querySelector(getDataSelector(name, ARROW)),
       opts,
-      hide: instance.hide,
       name,
       instance,
-      onTopLayer(type) {
-        constructor.dispatchTopLayer(type);
-      },
     }).init();
   }
 
