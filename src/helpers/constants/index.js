@@ -282,6 +282,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   popoverApi: true,
   safeModal: true,
   floatingClass: "",
+  checkChildren: false,
   shown: false,
   arrow: {
     height: null,

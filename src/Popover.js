@@ -40,6 +40,7 @@ import {
   floatingTransition,
   callShowInit,
   toggleConfirm,
+  checkFloatings,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -55,6 +56,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     eventPrefix: getEventsPrefix(POPOVER),
     dismiss: true,
     autofocus: true,
+    interactive: true,
     trigger: CLICK,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -126,6 +128,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       return;
 
     this.isOpen = s;
+
+    if (opts.interactive && checkFloatings(this, s)) return;
 
     if (isAnimating && !awaitAnimation) {
       await this[TRANSITION].cancel();

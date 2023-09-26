@@ -45,6 +45,7 @@ import {
   callShowInit,
   toggleOnInterection,
   addDismiss,
+  checkFloatings,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 
@@ -156,6 +157,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       return;
 
     this.isOpen = s;
+
+    if (opts.interactive && checkFloatings(this, s)) return;
 
     if (isAnimating && !awaitAnimation) {
       await this[TRANSITION].cancel();

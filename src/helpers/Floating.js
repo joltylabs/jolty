@@ -54,6 +54,7 @@ import {
   resizeObserver,
   ResetFloatingCssVariables,
   collectCssVariables,
+  arrayFrom,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import {
@@ -70,7 +71,9 @@ import FocusGuards from "./modules/FocusGuards.js";
 ResetFloatingCssVariables();
 
 export default class Floating {
+  static instances = new Set();
   constructor({
+    instance,
     target,
     anchor,
     arrow,
@@ -78,7 +81,6 @@ export default class Floating {
     name = "",
     base,
     onTopLayer,
-    defaultTopLayerOpts,
     hide,
     teleport,
   }) {
@@ -94,14 +96,13 @@ export default class Floating {
       off,
       base,
       onTopLayer,
-      defaultTopLayerOpts,
       hide,
       teleport,
+      instance,
     });
   }
   init() {
-    const { target, anchor, arrow, opts, name, base, on, defaultTopLayerOpts } =
-      this;
+    const { target, anchor, arrow, opts, name, base, on } = this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
 
     const anchorScrollParents = parents(anchor, isOverflowElement);
@@ -127,8 +128,7 @@ export default class Floating {
     sticky = sticky ? sticky === TRUE : opts[STICKY];
     shrink = shrink ? shrink === TRUE : opts[SHRINK];
 
-    this.topLayer = topLayer =
-      topLayer === FALSE ? false : opts.topLayer || defaultTopLayerOpts;
+    this.topLayer = topLayer = topLayer === FALSE ? false : opts.topLayer;
 
     this[PLACEMENT] = placement =
       base.getAttribute(DATA_UI_PREFIX + PLACEMENT) ||
@@ -310,14 +310,28 @@ export default class Floating {
       passive: true,
     });
     this.updatePosition = updatePosition.bind(this);
+
+    Floating.instances.add(this);
+
     return this;
+  }
+  get parentFloating() {
+    return arrayFrom(Floating.instances).find(
+      (floating) =>
+        floating !== this &&
+        this.teleport.placeholder.parentNode.closest("#" + floating.base.id),
+    );
+  }
+  get floatings() {
+    return arrayFrom(Floating.instances).filter(
+      (floating) => floating.parentFloating === this,
+    );
   }
 
   _toggleApi(useFocusGuards) {
     const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
     const wrapperIsDialog = isDialog(wrapper);
-    const isModal =
-      mode === MODAL && (!opts.safeModal || POPOVER_API_SUPPORTED);
+    const isModal = mode === MODAL;
     const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
 
     if (wrapperIsDialog) {
@@ -433,5 +447,6 @@ export default class Floating {
     this.focusGuards?.destroy();
     this.wrapper.remove();
     this.teleport.reset();
+    Floating.instances.delete(this);
   }
 }
