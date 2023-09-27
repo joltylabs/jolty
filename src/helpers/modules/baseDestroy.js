@@ -32,8 +32,9 @@ export default (
 
   off();
 
+  base.id.includes(uuid) && base.removeAttribute(ID);
+
   if (!keepInstance) {
-    base.id.includes(uuid) && base.removeAttribute(ID);
     breakpoints?.destroy();
     instances.delete(id);
   }

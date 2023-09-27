@@ -287,20 +287,32 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   destroy(destroyOpts) {
     if (!this.isInit) return;
 
-    removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
+    removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+    [DIALOG, CONTENT, BACKDROP].forEach((name) =>
+      removeClass(this[name], this.opts[name + CLASS_ACTIVE_SUFFIX]),
+    );
+
     this.focusGuards?.destroy();
     this.focusGuards = null;
     this.placeholder?.replaceWith(this.base);
-    if (!destroyOpts?.remove) {
-      this.opts.a11y &&
-        removeAttribute(
-          this.base,
-          TABINDEX,
-          ROLE,
-          ARIA_LABELLEDBY,
-          ARIA_DESCRIBEDBY,
-        );
-    }
+
+    this.isOpen = false;
+
+    this[DIALOG].hidePopover?.();
+    this[DIALOG].close?.();
+    this[DIALOG].popover = null;
+
+    this.preventScroll(false);
+
+    this.opts.a11y &&
+      removeAttribute(
+        this.base,
+        TABINDEX,
+        ROLE,
+        ARIA_LABELLEDBY,
+        ARIA_DESCRIBEDBY,
+      );
+
     baseDestroy(this, destroyOpts);
     return this;
   }
