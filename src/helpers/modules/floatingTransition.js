@@ -46,9 +46,11 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   if (!s && wrapper?.matches(":" + MODAL)) {
     wrapper.close();
-    if (opts.popoverApi && POPOVER_API_SUPPORTED) {
+    if (POPOVER_API_SUPPORTED) {
       wrapper.popover = POPOVER_API_MODE_MANUAL;
       wrapper.showPopover();
+    } else {
+      animated = false;
     }
   }
 

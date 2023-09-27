@@ -83,7 +83,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limitAnimateLeave: true,
     autohide: false,
     topLayer: true,
-    popoverApi: true,
     keepTopLayer: true,
     a11y: STATUS,
     [TOAST + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -155,15 +154,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
 
-    const {
-      limit,
-      position,
-      container,
-      popoverApi,
-      topLayer,
-      keepTopLayer,
-      hideMode,
-    } = opts;
+    const { limit, position, container, topLayer, keepTopLayer, hideMode } =
+      opts;
 
     if (animated && transition?.isAnimating) return;
 
@@ -198,7 +190,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
             keepTopLayer,
           }));
 
-          if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+          if (POPOVER_API_SUPPORTED && topLayer) {
             wrapper[POPOVER] = POPOVER_API_MODE_MANUAL;
           } else {
             wrapper[POPOVER] = null;
@@ -207,7 +199,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
           if (wrapper && wrapper.parentElement !== root) {
             root.append(wrapper);
           }
-          if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+          if (POPOVER_API_SUPPORTED && topLayer) {
             wrapper.hidePopover();
             wrapper.showPopover();
           }

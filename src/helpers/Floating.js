@@ -10,7 +10,6 @@ import {
   DIV,
   AVAILABLE_WIDTH,
   AVAILABLE_HEIGHT,
-  body,
   EVENT_SCROLL,
   EVENT_RESIZE,
   FLOATING_DATA_ATTRIBUTE,
@@ -40,7 +39,6 @@ import {
   UI_EVENT_PREFIX,
   FALSE,
   FLOATING,
-  CLASS,
   CENTER,
   AUTO,
   CONTENT,
@@ -66,6 +64,7 @@ import {
   parents,
   setAttribute,
   focus,
+  getElement,
 } from "./dom";
 
 import { isDialog } from "./is/index.js";
@@ -426,7 +425,7 @@ export default class Floating {
     }
 
     if (moveToRoot) {
-      body.append(wrapper);
+      getElement(opts.root)?.append(wrapper);
     } else {
       anchor.after(wrapper);
     }
