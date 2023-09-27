@@ -109,10 +109,10 @@ export const ARROW_WIDTH = ARROW + "-" + WIDTH;
 export const ARROW_HEIGHT = ARROW + "-" + HEIGHT;
 export const TRUE = "true";
 export const FALSE = "false";
-export const TOP_LAYER = "top-layer";
 
 export const doc = document;
 export const body = doc.body;
+export const BODY = "body";
 
 export const ENTER = "enter";
 export const LEAVE = "leave";
@@ -235,6 +235,9 @@ export const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
 export const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
 export const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
 export const OPTION_TOP_LAYER = "topLayer";
+export const OPTION_MOVE_TO_ROOT = "moveToRoot";
+
+export const OPTION_FLOATING_CLASS = FLOATING + "Class";
 export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = upperFirst(ROLE);
@@ -244,7 +247,9 @@ export const ALERT = "alert";
 export const REGION = "region";
 
 export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
-
+export const SHOWN_CLASS = UI_PREFIX + SHOWN;
+export const CLASS_SHOWN_MODE = CLASS + "-" + SHOWN;
+export const CLASS_HIDDEN_MODE = CLASS + "-" + HIDDEN;
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
 export const DEFAULT_OPTIONS = {
   init: true,
@@ -267,26 +272,21 @@ export const DEFAULT_FLOATING_OPTIONS = {
   placement: BOTTOM,
   offset: 0,
   padding: 0,
-  delay: 200,
+  delay: 150,
   boundaryOffset: 0,
   shrink: false,
   flip: true,
-  sticky: false,
+  sticky: true,
   escapeHide: true,
   outsideHide: true,
   focusTrap: false,
   topLayer: true,
-  topLayerForce: true,
-  popoverApi: true,
-  safeModal: true,
-  floatingClass: "",
+  root: BODY,
+  moveToRoot: false,
+  mode: false,
+  [OPTION_FLOATING_CLASS]: "",
   shown: false,
-  arrow: {
-    height: null,
-    width: null,
-    offset: 0,
-    padding: 0,
-  },
+  arrow: null,
 };
 
 export const SELECTOR_AUTOFOCUS = `[${AUTOFOCUS}]`;

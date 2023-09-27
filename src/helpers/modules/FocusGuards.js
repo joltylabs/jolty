@@ -1,4 +1,4 @@
-import { createElement } from "../utils/index.js";
+import { arrayFrom, createElement } from "../utils/index.js";
 import {
   AFTER,
   BEFORE,
@@ -46,13 +46,10 @@ export default class FocusGuards {
       if (e.relatedTarget === returnElem) {
         focusFirst = true;
       }
-      const returnElems = target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR);
-      if (!focusFirst && isGuardBefore) {
-        returnElem = returnElems[returnElems.length - 1];
-      } else {
-        returnElem = returnElems[0];
-      }
-      focus(returnElem);
+
+      arrayFrom(target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR))
+        .at(!focusFirst && isGuardBefore ? -1 : 0)
+        .focus();
     };
 
     this.focusGuards = [BEFORE, AFTER].map((methodName) => {

@@ -11,7 +11,6 @@ import {
   DEFAULT_OPTIONS,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
-  OPTION_TOP_LAYER,
   DATA_UI_PREFIX,
   CONFIRM,
   TRIGGER,
@@ -40,6 +39,7 @@ import {
   floatingTransition,
   callShowInit,
   toggleConfirm,
+  checkFloatings,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -51,10 +51,10 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    mode: false,
     eventPrefix: getEventsPrefix(POPOVER),
     dismiss: true,
     autofocus: true,
+    interactive: true,
     trigger: CLICK,
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -69,6 +69,9 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   init() {
     if (this.isInit) return;
+
+    this.base.id = this.id;
+
     this._update();
 
     this.teleport = new Teleport(this.base, { disableAttributes: true });
@@ -77,12 +80,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   _update() {
     const { base, opts } = this;
-    updateOptsByData(
-      opts,
-      base,
-      [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
-      [OPTION_TOP_LAYER],
-    );
+    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
@@ -107,10 +105,11 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
-    const { opts, toggler } = this;
+    const { opts, toggler, base } = this;
     this.emit(EVENT_BEFORE_DESTROY);
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+    removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
     return baseDestroy(this, destroyOpts);
   }
 
@@ -126,6 +125,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       return;
 
     this.isOpen = s;
+
+    if (opts.interactive && checkFloatings(this, s)) return;
 
     if (isAnimating && !awaitAnimation) {
       await this[TRANSITION].cancel();

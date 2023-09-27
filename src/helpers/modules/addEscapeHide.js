@@ -6,7 +6,7 @@ import {
 } from "../constants";
 const eventName = EVENT_KEYDOWN + ".escapeHide";
 
-export default function (instance, s, elem = instance.base) {
+export default function (instance, s, elem) {
   if (s) {
     instance.on(elem, eventName, (event) => {
       if (event.keyCode === KEY_ESC) {

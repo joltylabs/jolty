@@ -45,6 +45,7 @@ import {
   callShowInit,
   toggleOnInterection,
   addDismiss,
+  checkFloatings,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 
@@ -54,7 +55,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    delay: [200, 0],
+    delay: [150, 0],
     eventPrefix: getEventsPrefix(TOOLTIP),
     placement: TOP,
     template: (content) =>
@@ -110,6 +111,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     if (isInit) return;
 
+    anchor.id = id;
+
     emit(EVENT_BEFORE_INIT);
 
     this._cache = { [TITLE]: anchor[TITLE] };
@@ -156,6 +159,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       return;
 
     this.isOpen = s;
+
+    if (opts.interactive && checkFloatings(this, s)) return;
 
     if (isAnimating && !awaitAnimation) {
       await this[TRANSITION].cancel();

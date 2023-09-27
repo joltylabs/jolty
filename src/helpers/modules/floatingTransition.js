@@ -35,12 +35,8 @@ export default (instance, { s, animated, silent, eventParams }) => {
       target,
       arrow: target.querySelector(getDataSelector(name, ARROW)),
       opts,
-      hide: instance.hide,
-      defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
       name,
-      onTopLayer(type) {
-        constructor.dispatchTopLayer(type);
-      },
+      instance,
     }).init();
   }
 
@@ -50,9 +46,11 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   if (!s && wrapper?.matches(":" + MODAL)) {
     wrapper.close();
-    if (opts.popoverApi && POPOVER_API_SUPPORTED) {
+    if (POPOVER_API_SUPPORTED) {
       wrapper.popover = POPOVER_API_MODE_MANUAL;
       wrapper.showPopover();
+    } else {
+      animated = false;
     }
   }
 
@@ -70,8 +68,14 @@ export default (instance, { s, animated, silent, eventParams }) => {
     instance.off(doc, EVENT_ACTION_OUTSIDE);
   }
 
+  opts.escapeHide &&
+    addEscapeHide(
+      instance,
+      s,
+      instance.toggler ? [instance.toggler, instance.base] : doc,
+    );
+
   if (s) {
-    opts.escapeHide && addEscapeHide(instance, s, doc);
     opts.autofocus && callAutofocus(instance);
   } else {
     !s && target.contains(doc.activeElement) && focus(toggler);

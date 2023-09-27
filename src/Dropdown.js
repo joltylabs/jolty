@@ -23,12 +23,15 @@ import {
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   doc,
-  OPTION_TOP_LAYER,
   HIDE_MODE,
   TELEPORT,
   TRANSITION,
   TRIGGER,
   ITEM,
+  LEFT,
+  RIGHT,
+  DOWN,
+  UP,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -58,17 +61,27 @@ import {
   toggleOnInterection,
   floatingTransition,
   callShowInit,
+  checkFloatings,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 import { isFunction } from "./helpers/is/index.js";
+
+const DIRECTIONS = {
+  [KEY_ARROW_LEFT]: LEFT,
+  [KEY_ARROW_UP]: UP,
+  [KEY_ARROW_RIGHT]: RIGHT,
+  [KEY_ARROW_DOWN]: DOWN,
+  x: [LEFT, RIGHT],
+  y: [UP, DOWN],
+};
 
 class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    mode: false,
     eventPrefix: getEventsPrefix(DROPDOWN),
     itemClickHide: true,
+    arrowActivation: "y",
     autofocus: true,
     items: getDataSelector(DROPDOWN + "-" + ITEM),
     trigger: CLICK,
@@ -82,27 +95,33 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   init() {
     if (this.isInit) return;
+
+    this.base.id = this.id;
+
     this._update();
 
     const { toggler, base, show, on } = this;
 
     on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
+      let arrowActivation = this.opts.arrowActivation;
       const { keyCode } = event;
 
-      const arrowActivated =
-        KEY_ARROW_UP === keyCode || KEY_ARROW_DOWN === keyCode;
+      if (DIRECTIONS[arrowActivation]) {
+        arrowActivation = DIRECTIONS[arrowActivation];
+      }
+
+      const arrowActivated = arrowActivation.includes(DIRECTIONS[keyCode]);
+
       if (arrowActivated) {
         event.preventDefault();
-      }
-      if (arrowActivated) {
         if (!this.isOpen) {
           await show({ event, trigger: toggler });
         }
-      }
-      if (arrowActivated) {
         if (this.isAnimating && !this.isOpen) return;
-        this.focusableElems[0]?.focus();
+        this.focusableElems
+          .at(keyCode === KEY_ARROW_UP || keyCode === KEY_ARROW_LEFT ? -1 : 0)
+          ?.focus();
       }
     });
 
@@ -112,12 +131,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   _update() {
     const { base, opts, on, off, hide } = this;
-    updateOptsByData(
-      opts,
-      base,
-      [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
-      [OPTION_TOP_LAYER],
-    );
+    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
@@ -169,7 +183,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     );
   }
   _onKeydown(event) {
-    const { keyCode } = event;
     const isControl = [
       KEY_ENTER,
       KEY_SPACE,
@@ -179,10 +192,10 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       KEY_ARROW_UP,
       KEY_ARROW_RIGHT,
       KEY_ARROW_DOWN,
-    ].includes(keyCode);
-    const { focusableElems, hide, opts } = this;
+    ].includes(event.keyCode);
+    const { focusableElems, opts } = this;
 
-    if (!isControl && keyCode !== KEY_TAB) {
+    if (!isControl && event.keyCode !== KEY_TAB) {
       focusableElems
         .find((elem) => elem.textContent.toLowerCase().startsWith(event.key))
         ?.focus();
@@ -197,7 +210,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     );
 
     const nextIndex = currentIndex + 1 > lastIndex ? 0 : currentIndex + 1;
-    const prevIndex = currentIndex ? currentIndex - 1 : lastIndex;
+    const prevIndex = currentIndex > 0 ? currentIndex - 1 : lastIndex;
 
     const prevCode = opts.horizontal ? KEY_ARROW_LEFT : KEY_ARROW_UP;
     const nextCode = opts.horizontal ? KEY_ARROW_RIGHT : KEY_ARROW_DOWN;
@@ -211,7 +224,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       case KEY_ENTER:
       case KEY_SPACE:
         focusableElems[currentIndex].click();
-        hide({ event, trigger: event.target });
+        // hide({ event, trigger: event.target });
         break;
       case KEY_END:
         focusableElems[rtl ? firstIndex : lastIndex].focus();
@@ -229,10 +242,11 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
-    const { opts, toggler } = this;
+    const { opts, toggler, base } = this;
     this.emit(EVENT_BEFORE_DESTROY);
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+    removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
     return baseDestroy(this, destroyOpts);
   }
 
@@ -248,6 +262,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       return;
 
     this.isOpen = s;
+
+    if (checkFloatings(this, s)) return;
 
     if (isAnimating && !awaitAnimation) {
       await this[TRANSITION].cancel();

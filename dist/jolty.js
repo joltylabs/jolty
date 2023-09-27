@@ -117,10 +117,10 @@
   const ARROW_HEIGHT = ARROW + "-" + HEIGHT;
   const TRUE = "true";
   const FALSE = "false";
-  const TOP_LAYER = "top-layer";
 
   const doc = document;
   const body = doc.body;
+  const BODY = "body";
 
   const ENTER = "enter";
   const LEAVE = "leave";
@@ -234,6 +234,9 @@
   const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
   kebabToCamel(ARIA_ATOMIC);
   const OPTION_TOP_LAYER = "topLayer";
+  const OPTION_MOVE_TO_ROOT = "moveToRoot";
+
+  const OPTION_FLOATING_CLASS = FLOATING + "Class";
   const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
   const CLASS_ACTIVE_SUFFIX = "ClassActive";
   const ROLE_SUFFIX = upperFirst(ROLE);
@@ -243,6 +246,9 @@
   const REGION = "region";
 
   const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
+  const SHOWN_CLASS = UI_PREFIX + SHOWN;
+  const CLASS_SHOWN_MODE = CLASS + "-" + SHOWN;
+  const CLASS_HIDDEN_MODE = CLASS + "-" + HIDDEN;
   const DEFAULT_OPTIONS = {
     init: true,
     destroy: false,
@@ -264,26 +270,21 @@
     placement: BOTTOM,
     offset: 0,
     padding: 0,
-    delay: 200,
+    delay: 150,
     boundaryOffset: 0,
     shrink: false,
     flip: true,
-    sticky: false,
+    sticky: true,
     escapeHide: true,
     outsideHide: true,
     focusTrap: false,
     topLayer: true,
-    topLayerForce: true,
-    popoverApi: true,
-    safeModal: true,
-    floatingClass: "",
+    root: BODY,
+    moveToRoot: false,
+    mode: false,
+    [OPTION_FLOATING_CLASS]: "",
     shown: false,
-    arrow: {
-      height: null,
-      width: null,
-      offset: 0,
-      padding: 0,
-    },
+    arrow: null,
   };
   const SELECTOR_DISABLED = `[${DISABLED}]`;
   const SELECTOR_INERT = `[${INERT}]`;
@@ -932,6 +933,8 @@
         BOUNDARY_OFFSET,
         ARROW_OFFSET,
         ARROW_PADDING,
+        ARROW_WIDTH,
+        ARROW_HEIGHT,
       ].forEach((prop) => {
         if (registerProperty) {
           registerProperty({
@@ -1021,8 +1024,10 @@
   var isShown = (elem, hideMode) => {
     return hideMode === ACTION_REMOVE
       ? inDOM(elem)
-      : hideMode === CLASS
+      : hideMode === CLASS_HIDDEN_MODE
       ? !elem.classList.contains(HIDDEN_CLASS)
+      : hideMode === CLASS_SHOWN_MODE
+      ? elem.classList.contains(SHOWN_CLASS)
       : !elem.hasAttribute(hideMode);
   };
 
@@ -1190,40 +1195,49 @@
   }
 
   class Breakpoints {
-    static mql = {};
-    static instances = new Set();
     constructor(breakpoints, opts) {
-      const unit = opts.unit ?? PX;
       this._onResize = this._onResize.bind(this);
-      breakpoints = Object.entries(breakpoints).sort((a, b) => a[0] - b[0]);
+
+      breakpoints = Object.entries(breakpoints).sort((a, b) => +a[0] - +b[0]);
+
       this.mql = breakpoints.map(([width, data], i) => {
-        width = +width;
-        const media = !i
-          ? `not all and (min-width:${breakpoints[i + 1][0]}${unit})`
-          : `(min-width:${width}${unit})`;
-        const mq = (this.constructor.mql[width] ||= window.matchMedia(media));
+        let media;
+        if (i === 0) {
+          media = `(max-width:${breakpoints[1][0] - 1}px)`;
+        } else if (i === breakpoints.length - 1) {
+          media = `(min-width:${width}px)`;
+        } else {
+          media = `(min-width:${width}px) and (max-width:${
+          breakpoints[i + 1][0] - 1
+        }px)`;
+        }
+
+        const mq = window.matchMedia(media);
+
         mq.addEventListener(EVENT_CHANGE, this._onResize);
-        return { mq, width, data };
+        return { mq, width: +width, data };
       });
       this.breakpoints = breakpoints;
       this.opts = opts;
       this._onResize();
-      this.constructor.instances.add(this);
     }
     _onResize(e) {
       if (!e || e.matches) {
         this.checkBreakpoints();
       }
     }
-    checkBreakpoints(ignoreConditions) {
+    checkBreakpoints() {
       const { opts, breakpoint, mql } = this;
-      let currentData, newBreakpoint;
+
+      let currentData = {},
+        newBreakpoint;
       for (const { width, data, mq } of mql) {
         if (width && !mq.matches) break;
         newBreakpoint = [data, width];
-        currentData = mergeDeep(currentData ?? data, data);
+        currentData = mergeDeep(currentData, data);
       }
-      if (ignoreConditions || !breakpoint || breakpoint[1] !== newBreakpoint[1]) {
+
+      if (!breakpoint || breakpoint[1] !== newBreakpoint[1]) {
         this.breakpoint = newBreakpoint;
         opts.onUpdate && opts.onUpdate(newBreakpoint, currentData);
       }
@@ -1234,7 +1248,6 @@
       this.mql.forEach(({ mq }) =>
         mq.removeEventListener(EVENT_CHANGE, this._onResize),
       );
-      this.constructor.instances.delete(this);
     }
   }
 
@@ -1271,7 +1284,7 @@
         opts = mergeDeep(Default, getDataValue(_data, dataName, elem), opts);
         elem = isString(opts.template)
           ? callOrReturn(_templates[opts.template], opts)
-          : opts.template(opts);
+          : opts.template?.(opts);
         this._fromTemplate = true;
       } else if (elem) {
         if (isHTML(elem)) {
@@ -1302,7 +1315,8 @@
 
       this.baseOpts = this.opts = opts;
 
-      this.id = elem.id ||= this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
+      this.id = elem.id || (this.uuid = uuidGenerator(UI_PREFIX + NAME + "-"));
+
       const eventHandler = new EventHandler();
       [ACTION_ON, ACTION_OFF, ACTION_ONCE].forEach((name) => {
         this[name] = (...params) => {
@@ -1350,8 +1364,9 @@
               ? mergeDeep(opts, breakpoint[0])
               : { ...opts };
             delete this.opts.breakpoints;
+
             if (opts.destroy) {
-              this.destroy();
+              this.destroy({ keepInstance: true });
             } else if (this.isInit) {
               this._update?.();
             } else {
@@ -1765,7 +1780,7 @@
 
   const eventName = EVENT_KEYDOWN + ".escapeHide";
 
-  function addEscapeHide (instance, s, elem = instance.base) {
+  function addEscapeHide (instance, s, elem) {
     if (s) {
       instance.on(elem, eventName, (event) => {
         if (event.keyCode === KEY_ESC) {
@@ -1802,8 +1817,14 @@
     focus(focusElem);
   };
 
-  var baseDestroy = (instance, { remove = false, keepInstance = false } = {}) => {
-    const { base, off, emit, id, uuid, instances, breakpoints } = instance;
+  var baseDestroy = (
+    instance,
+    { remove = false, keepInstance = false, keepState = false } = {},
+  ) => {
+    const { base, off, emit, id, uuid, instances, breakpoints, constructor } =
+      instance;
+
+    const stateElem = instance[constructor.NAME];
 
     instance[PLACEHOLDER]?.replaceWith(base);
 
@@ -1823,11 +1844,14 @@
     }
     if (remove) {
       base.remove();
+    } else if (!keepState) {
+      removeClass(stateElem, [HIDDEN_CLASS, SHOWN_CLASS]);
+      removeAttribute(stateElem, HIDDEN, INERT);
     }
 
-    emit(EVENT_DESTROY);
-
     instance.isInit = false;
+
+    emit(EVENT_DESTROY);
 
     return instance;
   };
@@ -1897,6 +1921,7 @@
           (triggerFocus && type === EVENT_FOCUSIN);
         const d = isFocus ? 0 : delay[entered ? 0 : 1];
         clearTimeout(hoverTimer);
+
         if (d) {
           hoverTimer = setTimeout(
             () => toggle(entered, { trigger: toggler, event }),
@@ -1945,13 +1970,10 @@
         if (e.relatedTarget === returnElem) {
           focusFirst = true;
         }
-        const returnElems = target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR);
-        if (!focusFirst && isGuardBefore) {
-          returnElem = returnElems[returnElems.length - 1];
-        } else {
-          returnElem = returnElems[0];
-        }
-        focus(returnElem);
+
+        arrayFrom(target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR))
+          .at(!focusFirst && isGuardBefore ? -1 : 0)
+          .focus();
       };
 
       this.focusGuards = [BEFORE, AFTER].map((methodName) => {
@@ -1977,7 +1999,17 @@
 
   ResetFloatingCssVariables();
 
+  const OPTIONS = [
+    FLIP,
+    STICKY,
+    SHRINK,
+    PLACEMENT,
+    OPTION_TOP_LAYER,
+    OPTION_MOVE_TO_ROOT,
+  ];
+
   class Floating {
+    static instances = new Set();
     constructor({
       target,
       anchor,
@@ -1985,10 +2017,8 @@
       opts,
       name = "",
       base,
-      onTopLayer,
-      defaultTopLayerOpts,
-      hide,
       teleport,
+      instance,
     }) {
       const { on, off } = new EventHandler();
 
@@ -2001,74 +2031,64 @@
         on,
         off,
         base,
-        onTopLayer,
-        defaultTopLayerOpts,
-        hide,
         teleport,
+        instance,
+        floatings: new Set(),
       });
     }
     init() {
-      const { target, anchor, arrow, opts, name, base, on, defaultTopLayerOpts } =
-        this;
+      const { target, anchor, arrow, opts, name, base, on } = this;
       const PREFIX = VAR_UI_PREFIX + name + "-";
 
       const anchorScrollParents = parents(anchor, isOverflowElement);
       const anchorStyles = getComputedStyle(anchor);
       const targetStyles = getComputedStyle(target);
 
-      let [flip, sticky, shrink, placement, topLayer] = [
-        FLIP,
-        STICKY,
-        SHRINK,
-        PLACEMENT,
-        TOP_LAYER,
-      ].map(
-        (name) =>
-          getPropertyValue(anchorStyles, PREFIX + name) ||
-          getPropertyValue(targetStyles, PREFIX + name),
-      );
+      const options = {};
+      OPTIONS.map((name) => {
+        const variableName = camelToKebab(name);
+        return (options[name] =
+          getPropertyValue(anchorStyles, PREFIX + variableName) ||
+          getPropertyValue(targetStyles, PREFIX + variableName));
+      });
 
-      flip = flip
-        ? flip.split(" ").map((v) => v === TRUE)
-        : returnArray(opts[FLIP]);
+      [...OPTIONS, MODE, OPTION_FLOATING_CLASS].forEach((name) => {
+        if (name === FLIP) {
+          options[FLIP] = options[FLIP]
+            ? options[FLIP].split(" ").map((v) => v === TRUE)
+            : returnArray(opts[FLIP]);
+        } else if (
+          name === PLACEMENT ||
+          name === MODE ||
+          name === OPTION_FLOATING_CLASS
+        ) {
+          options[name] =
+            base.getAttribute(DATA_UI_PREFIX + camelToKebab(name)) ||
+            options[name] ||
+            opts[PLACEMENT];
+        } else {
+          options[name] =
+            options[name] === TRUE
+              ? true
+              : options[name] === FALSE
+              ? false
+              : opts[name];
+        }
+        this[name] = options[name];
+      });
 
-      sticky = sticky ? sticky === TRUE : opts[STICKY];
-      shrink = shrink ? shrink === TRUE : opts[SHRINK];
+      const { shrink, sticky, topLayer, moveToRoot, flip, placement, mode } =
+        this;
 
-      this.topLayer = topLayer =
-        topLayer === FALSE ? false : opts.topLayer || defaultTopLayerOpts;
-
-      this[PLACEMENT] = placement =
-        base.getAttribute(DATA_UI_PREFIX + PLACEMENT) ||
-        placement ||
-        opts[PLACEMENT];
-
-      this[CLASS] =
-        base.getAttribute(DATA_UI_PREFIX + FLOATING + "-" + CLASS) ??
-        opts.floatingClass;
-
-      const mode = (this[MODE] =
-        base.getAttribute(DATA_UI_PREFIX + MODE) || opts[MODE]);
-
-      const usePopoverApi =
-        topLayer && mode !== MODAL && opts.popoverApi && POPOVER_API_SUPPORTED;
-
-      const moveToRoot = topLayer && opts.topLayerForce;
+      const usePopoverApi = topLayer && mode !== MODAL && POPOVER_API_SUPPORTED;
 
       const inTopLayer =
-        (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
-        mode === MODAL ||
-        moveToRoot;
+        (topLayer && POPOVER_API_SUPPORTED) || mode === MODAL || moveToRoot;
 
       const useFocusGuards =
         (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
 
-      const wrapper = this.createWrapper(
-        placement,
-        mode,
-        moveToRoot,
-        usePopoverApi,
-      );
+      const wrapper = this.createWrapper(usePopoverApi);
 
       if (moveToRoot && mode !== MODAL && !opts.focusTrap) {
         on(anchor, EVENT_KEYDOWN, (e) => {
@@ -2090,8 +2110,8 @@
         padding,
         offset = opts.offset,
         boundaryOffset = opts.boundaryOffset,
-        arrowPadding,
         arrowOffset,
+        arrowPadding,
         arrowWidth,
         arrowHeight,
         wrapperComputedStyle,
@@ -2218,15 +2238,24 @@
         passive: true,
       });
       this.updatePosition = updatePosition.bind(this);
+
+      Floating.instances.add(this);
+
+      this.parentFloating = arrayFrom(Floating.instances).find(
+        (floating) => floating !== this && anchor.closest("#" + floating.base.id),
+      );
+      this.parentFloating?.floatings?.add(this);
+
       return this;
     }
 
     _toggleApi(useFocusGuards) {
-      const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
+      const { wrapper, opts, mode, topLayer, anchor, target, instance } = this;
       const wrapperIsDialog = isDialog(wrapper);
-      const isModal =
-        mode === MODAL && (!opts.safeModal || POPOVER_API_SUPPORTED);
+      const isModal = mode === MODAL;
       const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
+
+      const onTopLayer = (type) => instance.constructor.dispatchTopLayer(type);
 
       if (wrapperIsDialog) {
         if (isModal) {
@@ -2256,15 +2285,15 @@
           strategy: ABSOLUTE,
           onFocusOut: () => {
             if (wrapperIsDialog) {
-              this.hide?.();
+              instance.hide?.();
             }
           },
         });
       }
     }
 
-    createWrapper(placement, mode, moveToRoot, usePopoverApi) {
-      const { target, name, anchor, opts } = this;
+    createWrapper(usePopoverApi) {
+      const { target, name, anchor, opts, placement, mode, moveToRoot } = this;
 
       const style = {
         zIndex: `var(${VAR_UI_PREFIX}floating-top-layer,999)`,
@@ -2291,13 +2320,12 @@
         style.left = 0;
         style.top = 0;
         style.height = style.width = "fit-" + CONTENT;
-        style.willChange = "transform";
         style.minWidth = "max-" + CONTENT;
       }
 
       const attributes = {
         style,
-        class: this.class,
+        class: this[OPTION_FLOATING_CLASS],
         [FLOATING_DATA_ATTRIBUTE]: name,
         [DATA_UI_PREFIX + FLOATING + "-" + MODE]: mode,
       };
@@ -2324,7 +2352,7 @@
       }
 
       if (moveToRoot) {
-        body.append(wrapper);
+        getElement(opts.root)?.append(wrapper);
       } else {
         anchor.after(wrapper);
       }
@@ -2338,9 +2366,12 @@
       if (this.wrapper.popover && POPOVER_API_SUPPORTED) {
         this.wrapper.hidePopover();
       }
+      this.base.style.pointerEvents = "";
       this.focusGuards?.destroy();
       this.wrapper.remove();
       this.teleport.reset();
+      Floating.instances.delete(this);
+      this.parentFloating?.floatings?.delete(this);
     }
   }
 
@@ -2379,11 +2410,12 @@
           }
         }
       }
-    } else if (mode !== CLASS) {
+    } else if (mode !== CLASS_HIDDEN_MODE && mode !== CLASS_SHOWN_MODE) {
       target.toggleAttribute(mode, !s);
     }
 
-    target.classList.toggle(HIDDEN_CLASS, !s && mode === CLASS);
+    target.classList.toggle(HIDDEN_CLASS, !s && mode === CLASS_HIDDEN_MODE);
+    target.classList.toggle(SHOWN_CLASS, s && mode === CLASS_SHOWN_MODE);
 
     if (s) {
       target[HIDDEN] = false;
@@ -2407,12 +2439,8 @@
         target,
         arrow: target.querySelector(getDataSelector(name, ARROW)),
         opts,
-        hide: instance.hide,
-        defaultTopLayerOpts: instance.constructor.DefaultTopLayer,
         name,
-        onTopLayer(type) {
-          constructor.dispatchTopLayer(type);
-        },
+        instance,
       }).init();
     }
 
@@ -2422,9 +2450,11 @@
 
     if (!s && wrapper?.matches(":" + MODAL)) {
       wrapper.close();
-      if (opts.popoverApi && POPOVER_API_SUPPORTED) {
+      if (POPOVER_API_SUPPORTED) {
         wrapper.popover = POPOVER_API_MODE_MANUAL;
         wrapper.showPopover();
+      } else {
+        animated = false;
       }
     }
 
@@ -2442,8 +2472,14 @@
       instance.off(doc, EVENT_ACTION_OUTSIDE);
     }
 
+    opts.escapeHide &&
+      addEscapeHide(
+        instance,
+        s,
+        instance.toggler ? [instance.toggler, instance.base] : doc,
+      );
+
     if (s) {
-      opts.escapeHide && addEscapeHide(instance, s, doc);
       opts.autofocus && callAutofocus(instance);
     } else {
       !s && target.contains(doc.activeElement) && focus(toggler);
@@ -2541,6 +2577,39 @@
     return opts;
   };
 
+  const FLOATING_IS_INTERACTED = ":hover,:focus-within";
+  function checkFloatings (instance, s) {
+    const floating = instance.floating;
+
+    if (!floating) return;
+    let parentFloating = floating.parentFloating;
+
+    if (s) {
+      while (parentFloating) {
+        parentFloating.instance.show();
+        parentFloating = parentFloating.parentFloating;
+      }
+    } else {
+      if (
+        parentFloating &&
+        !parentFloating.base.matches(FLOATING_IS_INTERACTED)
+      ) {
+        parentFloating.instance.hide();
+      }
+
+      let floatings = arrayFrom(floating.floatings);
+      while (floatings.length) {
+        for (const childFloating of floatings) {
+          if (childFloating.base.matches(FLOATING_IS_INTERACTED)) {
+            instance.isOpen = true;
+            return true;
+          }
+          floatings = arrayFrom(childFloating.floatings);
+        }
+      }
+    }
+  }
+
   const COLLAPSE = "collapse";
 
   class Collapse extends ToggleMixin(Base, COLLAPSE) {
@@ -2561,6 +2630,8 @@
     init() {
       if (this.isInit) return;
 
+      this.base.id = this.id;
+
       this.emit(EVENT_BEFORE_INIT);
 
       this._update();
@@ -2573,7 +2644,7 @@
         opts,
         base,
         [HIDE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
-        [OPTION_HASH_NAVIGATION],
+        [OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
       );
 
       this[TELEPORT] = Teleport.createOrUpdate(
@@ -2600,7 +2671,7 @@
     }
     destroy(destroyOpts) {
       // eslint-disable-next-line prefer-const
-      let { opts, togglers } = this;
+      let { opts, togglers, base } = this;
 
       if (!this.isInit) return;
 
@@ -2624,6 +2695,7 @@
       }
 
       opts.a11y && removeAttribute(togglers, ARIA_CONTROLS, ARIA_EXPANDED, ROLE);
+      removeClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX]);
 
       baseDestroy(this, destroyOpts);
 
@@ -2703,13 +2775,22 @@
     }
   }
 
+  const DIRECTIONS = {
+    [KEY_ARROW_LEFT]: LEFT,
+    [KEY_ARROW_UP]: UP,
+    [KEY_ARROW_RIGHT]: RIGHT,
+    [KEY_ARROW_DOWN]: DOWN,
+    x: [LEFT, RIGHT],
+    y: [UP, DOWN],
+  };
+
   class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
-      mode: false,
       eventPrefix: getEventsPrefix(DROPDOWN),
       itemClickHide: true,
+      arrowActivation: "y",
       autofocus: true,
       items: getDataSelector(DROPDOWN + "-" + ITEM),
       trigger: CLICK,
@@ -2723,27 +2804,33 @@
     }
     init() {
       if (this.isInit) return;
+
+      this.base.id = this.id;
+
       this._update();
 
       const { toggler, base, show, on } = this;
 
       on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
       on(toggler, EVENT_KEYDOWN, async (event) => {
+        let arrowActivation = this.opts.arrowActivation;
         const { keyCode } = event;
 
-        const arrowActivated =
-          KEY_ARROW_UP === keyCode || KEY_ARROW_DOWN === keyCode;
+        if (DIRECTIONS[arrowActivation]) {
+          arrowActivation = DIRECTIONS[arrowActivation];
+        }
+
+        const arrowActivated = arrowActivation.includes(DIRECTIONS[keyCode]);
+
         if (arrowActivated) {
           event.preventDefault();
-        }
-        if (arrowActivated) {
           if (!this.isOpen) {
             await show({ event, trigger: toggler });
           }
-        }
-        if (arrowActivated) {
           if (this.isAnimating && !this.isOpen) return;
-          this.focusableElems[0]?.focus();
+          this.focusableElems
+            .at(keyCode === KEY_ARROW_UP || keyCode === KEY_ARROW_LEFT ? -1 : 0)
+            ?.focus();
         }
       });
 
@@ -2753,12 +2840,7 @@
     }
     _update() {
       const { base, opts, on, off, hide } = this;
-      updateOptsByData(
-        opts,
-        base,
-        [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
-        [OPTION_TOP_LAYER],
-      );
+      updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
 
       this[TRANSITION] = Transition.createOrUpdate(
         this[TRANSITION],
@@ -2810,7 +2892,6 @@
       );
     }
     _onKeydown(event) {
-      const { keyCode } = event;
       const isControl = [
         KEY_ENTER,
         KEY_SPACE,
@@ -2820,10 +2901,10 @@
         KEY_ARROW_UP,
         KEY_ARROW_RIGHT,
         KEY_ARROW_DOWN,
-      ].includes(keyCode);
-      const { focusableElems, hide, opts } = this;
+      ].includes(event.keyCode);
+      const { focusableElems, opts } = this;
 
-      if (!isControl && keyCode !== KEY_TAB) {
+      if (!isControl && event.keyCode !== KEY_TAB) {
         focusableElems
           .find((elem) => elem.textContent.toLowerCase().startsWith(event.key))
           ?.focus();
@@ -2836,7 +2917,7 @@
       );
 
       const nextIndex = currentIndex + 1 > lastIndex ? 0 : currentIndex + 1;
-      const prevIndex = currentIndex ? currentIndex - 1 : lastIndex;
+      const prevIndex = currentIndex > 0 ? currentIndex - 1 : lastIndex;
 
       const prevCode = opts.horizontal ? KEY_ARROW_LEFT : KEY_ARROW_UP;
       const nextCode = opts.horizontal ? KEY_ARROW_RIGHT : KEY_ARROW_DOWN;
@@ -2850,7 +2931,7 @@
         case KEY_ENTER:
         case KEY_SPACE:
           focusableElems[currentIndex].click();
-          hide({ event, trigger: event.target });
+          // hide({ event, trigger: event.target });
           break;
         case KEY_END:
           focusableElems[lastIndex].focus();
@@ -2868,10 +2949,11 @@
     }
     destroy(destroyOpts) {
       if (!this.isInit) return;
-      const { opts, toggler } = this;
+      const { opts, toggler, base } = this;
       this.emit(EVENT_BEFORE_DESTROY);
       opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
       removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+      removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
       return baseDestroy(this, destroyOpts);
     }
 
@@ -2887,6 +2969,8 @@
         return;
 
       this.isOpen = s;
+
+      if (checkFloatings(this, s)) return;
 
       if (isAnimating && !awaitAnimation) {
         await this[TRANSITION].cancel();
@@ -2973,10 +3057,8 @@
 
       modal: true,
       topLayer: true,
-      topLayerForce: true,
-
-      popoverApi: true,
-      safeModal: true,
+      root: BODY,
+      moveToRoot: true,
     };
 
     constructor(elem, opts) {
@@ -2984,7 +3066,7 @@
     }
 
     _update() {
-      const { base, _fromHTML, opts, id, on } = this;
+      const { base, opts, id, on } = this;
       updateOptsByData(
         opts,
         base,
@@ -2997,8 +3079,16 @@
           HIDE_MODE,
           OPTION_GROUP,
           OPTION_AUTODESTROY,
+          OPTION_MOVE_TO_ROOT,
         ],
-        [OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL, OPTION_HASH_NAVIGATION],
+        [
+          MODAL,
+          OPTION_TOP_LAYER,
+          OPTION_MOVE_TO_ROOT,
+          OPTION_PREVENT_SCROLL,
+          OPTION_HASH_NAVIGATION,
+          OPTION_AUTODESTROY,
+        ],
       );
       updateModule(this, OPTION_GROUP, NAME);
 
@@ -3015,12 +3105,10 @@
 
       const isDialogElem = isDialog(base);
 
-      const moveToBody = (opts.topLayer && opts.topLayerForce) || _fromHTML;
-
       this[TELEPORT] = Teleport.createOrUpdate(
         this[TELEPORT],
         base,
-        moveToBody ? body : false,
+        opts.moveToRoot ? opts.root : false,
         {
           disableAttributes: true,
         },
@@ -3047,10 +3135,7 @@
       }
 
       base.popover =
-        opts.topLayer &&
-        (!isDialogElem || !opts.modal) &&
-        POPOVER_API_SUPPORTED &&
-        opts.popoverApi
+        opts.topLayer && (!isDialogElem || !opts.modal) && POPOVER_API_SUPPORTED
           ? POPOVER_API_MODE_MANUAL
           : null;
 
@@ -3061,6 +3146,8 @@
       const { opts, isInit, base, on, emit, hide, toggle } = this;
 
       if (isInit) return;
+
+      this.base.id = this.id;
 
       emit(EVENT_BEFORE_INIT);
 
@@ -3105,17 +3192,19 @@
       if (!this.isInit) return;
 
       removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
-      this.opts.a11y &&
-        removeAttribute(
-          this.base,
-          TABINDEX,
-          ROLE,
-          ARIA_LABELLEDBY,
-          ARIA_DESCRIBEDBY,
-        );
       this.focusGuards?.destroy();
       this.focusGuards = null;
       this.placeholder?.replaceWith(this.base);
+      if (!destroyOpts?.remove) {
+        this.opts.a11y &&
+          removeAttribute(
+            this.base,
+            TABINDEX,
+            ROLE,
+            ARIA_LABELLEDBY,
+            ARIA_DESCRIBEDBY,
+          );
+      }
       baseDestroy(this, destroyOpts);
       return this;
     }
@@ -3266,7 +3355,7 @@
         toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
       }
 
-      if (__initial && !animated) {
+      if (__initial && !animated && backdrop) {
         backdrop.style.transition = NONE;
         backdrop.offsetWidth;
         backdrop.style.transition = "";
@@ -3279,7 +3368,7 @@
         this.returnFocus();
       }
 
-      opts.escapeHide && addEscapeHide(this, s);
+      opts.escapeHide && addEscapeHide(this, s, base);
 
       if (s) {
         !ignoreAutofocus && opts.autofocus && callAutofocus(this);
@@ -3318,12 +3407,8 @@
       const { base, opts } = this;
       const baseIsDialog = isDialog(base);
       if (s) {
-        const isModal =
-          baseIsDialog &&
-          (!opts.safeModal || POPOVER_API_SUPPORTED) &&
-          opts.modal;
-        const isPopover =
-          opts.topLayer && POPOVER_API_SUPPORTED && opts.popoverApi;
+        const isModal = baseIsDialog && opts.modal;
+        const isPopover = opts.topLayer && POPOVER_API_SUPPORTED;
 
         if (baseIsDialog) {
           if (isModal) {
@@ -3536,8 +3621,10 @@
       });
     }
     init() {
-      const { id, instances, isInit, emit } = this;
+      const { isInit, emit } = this;
       if (isInit) return;
+
+      this.base.id = this.id;
 
       TABLIST_SECONDARY_METHODS.forEach(
         (name) => (this[name] = this[name].bind(this)),
@@ -3548,8 +3635,6 @@
       this.tabs = [];
       this.initTabs();
 
-      instances.set(id, this);
-
       this._updateTabIndex();
 
       this._update();
@@ -3559,7 +3644,7 @@
       return emit(EVENT_INIT);
     }
 
-    destroy(deleteInstance = false, cleanStyles = true) {
+    destroy({ keepInstance = false, keepState = false }) {
       const {
         tablist,
         tabs,
@@ -3587,13 +3672,13 @@
       }
       tablist.id.includes(uuid) && tablist.removeAttribute(ID);
 
-      tabs.forEach((tab) => tab.destroy(cleanStyles));
+      tabs.forEach((tab) => tab.destroy({ keepState }));
 
-      this.isInit = false;
-
-      if (deleteInstance) {
+      if (!keepInstance) {
         instances.delete(id);
       }
+
+      this.isInit = false;
 
       emit(EVENT_DESTROY);
 
@@ -3663,7 +3748,11 @@
         this.toggle(event.currentTarget, null, { event, trigger: tab });
       });
 
-      const destroy = ({ clean = true, remove = false }) => {
+      const destroy = ({
+        cleanStyles = true,
+        remove = false,
+        keepState = false,
+      }) => {
         const opts = this.opts;
         const a11y = opts.a11y;
         if (a11y) {
@@ -3672,6 +3761,7 @@
             ROLE,
             a11y[TABINDEX] && TABINDEX,
             ARIA_CONTROLS,
+            ARIA_EXPANDED,
             a11y[OPTION_STATE_ATTRIBUTE],
           );
           removeAttribute(
@@ -3688,7 +3778,7 @@
 
         off(elems);
         this.tabs = without(this.tabs, tabInstance);
-        if (clean) {
+        if (cleanStyles) {
           ELEMS.forEach((name) =>
             removeClass(tabInstance[name], opts[name + CLASS_ACTIVE_SUFFIX]),
           );
@@ -3698,9 +3788,16 @@
         tabpanel.id.includes(uuid) && tabpanel.removeAttribute(ID);
         tab.id.includes(uuid) && tab.removeAttribute(ID);
 
-        if (remove) {
-          elems.forEach((elem) => elem && elem.remove());
-        }
+        elems.forEach((elem) => {
+          if (!elem) return;
+
+          remove && elem.remove();
+
+          if (!keepState) {
+            removeClass(elem, [HIDDEN_CLASS, SHOWN_CLASS]);
+            removeAttribute(elem, HIDDEN, INERT);
+          }
+        });
       };
 
       const toggleDisabled = (s = null) => {
@@ -3937,7 +4034,7 @@
 
       if (a11y) {
         a11y[OPTION_STATE_ATTRIBUTE] &&
-          setAttribute(tab, a11y[OPTION_STATE_ATTRIBUTE], s);
+          setAttribute(tab, a11y[OPTION_STATE_ATTRIBUTE], !!s);
       }
 
       if (s) {
@@ -4150,7 +4247,6 @@
       limitAnimateLeave: true,
       autohide: false,
       topLayer: true,
-      popoverApi: true,
       keepTopLayer: true,
       a11y: STATUS,
       [TOAST + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -4204,6 +4300,8 @@
     init() {
       if (this.isInit) return;
 
+      this.base.id = this.id;
+
       this._update();
 
       return callShowInit(this);
@@ -4222,15 +4320,8 @@
       const { animated, silent, event, trigger } =
         normalizeToggleParameters(params);
 
-      const {
-        limit,
-        position,
-        container,
-        popoverApi,
-        topLayer,
-        keepTopLayer,
-        hideMode,
-      } = opts;
+      const { limit, position, container, topLayer, keepTopLayer, hideMode } =
+        opts;
 
       if (animated && transition?.isAnimating) return;
 
@@ -4265,7 +4356,7 @@
               keepTopLayer,
             }));
 
-            if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+            if (POPOVER_API_SUPPORTED && topLayer) {
               wrapper[POPOVER] = POPOVER_API_MODE_MANUAL;
             } else {
               wrapper[POPOVER] = null;
@@ -4274,7 +4365,7 @@
             if (wrapper && wrapper.parentElement !== root) {
               root.append(wrapper);
             }
-            if (POPOVER_API_SUPPORTED && popoverApi && topLayer) {
+            if (POPOVER_API_SUPPORTED && topLayer) {
               wrapper.hidePopover();
               wrapper.showPopover();
             }
@@ -4410,7 +4501,7 @@
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
-      delay: [200, 0],
+      delay: [150, 0],
       eventPrefix: getEventsPrefix(TOOLTIP),
       placement: TOP,
       template: (content) =>
@@ -4466,6 +4557,8 @@
 
       if (isInit) return;
 
+      anchor.id = id;
+
       emit(EVENT_BEFORE_INIT);
 
       this._cache = { [TITLE]: anchor[TITLE] };
@@ -4513,6 +4606,8 @@
 
       this.isOpen = s;
 
+      if (opts.interactive && checkFloatings(this, s)) return;
+
       if (isAnimating && !awaitAnimation) {
         await this[TRANSITION].cancel();
       }
@@ -4555,10 +4650,10 @@
     static Default = {
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
-      mode: false,
       eventPrefix: getEventsPrefix(POPOVER),
       dismiss: true,
       autofocus: true,
+      interactive: true,
       trigger: CLICK,
       [TOGGLER]: null,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -4573,6 +4668,9 @@
     }
     init() {
       if (this.isInit) return;
+
+      this.base.id = this.id;
+
       this._update();
 
       this.teleport = new Teleport(this.base, { disableAttributes: true });
@@ -4581,12 +4679,7 @@
     }
     _update() {
       const { base, opts } = this;
-      updateOptsByData(
-        opts,
-        base,
-        [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
-        [OPTION_TOP_LAYER],
-      );
+      updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
 
       this[TRANSITION] = Transition.createOrUpdate(
         this[TRANSITION],
@@ -4611,10 +4704,11 @@
     }
     destroy(destroyOpts) {
       if (!this.isInit) return;
-      const { opts, toggler } = this;
+      const { opts, toggler, base } = this;
       this.emit(EVENT_BEFORE_DESTROY);
       opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
       removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+      removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
       return baseDestroy(this, destroyOpts);
     }
 
@@ -4630,6 +4724,8 @@
         return;
 
       this.isOpen = s;
+
+      if (opts.interactive && checkFloatings(this, s)) return;
 
       if (isAnimating && !awaitAnimation) {
         await this[TRANSITION].cancel();

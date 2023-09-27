@@ -53,6 +53,8 @@ import {
   OPTION_HASH_NAVIGATION,
   NONE,
   OPTION_AUTODESTROY,
+  OPTION_MOVE_TO_ROOT,
+  BODY,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -151,10 +153,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     modal: true,
     topLayer: true,
-    topLayerForce: true,
-
-    popoverApi: true,
-    safeModal: true,
+    root: BODY,
+    moveToRoot: true,
   };
 
   constructor(elem, opts) {
@@ -162,7 +162,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   _update() {
-    const { base, _fromHTML, opts, id, on } = this;
+    const { base, opts, id, on } = this;
     updateOptsByData(
       opts,
       base,
@@ -175,8 +175,16 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         HIDE_MODE,
         OPTION_GROUP,
         OPTION_AUTODESTROY,
+        OPTION_MOVE_TO_ROOT,
       ],
-      [OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL, OPTION_HASH_NAVIGATION],
+      [
+        MODAL,
+        OPTION_TOP_LAYER,
+        OPTION_MOVE_TO_ROOT,
+        OPTION_PREVENT_SCROLL,
+        OPTION_HASH_NAVIGATION,
+        OPTION_AUTODESTROY,
+      ],
     );
     updateModule(this, OPTION_GROUP, NAME);
 
@@ -193,12 +201,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     const isDialogElem = isDialog(base);
 
-    const moveToBody = (opts.topLayer && opts.topLayerForce) || _fromHTML;
-
     this[TELEPORT] = Teleport.createOrUpdate(
       this[TELEPORT],
       base,
-      moveToBody ? body : false,
+      opts.moveToRoot ? opts.root : false,
       {
         disableAttributes: true,
       },
@@ -225,10 +231,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     base.popover =
-      opts.topLayer &&
-      (!isDialogElem || !opts.modal) &&
-      POPOVER_API_SUPPORTED &&
-      opts.popoverApi
+      opts.topLayer && (!isDialogElem || !opts.modal) && POPOVER_API_SUPPORTED
         ? POPOVER_API_MODE_MANUAL
         : null;
 
@@ -239,6 +242,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     const { opts, isInit, base, on, emit, hide, toggle } = this;
 
     if (isInit) return;
+
+    this.base.id = this.id;
 
     emit(EVENT_BEFORE_INIT);
 
@@ -283,17 +288,19 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     if (!this.isInit) return;
 
     removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
-    this.opts.a11y &&
-      removeAttribute(
-        this.base,
-        TABINDEX,
-        ROLE,
-        ARIA_LABELLEDBY,
-        ARIA_DESCRIBEDBY,
-      );
     this.focusGuards?.destroy();
     this.focusGuards = null;
     this.placeholder?.replaceWith(this.base);
+    if (!destroyOpts?.remove) {
+      this.opts.a11y &&
+        removeAttribute(
+          this.base,
+          TABINDEX,
+          ROLE,
+          ARIA_LABELLEDBY,
+          ARIA_DESCRIBEDBY,
+        );
+    }
     baseDestroy(this, destroyOpts);
     return this;
   }
@@ -444,7 +451,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
     }
 
-    if (__initial && !animated) {
+    if (__initial && !animated && backdrop) {
       backdrop.style.transition = NONE;
       backdrop.offsetWidth;
       backdrop.style.transition = "";
@@ -457,7 +464,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       this.returnFocus();
     }
 
-    opts.escapeHide && addEscapeHide(this, s);
+    opts.escapeHide && addEscapeHide(this, s, base);
 
     if (s) {
       !ignoreAutofocus && opts.autofocus && callAutofocus(this);
@@ -496,12 +503,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     const { base, opts } = this;
     const baseIsDialog = isDialog(base);
     if (s) {
-      const isModal =
-        baseIsDialog &&
-        (!opts.safeModal || POPOVER_API_SUPPORTED) &&
-        opts.modal;
-      const isPopover =
-        opts.topLayer && POPOVER_API_SUPPORTED && opts.popoverApi;
+      const isModal = baseIsDialog && opts.modal;
+      const isPopover = opts.topLayer && POPOVER_API_SUPPORTED;
 
       if (baseIsDialog) {
         if (isModal) {

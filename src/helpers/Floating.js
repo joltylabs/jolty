@@ -10,7 +10,6 @@ import {
   DIV,
   AVAILABLE_WIDTH,
   AVAILABLE_HEIGHT,
-  body,
   EVENT_SCROLL,
   EVENT_RESIZE,
   FLOATING_DATA_ATTRIBUTE,
@@ -31,7 +30,7 @@ import {
   MODAL,
   MODE,
   POPOVER_API_SUPPORTED,
-  TOP_LAYER,
+  OPTION_TOP_LAYER,
   FIXED,
   EVENT_KEYDOWN,
   FOCUSABLE_ELEMENTS_SELECTOR,
@@ -40,10 +39,11 @@ import {
   UI_EVENT_PREFIX,
   FALSE,
   FLOATING,
-  CLASS,
   CENTER,
   AUTO,
   CONTENT,
+  OPTION_MOVE_TO_ROOT,
+  OPTION_FLOATING_CLASS,
 } from "./constants";
 import {
   createElement,
@@ -54,6 +54,8 @@ import {
   resizeObserver,
   ResetFloatingCssVariables,
   collectCssVariables,
+  arrayFrom,
+  camelToKebab,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import {
@@ -62,6 +64,7 @@ import {
   parents,
   setAttribute,
   focus,
+  getElement,
 } from "./dom";
 
 import { isDialog } from "./is/index.js";
@@ -69,7 +72,17 @@ import FocusGuards from "./modules/FocusGuards.js";
 
 ResetFloatingCssVariables();
 
+const OPTIONS = [
+  FLIP,
+  STICKY,
+  SHRINK,
+  PLACEMENT,
+  OPTION_TOP_LAYER,
+  OPTION_MOVE_TO_ROOT,
+];
+
 export default class Floating {
+  static instances = new Set();
   constructor({
     target,
     anchor,
@@ -77,10 +90,8 @@ export default class Floating {
     opts,
     name = "",
     base,
-    onTopLayer,
-    defaultTopLayerOpts,
-    hide,
     teleport,
+    instance,
   }) {
     const { on, off } = new EventHandler();
 
@@ -93,74 +104,64 @@ export default class Floating {
       on,
       off,
       base,
-      onTopLayer,
-      defaultTopLayerOpts,
-      hide,
       teleport,
+      instance,
+      floatings: new Set(),
     });
   }
   init() {
-    const { target, anchor, arrow, opts, name, base, on, defaultTopLayerOpts } =
-      this;
+    const { target, anchor, arrow, opts, name, base, on } = this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
 
     const anchorScrollParents = parents(anchor, isOverflowElement);
     const anchorStyles = getComputedStyle(anchor);
     const targetStyles = getComputedStyle(target);
 
-    let [flip, sticky, shrink, placement, topLayer] = [
-      FLIP,
-      STICKY,
-      SHRINK,
-      PLACEMENT,
-      TOP_LAYER,
-    ].map(
-      (name) =>
-        getPropertyValue(anchorStyles, PREFIX + name) ||
-        getPropertyValue(targetStyles, PREFIX + name),
-    );
+    const options = {};
+    OPTIONS.map((name) => {
+      const variableName = camelToKebab(name);
+      return (options[name] =
+        getPropertyValue(anchorStyles, PREFIX + variableName) ||
+        getPropertyValue(targetStyles, PREFIX + variableName));
+    });
 
-    flip = flip
-      ? flip.split(" ").map((v) => v === TRUE)
-      : returnArray(opts[FLIP]);
+    [...OPTIONS, MODE, OPTION_FLOATING_CLASS].forEach((name) => {
+      if (name === FLIP) {
+        options[FLIP] = options[FLIP]
+          ? options[FLIP].split(" ").map((v) => v === TRUE)
+          : returnArray(opts[FLIP]);
+      } else if (
+        name === PLACEMENT ||
+        name === MODE ||
+        name === OPTION_FLOATING_CLASS
+      ) {
+        options[name] =
+          base.getAttribute(DATA_UI_PREFIX + camelToKebab(name)) ||
+          options[name] ||
+          opts[PLACEMENT];
+      } else {
+        options[name] =
+          options[name] === TRUE
+            ? true
+            : options[name] === FALSE
+            ? false
+            : opts[name];
+      }
+      this[name] = options[name];
+    });
 
-    sticky = sticky ? sticky === TRUE : opts[STICKY];
-    shrink = shrink ? shrink === TRUE : opts[SHRINK];
+    const { shrink, sticky, topLayer, moveToRoot, flip, placement, mode } =
+      this;
 
-    this.topLayer = topLayer =
-      topLayer === FALSE ? false : opts.topLayer || defaultTopLayerOpts;
-
-    this[PLACEMENT] = placement =
-      base.getAttribute(DATA_UI_PREFIX + PLACEMENT) ||
-      placement ||
-      opts[PLACEMENT];
-
-    this[CLASS] =
-      base.getAttribute(DATA_UI_PREFIX + FLOATING + "-" + CLASS) ??
-      opts.floatingClass;
-
-    const mode = (this[MODE] =
-      base.getAttribute(DATA_UI_PREFIX + MODE) || opts[MODE]);
-
-    const usePopoverApi =
-      topLayer && mode !== MODAL && opts.popoverApi && POPOVER_API_SUPPORTED;
-
-    const moveToRoot = topLayer && opts.topLayerForce;
+    const usePopoverApi = topLayer && mode !== MODAL && POPOVER_API_SUPPORTED;
 
     const inTopLayer =
-      (topLayer && (!opts.popoverApi || POPOVER_API_SUPPORTED)) ||
-      mode === MODAL ||
-      moveToRoot;
+      (topLayer && POPOVER_API_SUPPORTED) || mode === MODAL || moveToRoot;
 
     const useFocusGuards =
       (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
 
-    const wrapper = this.createWrapper(
-      placement,
-      mode,
-      moveToRoot,
-      usePopoverApi,
-    );
+    const wrapper = this.createWrapper(usePopoverApi);
 
     if (moveToRoot && mode !== MODAL && !opts.focusTrap) {
       on(anchor, EVENT_KEYDOWN, (e) => {
@@ -182,8 +183,8 @@ export default class Floating {
       padding,
       offset = opts.offset,
       boundaryOffset = opts.boundaryOffset,
-      arrowPadding,
       arrowOffset,
+      arrowPadding,
       arrowWidth,
       arrowHeight,
       wrapperComputedStyle,
@@ -310,15 +311,24 @@ export default class Floating {
       passive: true,
     });
     this.updatePosition = updatePosition.bind(this);
+
+    Floating.instances.add(this);
+
+    this.parentFloating = arrayFrom(Floating.instances).find(
+      (floating) => floating !== this && anchor.closest("#" + floating.base.id),
+    );
+    this.parentFloating?.floatings?.add(this);
+
     return this;
   }
 
   _toggleApi(useFocusGuards) {
-    const { wrapper, opts, mode, topLayer, anchor, target, onTopLayer } = this;
+    const { wrapper, opts, mode, topLayer, anchor, target, instance } = this;
     const wrapperIsDialog = isDialog(wrapper);
-    const isModal =
-      mode === MODAL && (!opts.safeModal || POPOVER_API_SUPPORTED);
+    const isModal = mode === MODAL;
     const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
+
+    const onTopLayer = (type) => instance.constructor.dispatchTopLayer(type);
 
     if (wrapperIsDialog) {
       if (isModal) {
@@ -348,15 +358,15 @@ export default class Floating {
         strategy: ABSOLUTE,
         onFocusOut: () => {
           if (wrapperIsDialog) {
-            this.hide?.();
+            instance.hide?.();
           }
         },
       });
     }
   }
 
-  createWrapper(placement, mode, moveToRoot, usePopoverApi) {
-    const { target, name, anchor, opts } = this;
+  createWrapper(usePopoverApi) {
+    const { target, name, anchor, opts, placement, mode, moveToRoot } = this;
 
     const style = {
       zIndex: `var(${VAR_UI_PREFIX}floating-top-layer,999)`,
@@ -383,13 +393,12 @@ export default class Floating {
       style.left = 0;
       style.top = 0;
       style.height = style.width = "fit-" + CONTENT;
-      style.willChange = "transform";
       style.minWidth = "max-" + CONTENT;
     }
 
     const attributes = {
       style,
-      class: this.class,
+      class: this[OPTION_FLOATING_CLASS],
       [FLOATING_DATA_ATTRIBUTE]: name,
       [DATA_UI_PREFIX + FLOATING + "-" + MODE]: mode,
     };
@@ -416,7 +425,7 @@ export default class Floating {
     }
 
     if (moveToRoot) {
-      body.append(wrapper);
+      getElement(opts.root)?.append(wrapper);
     } else {
       anchor.after(wrapper);
     }
@@ -430,8 +439,11 @@ export default class Floating {
     if (this.wrapper.popover && POPOVER_API_SUPPORTED) {
       this.wrapper.hidePopover();
     }
+    this.base.style.pointerEvents = "";
     this.focusGuards?.destroy();
     this.wrapper.remove();
     this.teleport.reset();
+    Floating.instances.delete(this);
+    this.parentFloating?.floatings?.delete(this);
   }
 }

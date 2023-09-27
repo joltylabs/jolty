@@ -80,6 +80,7 @@ export default (
         (triggerFocus && type === EVENT_FOCUSIN);
       const d = isFocus ? 0 : delay[entered ? 0 : 1];
       clearTimeout(hoverTimer);
+
       if (d) {
         hoverTimer = setTimeout(
           () => toggle(entered, { trigger: toggler, event }),

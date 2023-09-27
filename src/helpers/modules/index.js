@@ -10,3 +10,4 @@ export { default as toggleConfirm } from "./toggleConfirm.js";
 export { default as addHashNavigation } from "./addHashNavigation.js";
 export { default as toggleHideModeState } from "./toggleHideModeState.js";
 export { default as updateModule } from "./updateModule.js";
+export { default as checkFloatings } from "./checkFloatings.js";
