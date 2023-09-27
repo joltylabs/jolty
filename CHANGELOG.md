@@ -1,13 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.4] - 2023-09-27
+### Fixed
+- fix breakpoints
+- fix hide by Escape key
+### Changed
+- remove popoverApi, safeModal, topLayerForce options
+- change floatings delay from 200ms to 150ms
+- remove hideMode class option
+### Added
+- add moveToRoot and root options
+- add 'class-hidden' and 'class-shown' values to the hideMode option
 ## [0.3.7] - 2023-09-24
 ### Fixed
 - fix Tablist transition
 - fix floating zoom
 - opts property for all components
 ### Changed
-- changed Tablist tabpanel option to accept HTMLElements
+- change Tablist tabpanel option to accept HTMLElements
 ### Added
 - allow to inherit options from the data option
 ## [0.3.6] - 2023-09-23
@@ -15,7 +26,7 @@ All notable changes to this project will be documented in this file.
 - fix Tablist awaitAnimation
 - fix trigger with hover and click behavior
 ### Changed
-- changed itemClickHide option to accept CSSSelector, HTMLElements or function
+- change itemClickHide option to accept CSSSelector, HTMLElements or function
 ## [0.3.5] - 2023-09-17
 ### Fixed
 - update build
