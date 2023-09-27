@@ -380,6 +380,7 @@ export default class Floating {
       display: "flex",
       justifyContent: CENTER,
       alignItems: CENTER,
+      willChange: "transform",
     };
 
     if (placement === DIALOG) {

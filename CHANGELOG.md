@@ -1,6 +1,9 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.4.1] - 2023-09-27
+### Fixed
+- fix sticky position when zooming
 ## [0.4] - 2023-09-27
 ### Fixed
 - fix breakpoints

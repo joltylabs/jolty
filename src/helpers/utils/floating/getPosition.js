@@ -89,6 +89,12 @@ export default function ({
       anchorSpace[BOTTOM] += viewRect.offsetTop;
     }
 
+    const pageOffset = hasScale
+      ? hor
+        ? viewRect.offsetTop
+        : viewRect.offsetLeft
+      : 0;
+
     anchorSpace[m] -= offset + boundaryOffset[m];
     anchorSpace[MIRROR[m]] -= boundaryOffset[dirS] + boundaryOffset[mirrorDirS];
 
@@ -162,23 +168,28 @@ export default function ({
     }
 
     const staticSo = so;
+
     if (sticky) {
-      if (so < boundaryOffset[dirS]) {
+      if (so < boundaryOffset[dirS] + pageOffset) {
         if (!isStart) {
-          so = boundaryOffset[dirS];
-          if (anchorRect[dirS] < boundaryOffset[dirS] - padding[0]) {
+          so = boundaryOffset[dirS] + pageOffset;
+          if (
+            anchorRect[dirS] - pageOffset <
+            boundaryOffset[dirS] - padding[0]
+          ) {
             so = anchorRect[dirS] + padding[0];
           }
         }
       } else if (
         so + currentSize[mirrorSize] + boundaryOffset[mirrorDirS] >
-        viewRect[mirrorSize]
+        viewRect[mirrorSize] + pageOffset
       ) {
         if (!isEnd) {
           so -=
             so +
             currentSize[mirrorSize] -
-            viewRect[mirrorSize] +
+            viewRect[mirrorSize] -
+            pageOffset +
             boundaryOffset[mirrorDirS];
           if (
             anchorSpace[mirrorDirS] <
