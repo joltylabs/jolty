@@ -58,11 +58,10 @@ class Base {
     let dataName = opts.data;
 
     if (elem == null) {
-      if (!opts.template) return;
       opts = mergeDeep(Default, getDataValue(_data, dataName, elem), opts);
       elem = isString(opts.template)
         ? callOrReturn(_templates[opts.template], opts)
-        : opts.template(opts);
+        : opts.template?.(opts);
       this._fromTemplate = true;
     } else if (elem) {
       if (isHTML(elem)) {
