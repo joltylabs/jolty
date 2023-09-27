@@ -54,6 +54,7 @@ import {
   NONE,
   OPTION_AUTODESTROY,
   OPTION_MOVE_TO_ROOT,
+  BODY,
 } from "./helpers/constants";
 import { isString, isElement, isFunction, isDialog } from "./helpers/is";
 import {
@@ -152,6 +153,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     modal: true,
     topLayer: true,
+    root: BODY,
     moveToRoot: true,
   };
 
@@ -202,7 +204,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this[TELEPORT] = Teleport.createOrUpdate(
       this[TELEPORT],
       base,
-      opts.moveToRoot ? body : false,
+      opts.moveToRoot ? opts.root : false,
       {
         disableAttributes: true,
       },

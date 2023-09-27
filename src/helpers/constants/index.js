@@ -112,6 +112,7 @@ export const FALSE = "false";
 
 export const doc = document;
 export const body = doc.body;
+export const BODY = "body";
 
 export const ENTER = "enter";
 export const LEAVE = "leave";
