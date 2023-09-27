@@ -243,6 +243,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     if (isInit) return;
 
+    this.base.id = this.id;
+
     emit(EVENT_BEFORE_INIT);
 
     this._update();

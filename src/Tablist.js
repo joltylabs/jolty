@@ -262,8 +262,10 @@ class Tablist extends Base {
     });
   }
   init() {
-    const { id, instances, isInit, emit } = this;
+    const { isInit, emit } = this;
     if (isInit) return;
+
+    this.base.id = this.id;
 
     TABLIST_SECONDARY_METHODS.forEach(
       (name) => (this[name] = this[name].bind(this)),
@@ -273,8 +275,6 @@ class Tablist extends Base {
 
     this.tabs = [];
     this.initTabs();
-
-    instances.set(id, this);
 
     this._updateTabIndex();
 
@@ -389,7 +389,11 @@ class Tablist extends Base {
       this.toggle(event.currentTarget, null, { event, trigger: tab });
     });
 
-    const destroy = ({ clean = true, remove = false, keepState = false }) => {
+    const destroy = ({
+      cleanStyles = true,
+      remove = false,
+      keepState = false,
+    }) => {
       const opts = this.opts;
       const a11y = opts.a11y;
       if (a11y) {
@@ -398,6 +402,7 @@ class Tablist extends Base {
           ROLE,
           a11y[TABINDEX] && TABINDEX,
           ARIA_CONTROLS,
+          ARIA_EXPANDED,
           a11y[OPTION_STATE_ATTRIBUTE],
         );
         removeAttribute(
@@ -414,7 +419,7 @@ class Tablist extends Base {
 
       off(elems);
       this.tabs = without(this.tabs, tabInstance);
-      if (clean) {
+      if (cleanStyles) {
         ELEMS.forEach((name) =>
           removeClass(tabInstance[name], opts[name + CLASS_ACTIVE_SUFFIX]),
         );
@@ -426,7 +431,9 @@ class Tablist extends Base {
 
       elems.forEach((elem) => {
         if (!elem) return;
-        elem.remove();
+
+        remove && elem.remove();
+
         if (!keepState) {
           removeClass(elem, [HIDDEN_CLASS, SHOWN_CLASS]);
           removeAttribute(elem, HIDDEN, INERT);
@@ -668,7 +675,7 @@ class Tablist extends Base {
 
     if (a11y) {
       a11y[OPTION_STATE_ATTRIBUTE] &&
-        setAttribute(tab, a11y[OPTION_STATE_ATTRIBUTE], s);
+        setAttribute(tab, a11y[OPTION_STATE_ATTRIBUTE], !!s);
     }
 
     if (s) {

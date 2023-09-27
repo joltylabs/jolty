@@ -69,6 +69,9 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   init() {
     if (this.isInit) return;
+
+    this.base.id = this.id;
+
     this._update();
 
     this.teleport = new Teleport(this.base, { disableAttributes: true });

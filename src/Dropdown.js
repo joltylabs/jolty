@@ -95,6 +95,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   init() {
     if (this.isInit) return;
+
+    this.base.id = this.id;
+
     this._update();
 
     const { toggler, base, show, on } = this;

@@ -111,6 +111,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     if (isInit) return;
 
+    anchor.id = id;
+
     emit(EVENT_BEFORE_INIT);
 
     this._cache = { [TITLE]: anchor[TITLE] };

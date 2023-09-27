@@ -136,6 +136,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
   init() {
     if (this.isInit) return;
 
+    this.base.id = this.id;
+
     this._update();
 
     return callShowInit(this);

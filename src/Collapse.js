@@ -73,6 +73,8 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   init() {
     if (this.isInit) return;
 
+    this.base.id = this.id;
+
     this.emit(EVENT_BEFORE_INIT);
 
     this._update();

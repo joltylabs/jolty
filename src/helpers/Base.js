@@ -58,6 +58,7 @@ class Base {
     let dataName = opts.data;
 
     if (elem == null) {
+      if (!opts.template) return;
       opts = mergeDeep(Default, getDataValue(_data, dataName, elem), opts);
       elem = isString(opts.template)
         ? callOrReturn(_templates[opts.template], opts)
@@ -92,7 +93,8 @@ class Base {
 
     this.baseOpts = this.opts = opts;
 
-    this.id = elem.id ||= this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
+    this.id = elem.id || (this.uuid = uuidGenerator(UI_PREFIX + NAME + "-"));
+
     const eventHandler = new EventHandler();
     [ACTION_ON, ACTION_OFF, ACTION_ONCE].forEach((name) => {
       this[name] = (...params) => {
@@ -140,6 +142,7 @@ class Base {
             ? mergeDeep(opts, breakpoint[0])
             : { ...opts };
           delete this.opts.breakpoints;
+
           if (opts.destroy) {
             this.destroy({ keepInstance: true });
           } else if (this.isInit) {
