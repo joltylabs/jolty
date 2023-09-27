@@ -271,7 +271,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   placement: BOTTOM,
   offset: 0,
   padding: 0,
-  delay: 200,
+  delay: 150,
   boundaryOffset: 0,
   shrink: false,
   flip: true,
