@@ -439,6 +439,7 @@ export default class Floating {
     if (this.wrapper.popover && POPOVER_API_SUPPORTED) {
       this.wrapper.hidePopover();
     }
+    this.base.style.pointerEvents = "";
     this.focusGuards?.destroy();
     this.wrapper.remove();
     this.teleport.reset();

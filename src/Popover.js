@@ -102,10 +102,11 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
-    const { opts, toggler } = this;
+    const { opts, toggler, base } = this;
     this.emit(EVENT_BEFORE_DESTROY);
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+    removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
     return baseDestroy(this, destroyOpts);
   }
 

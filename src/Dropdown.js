@@ -23,7 +23,6 @@ import {
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   doc,
-  OPTION_TOP_LAYER,
   HIDE_MODE,
   TELEPORT,
   TRANSITION,
@@ -33,8 +32,6 @@ import {
   RIGHT,
   DOWN,
   UP,
-  CLASS_HIDDEN_MODE,
-  CLASS_SHOWN_MODE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -246,9 +243,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     this.emit(EVENT_BEFORE_DESTROY);
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
-    if (!destroyOpts?.remove) {
-      removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
-    }
+    removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
     return baseDestroy(this, destroyOpts);
   }
 

@@ -1,14 +1,25 @@
 import {
   EVENT_DESTROY,
   FLOATING,
+  HIDDEN,
+  HIDDEN_CLASS,
   ID,
+  INERT,
   PLACEHOLDER,
+  SHOWN_CLASS,
   TELEPORT,
   TRANSITION,
 } from "../constants";
+import { removeAttribute, removeClass } from "../dom/index.js";
 
-export default (instance, { remove = false, keepInstance = false } = {}) => {
-  const { base, off, emit, id, uuid, instances, breakpoints } = instance;
+export default (
+  instance,
+  { remove = false, keepInstance = false, keepState = false } = {},
+) => {
+  const { base, off, emit, id, uuid, instances, breakpoints, constructor } =
+    instance;
+
+  const stateElem = instance[constructor.NAME];
 
   instance[PLACEHOLDER]?.replaceWith(base);
 
@@ -28,11 +39,14 @@ export default (instance, { remove = false, keepInstance = false } = {}) => {
   }
   if (remove) {
     base.remove();
+  } else if (!keepState) {
+    removeClass(stateElem, [HIDDEN_CLASS, SHOWN_CLASS]);
+    removeAttribute(stateElem, HIDDEN, INERT);
   }
 
-  emit(EVENT_DESTROY);
-
   instance.isInit = false;
+
+  emit(EVENT_DESTROY);
 
   return instance;
 };

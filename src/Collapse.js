@@ -28,7 +28,12 @@ import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
-import { removeAttribute, setAttribute, toggleClass } from "./helpers/dom";
+import {
+  removeAttribute,
+  removeClass,
+  setAttribute,
+  toggleClass,
+} from "./helpers/dom";
 import {
   normalizeToggleParameters,
   replaceWord,
@@ -107,7 +112,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   }
   destroy(destroyOpts) {
     // eslint-disable-next-line prefer-const
-    let { opts, togglers } = this;
+    let { opts, togglers, base } = this;
 
     if (!this.isInit) return;
 
@@ -131,6 +136,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     }
 
     opts.a11y && removeAttribute(togglers, ARIA_CONTROLS, ARIA_EXPANDED, ROLE);
+    removeClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX]);
 
     baseDestroy(this, destroyOpts);
 

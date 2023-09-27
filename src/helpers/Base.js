@@ -141,7 +141,7 @@ class Base {
             : { ...opts };
           delete this.opts.breakpoints;
           if (opts.destroy) {
-            this.destroy();
+            this.destroy({ keepInstance: true });
           } else if (this.isInit) {
             this._update?.();
           } else {

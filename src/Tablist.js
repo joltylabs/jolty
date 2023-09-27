@@ -57,6 +57,8 @@ import {
   REGION,
   NONE,
   EVENT_MOUSEDOWN,
+  HIDDEN_CLASS,
+  SHOWN_CLASS,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -283,7 +285,7 @@ class Tablist extends Base {
     return emit(EVENT_INIT);
   }
 
-  destroy(deleteInstance = false, cleanStyles = true) {
+  destroy({ keepInstance = false, keepState = false }) {
     const {
       tablist,
       tabs,
@@ -311,13 +313,13 @@ class Tablist extends Base {
     }
     tablist.id.includes(uuid) && tablist.removeAttribute(ID);
 
-    tabs.forEach((tab) => tab.destroy(cleanStyles));
+    tabs.forEach((tab) => tab.destroy({ keepState }));
 
-    this.isInit = false;
-
-    if (deleteInstance) {
+    if (!keepInstance) {
       instances.delete(id);
     }
+
+    this.isInit = false;
 
     emit(EVENT_DESTROY);
 
@@ -387,7 +389,7 @@ class Tablist extends Base {
       this.toggle(event.currentTarget, null, { event, trigger: tab });
     });
 
-    const destroy = ({ clean = true, remove = false }) => {
+    const destroy = ({ clean = true, remove = false, keepState = false }) => {
       const opts = this.opts;
       const a11y = opts.a11y;
       if (a11y) {
@@ -422,9 +424,14 @@ class Tablist extends Base {
       tabpanel.id.includes(uuid) && tabpanel.removeAttribute(ID);
       tab.id.includes(uuid) && tab.removeAttribute(ID);
 
-      if (remove) {
-        elems.forEach((elem) => elem && elem.remove());
-      }
+      elems.forEach((elem) => {
+        if (!elem) return;
+        elem.remove();
+        if (!keepState) {
+          removeClass(elem, [HIDDEN_CLASS, SHOWN_CLASS]);
+          removeAttribute(elem, HIDDEN, INERT);
+        }
+      });
     };
 
     const toggleDisabled = (s = null) => {
