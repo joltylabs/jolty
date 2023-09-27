@@ -33,6 +33,8 @@ import {
   RIGHT,
   DOWN,
   UP,
+  CLASS_HIDDEN_MODE,
+  CLASS_SHOWN_MODE,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -80,7 +82,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
-    mode: false,
     eventPrefix: getEventsPrefix(DROPDOWN),
     itemClickHide: true,
     arrowActivation: "y",
@@ -118,7 +119,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
           await show({ event, trigger: toggler });
         }
         if (this.isAnimating && !this.isOpen) return;
-        this.focusableElems[0]?.focus();
+        this.focusableElems
+          .at(keyCode === KEY_ARROW_UP || keyCode === KEY_ARROW_LEFT ? -1 : 0)
+          ?.focus();
       }
     });
 
@@ -128,12 +131,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   _update() {
     const { base, opts, on, off, hide } = this;
-    updateOptsByData(
-      opts,
-      base,
-      [TRIGGER, OPTION_TOP_LAYER, HIDE_MODE],
-      [OPTION_TOP_LAYER],
-    );
+    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
@@ -185,7 +183,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     );
   }
   _onKeydown(event) {
-    const { keyCode } = event;
     const isControl = [
       KEY_ENTER,
       KEY_SPACE,
@@ -195,10 +192,10 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       KEY_ARROW_UP,
       KEY_ARROW_RIGHT,
       KEY_ARROW_DOWN,
-    ].includes(keyCode);
+    ].includes(event.keyCode);
     const { focusableElems, opts } = this;
 
-    if (!isControl && keyCode !== KEY_TAB) {
+    if (!isControl && event.keyCode !== KEY_TAB) {
       focusableElems
         .find((elem) => elem.textContent.toLowerCase().startsWith(event.key))
         ?.focus();
@@ -245,10 +242,13 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
-    const { opts, toggler } = this;
+    const { opts, toggler, base } = this;
     this.emit(EVENT_BEFORE_DESTROY);
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+    if (!destroyOpts?.remove) {
+      removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
+    }
     return baseDestroy(this, destroyOpts);
   }
 
