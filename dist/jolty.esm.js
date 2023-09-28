@@ -1320,7 +1320,8 @@ class Base {
 
     this.baseOpts = this.opts = opts;
 
-    this.id = elem.id || (this.uuid = uuidGenerator(UI_PREFIX + NAME + "-"));
+    this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
+    this.id = elem.id || this.uuid;
 
     const eventHandler = new EventHandler();
     [ACTION_ON, ACTION_OFF, ACTION_ONCE].forEach((name) => {
@@ -1842,8 +1843,9 @@ var baseDestroy = (
 
   off();
 
+  base.id.includes(uuid) && base.removeAttribute(ID);
+
   if (!keepInstance) {
-    base.id.includes(uuid) && base.removeAttribute(ID);
     breakpoints?.destroy();
     instances.delete(id);
   }
@@ -2522,7 +2524,7 @@ var callShowInit = (instance, target = instance.base, stateElem = target) => {
       instance,
     ) ?? isShown(stateElem, opts.hideMode);
 
-  shown &&
+  if (shown) {
     show({
       animated: !!(
         getBooleanDataAttrValue(target, APPEAR) ??
@@ -2533,6 +2535,9 @@ var callShowInit = (instance, target = instance.base, stateElem = target) => {
       ignoreAutofocus: !instance._fromHTML,
       __initial: true,
     });
+  } else {
+    toggleHideModeState(false, instance, stateElem);
+  }
 
   return instance;
 };
@@ -3197,20 +3202,32 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   destroy(destroyOpts) {
     if (!this.isInit) return;
 
-    removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE]);
+    removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+    [DIALOG, CONTENT, BACKDROP].forEach((name) =>
+      removeClass(this[name], this.opts[name + CLASS_ACTIVE_SUFFIX]),
+    );
+
     this.focusGuards?.destroy();
     this.focusGuards = null;
     this.placeholder?.replaceWith(this.base);
-    if (!destroyOpts?.remove) {
-      this.opts.a11y &&
-        removeAttribute(
-          this.base,
-          TABINDEX,
-          ROLE,
-          ARIA_LABELLEDBY,
-          ARIA_DESCRIBEDBY,
-        );
-    }
+
+    this.isOpen = false;
+
+    this[DIALOG].hidePopover?.();
+    this[DIALOG].close?.();
+    this[DIALOG].popover = null;
+
+    this.preventScroll(false);
+
+    this.opts.a11y &&
+      removeAttribute(
+        this.base,
+        TABINDEX,
+        ROLE,
+        ARIA_LABELLEDBY,
+        ARIA_DESCRIBEDBY,
+      );
+
     baseDestroy(this, destroyOpts);
     return this;
   }
