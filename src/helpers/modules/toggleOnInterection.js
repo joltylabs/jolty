@@ -46,7 +46,12 @@ export default (
   }
   if (triggerClick) {
     on(toggler, EVENT_CLICK + PREFIX, (event) => {
-      if (instance.isOpen && instance.transition.isAnimating) return;
+      if (
+        instance.isOpen &&
+        instance.transition.isAnimating &&
+        instance.floating.floatings.size
+      )
+        return;
       toggle(null, { event, trigger: toggler });
     });
   }
