@@ -1,6 +1,10 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.4.3] - 2023-09-28
+### Fixed
+- fix instances duplication
+- fix floatings performance
 ## [0.4.2] - 2023-09-28
 ### Fixed
 - set the state when the element is not shown by default

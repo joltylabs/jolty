@@ -1285,6 +1285,9 @@
       const { NAME, BASE_NODE_NAME, Default, _data, _templates, allInstances } =
         this.constructor;
 
+      if (elem?.id && allInstances.get(elem.id)?.constructor?.NAME === NAME)
+        return;
+
       Base.components[NAME] = this.constructor;
 
       const baseElemName = BASE_NODE_NAME ?? NAME;
@@ -1327,6 +1330,7 @@
       this.baseOpts = this.opts = opts;
 
       this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
+
       this.id = elem.id || this.uuid;
 
       const eventHandler = new EventHandler();
@@ -1900,7 +1904,12 @@
     }
     if (triggerClick) {
       on(toggler, EVENT_CLICK + PREFIX, (event) => {
-        if (instance.isOpen && instance.transition.isAnimating) return;
+        if (
+          instance.isOpen &&
+          instance.transition.isAnimating &&
+          instance.floating.floatings.size
+        )
+          return;
         toggle(null, { event, trigger: toggler });
       });
     }
