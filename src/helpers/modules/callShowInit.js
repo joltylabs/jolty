@@ -5,6 +5,7 @@ import {
   getBooleanDataAttrValue,
   isShown,
 } from "../utils";
+import toggleHideModeState from "./toggleHideModeState.js";
 
 export default (instance, target = instance.base, stateElem = target) => {
   const { opts, show, id } = instance;
@@ -19,7 +20,7 @@ export default (instance, target = instance.base, stateElem = target) => {
       instance,
     ) ?? isShown(stateElem, opts.hideMode);
 
-  shown &&
+  if (shown) {
     show({
       animated: !!(
         getBooleanDataAttrValue(target, APPEAR) ??
@@ -30,6 +31,9 @@ export default (instance, target = instance.base, stateElem = target) => {
       ignoreAutofocus: !instance._fromHTML,
       __initial: true,
     });
+  } else {
+    toggleHideModeState(false, instance, stateElem);
+  }
 
   return instance;
 };
