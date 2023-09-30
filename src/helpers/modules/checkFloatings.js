@@ -1,6 +1,6 @@
 import { arrayFrom } from "../utils/index.js";
 
-const FLOATING_IS_INTERACTED = ":hover,:focus-within";
+const FLOATING_IS_INTERACTED = ":is(:hover,:focus-within)";
 export default function (instance, s) {
   const floating = instance.floating;
 
@@ -15,7 +15,8 @@ export default function (instance, s) {
   } else {
     if (
       parentFloating &&
-      !parentFloating.base.matches(FLOATING_IS_INTERACTED)
+      !parentFloating.base.matches(FLOATING_IS_INTERACTED) &&
+      !parentFloating.anchor.matches(FLOATING_IS_INTERACTED)
     ) {
       parentFloating.instance.hide();
     }

@@ -12,6 +12,7 @@ import {
   TRIGGER,
   MODAL,
   PRIVATE_PREFIX,
+  MOUSE,
 } from "../constants";
 import { isArray } from "../is";
 
@@ -44,14 +45,23 @@ export default (
   if (triggerHover) {
     delay = isArray(delay) ? delay : [delay, delay];
   }
+
+  let pointerType;
+  on(toggler, "pointerdown" + PREFIX, (event) => {
+    pointerType = event.pointerType;
+  });
+
   if (triggerClick) {
     on(toggler, EVENT_CLICK + PREFIX, (event) => {
       if (
-        instance.isOpen &&
-        instance.transition.isAnimating &&
-        instance.floating.floatings.size
-      )
+        (pointerType === MOUSE && triggerHover) ||
+        (instance.isOpen &&
+          instance.transition.isAnimating &&
+          instance.floating.floatings.size)
+      ) {
+        pointerType = null;
         return;
+      }
       toggle(null, { event, trigger: toggler });
     });
   }
@@ -72,6 +82,7 @@ export default (
   if (triggerHover || triggerFocus) {
     on([toggler, target], events, (event) => {
       const { type } = event;
+
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
       if (
         (type === EVENT_FOCUSIN && isMouseDown) ||
@@ -87,10 +98,9 @@ export default (
       clearTimeout(hoverTimer);
 
       if (d) {
-        hoverTimer = setTimeout(
-          () => toggle(entered, { trigger: toggler, event }),
-          d,
-        );
+        hoverTimer = setTimeout(() => {
+          toggle(entered, { trigger: toggler, event });
+        }, d);
       } else {
         toggle(entered, { event, trigger: event.target });
       }

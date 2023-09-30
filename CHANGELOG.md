@@ -1,6 +1,9 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.4.4] - 2023-09-30
+### Fixed
+- fix hover with click interaction
 ## [0.4.3] - 2023-09-28
 ### Fixed
 - fix instances duplication

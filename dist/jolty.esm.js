@@ -1896,14 +1896,23 @@ var toggleOnInterection = (
   if (triggerHover) {
     delay = isArray(delay) ? delay : [delay, delay];
   }
+
+  let pointerType;
+  on(toggler, "pointerdown" + PREFIX, (event) => {
+    pointerType = event.pointerType;
+  });
+
   if (triggerClick) {
     on(toggler, EVENT_CLICK + PREFIX, (event) => {
       if (
-        instance.isOpen &&
-        instance.transition.isAnimating &&
-        instance.floating.floatings.size
-      )
+        (pointerType === MOUSE && triggerHover) ||
+        (instance.isOpen &&
+          instance.transition.isAnimating &&
+          instance.floating.floatings.size)
+      ) {
+        pointerType = null;
         return;
+      }
       toggle(null, { event, trigger: toggler });
     });
   }
@@ -1924,6 +1933,7 @@ var toggleOnInterection = (
   if (triggerHover || triggerFocus) {
     on([toggler, target], events, (event) => {
       const { type } = event;
+
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
       if (
         (type === EVENT_FOCUSIN && isMouseDown) ||
@@ -1939,10 +1949,9 @@ var toggleOnInterection = (
       clearTimeout(hoverTimer);
 
       if (d) {
-        hoverTimer = setTimeout(
-          () => toggle(entered, { trigger: toggler, event }),
-          d,
-        );
+        hoverTimer = setTimeout(() => {
+          toggle(entered, { trigger: toggler, event });
+        }, d);
       } else {
         toggle(entered, { event, trigger: event.target });
       }
@@ -2597,7 +2606,7 @@ var updateModule = ({ opts, constructor }, name, property = false, defaults) => 
   return opts;
 };
 
-const FLOATING_IS_INTERACTED = ":hover,:focus-within";
+const FLOATING_IS_INTERACTED = ":is(:hover,:focus-within)";
 function checkFloatings (instance, s) {
   const floating = instance.floating;
 
@@ -2612,7 +2621,8 @@ function checkFloatings (instance, s) {
   } else {
     if (
       parentFloating &&
-      !parentFloating.base.matches(FLOATING_IS_INTERACTED)
+      !parentFloating.base.matches(FLOATING_IS_INTERACTED) &&
+      !parentFloating.anchor.matches(FLOATING_IS_INTERACTED)
     ) {
       parentFloating.instance.hide();
     }
