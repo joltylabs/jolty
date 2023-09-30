@@ -91,8 +91,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
   destroy(destroyOpts) {
-    const { isInit, anchor, tooltip, id, _cache, emit, opts } = this;
-    if (!isInit) return;
+    if (this.isInit) return;
+    const { anchor, tooltip, id, _cache, emit, opts } = this;
     emit(EVENT_BEFORE_DESTROY);
     if (opts.a11y) {
       removeAttribute(tooltip, TOOLTIP);

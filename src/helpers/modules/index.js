@@ -11,3 +11,4 @@ export { default as addHashNavigation } from "./addHashNavigation.js";
 export { default as toggleHideModeState } from "./toggleHideModeState.js";
 export { default as updateModule } from "./updateModule.js";
 export { default as checkFloatings } from "./checkFloatings.js";
+export { default as destroyInstance } from "./destroyInstance.js";

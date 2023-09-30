@@ -1,6 +1,9 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.4.5] - 2023-09-30
+### Fixed
+- fix memory leak
 ## [0.4.4] - 2023-09-30
 ### Fixed
 - fix hover with click interaction

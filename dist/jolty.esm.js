@@ -23,7 +23,6 @@ const MODE = "mode";
 
 const PX = "px";
 const NONE = "none";
-const ID = "id";
 
 const WIDTH = "width";
 const HEIGHT = "height";
@@ -880,7 +879,7 @@ var replaceWord = (str, word) =>
     .filter((w) => w !== word)
     .join(" ");
 
-var uuidGenerator = (prefix = "") =>
+var uuidGenerator = (prefix = UI_PREFIX) =>
   prefix + Math.random().toString(36).substring(2, 12);
 
 var updateOptsByData = (opts, { dataset }, names, booleanOptions) => {
@@ -1269,7 +1268,7 @@ function getDataValue(_data, dataName, elem) {
 }
 
 class Base {
-  static allInstances = new Map();
+  static allInstances = new Set();
   static components = {};
   constructor(elem, opts) {
     if (isFunction(opts)) {
@@ -1279,7 +1278,13 @@ class Base {
     const { NAME, BASE_NODE_NAME, Default, _data, _templates, allInstances } =
       this.constructor;
 
-    if (elem?.id && allInstances.get(elem.id)?.constructor?.NAME === NAME)
+    if (
+      elem?.id &&
+      arrayFrom(allInstances).find(
+        (instance) =>
+          instance.base === elem && instance.constructor.NAME === NAME,
+      )
+    )
       return;
 
     Base.components[NAME] = this.constructor;
@@ -1323,7 +1328,7 @@ class Base {
 
     this.baseOpts = this.opts = opts;
 
-    this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
+    this.uuid = uuidGenerator();
 
     this.id = elem.id || this.uuid;
 
@@ -1351,7 +1356,7 @@ class Base {
       this.init();
     }
 
-    allInstances.set(this.id, this);
+    allInstances.add(this);
 
     return this;
   }
@@ -1380,6 +1385,17 @@ class Base {
           } else if (this.isInit) {
             this._update?.();
           } else {
+            Base.allInstances.forEach((instance) => {
+              if (
+                instance.breakpoints &&
+                instance.base === this.base &&
+                instance !== this &&
+                instance.isInit &&
+                instance.breakpoints.checkBreakpoints()[0].destroy
+              ) {
+                instance.destroy({ keepInstance: true });
+              }
+            });
             this.init();
           }
           this.breakpoint = breakpoint;
@@ -1831,8 +1847,7 @@ var baseDestroy = (
   instance,
   { remove = false, keepInstance = false, keepState = false } = {},
 ) => {
-  const { base, off, emit, id, uuid, instances, breakpoints, constructor } =
-    instance;
+  const { base, off, emit, constructor } = instance;
 
   const stateElem = instance[constructor.NAME];
 
@@ -1847,11 +1862,8 @@ var baseDestroy = (
 
   off();
 
-  base.id.includes(uuid) && base.removeAttribute(ID);
-
   if (!keepInstance) {
-    breakpoints?.destroy();
-    instances.delete(id);
+    destroyInstance(instance);
   }
   if (remove) {
     base.remove();
@@ -2640,6 +2652,12 @@ function checkFloatings (instance, s) {
   }
 }
 
+var destroyInstance = (instance) => {
+  instance.breakpoints?.destroy();
+  instance.instances.delete(instance.id);
+  Base.allInstances.delete(instance);
+};
+
 const COLLAPSE = "collapse";
 
 class Collapse extends ToggleMixin(Base, COLLAPSE) {
@@ -3264,9 +3282,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       }
       this[suffix] = elem;
       if (!elem) return;
-      const id = elem
-        ? (elem.id ||= uuidGenerator(DIALOG + "-" + suffix + "-"))
-        : elem;
+      const id = elem ? (elem.id ||= uuidGenerator()) : elem;
       setAttribute(base, name, id);
     }
     return this;
@@ -3690,12 +3706,9 @@ class Tablist extends Base {
     const {
       tablist,
       tabs,
-      uuid,
       opts: { a11y },
       isInit,
       off,
-      instances,
-      id,
       emit,
     } = this;
 
@@ -3712,12 +3725,11 @@ class Tablist extends Base {
         a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
       );
     }
-    tablist.id.includes(uuid) && tablist.removeAttribute(ID);
 
     tabs.forEach((tab) => tab.destroy({ keepState }));
 
     if (!keepInstance) {
-      instances.delete(id);
+      destroyInstance(this);
     }
 
     this.isInit = false;
@@ -3765,8 +3777,8 @@ class Tablist extends Base {
     if (!tabpanel) return;
 
     const uuid = uuidGenerator();
-    const id = (tabpanel.id ||= TABPANEL + "-" + uuid);
-    tab.id ||= TAB + "-" + uuid;
+    const id = (tabpanel.id ||= uuid);
+    tab.id ||= uuid;
 
     let isOpen;
     if (shownTabs.length && !opts[OPTION_MULTI_EXPAND]) {
@@ -3827,8 +3839,6 @@ class Tablist extends Base {
         tabInstance[TRANSITION]?.destroy();
         tabInstance[TELEPORT]?.destroy();
       }
-      tabpanel.id.includes(uuid) && tabpanel.removeAttribute(ID);
-      tab.id.includes(uuid) && tab.removeAttribute(ID);
 
       elems.forEach((elem) => {
         if (!elem) return;
@@ -4579,8 +4589,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }
   destroy(destroyOpts) {
-    const { isInit, anchor, tooltip, id, _cache, emit, opts } = this;
-    if (!isInit) return;
+    if (this.isInit) return;
+    const { anchor, tooltip, id, _cache, emit, opts } = this;
     emit(EVENT_BEFORE_DESTROY);
     if (opts.a11y) {
       removeAttribute(tooltip, TOOLTIP);

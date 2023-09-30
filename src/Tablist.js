@@ -97,6 +97,7 @@ import {
 } from "./helpers/dom";
 import {
   addDismiss,
+  destroyInstance,
   toggleHideModeState,
   updateModule,
 } from "./helpers/modules";
@@ -289,12 +290,9 @@ class Tablist extends Base {
     const {
       tablist,
       tabs,
-      uuid,
       opts: { a11y },
       isInit,
       off,
-      instances,
-      id,
       emit,
     } = this;
 
@@ -311,12 +309,11 @@ class Tablist extends Base {
         a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
       );
     }
-    tablist.id.includes(uuid) && tablist.removeAttribute(ID);
 
     tabs.forEach((tab) => tab.destroy({ keepState }));
 
     if (!keepInstance) {
-      instances.delete(id);
+      destroyInstance(this);
     }
 
     this.isInit = false;
@@ -364,8 +361,8 @@ class Tablist extends Base {
     if (!tabpanel) return;
 
     const uuid = uuidGenerator();
-    const id = (tabpanel.id ||= TABPANEL + "-" + uuid);
-    tab.id ||= TAB + "-" + uuid;
+    const id = (tabpanel.id ||= uuid);
+    tab.id ||= uuid;
 
     let isOpen;
     if (shownTabs.length && !opts[OPTION_MULTI_EXPAND]) {
@@ -426,8 +423,6 @@ class Tablist extends Base {
         tabInstance[TRANSITION]?.destroy();
         tabInstance[TELEPORT]?.destroy();
       }
-      tabpanel.id.includes(uuid) && tabpanel.removeAttribute(ID);
-      tab.id.includes(uuid) && tab.removeAttribute(ID);
 
       elems.forEach((elem) => {
         if (!elem) return;

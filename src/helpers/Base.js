@@ -41,7 +41,7 @@ function getDataValue(_data, dataName, elem) {
 }
 
 class Base {
-  static allInstances = new Map();
+  static allInstances = new Set();
   static components = {};
   constructor(elem, opts) {
     if (isFunction(opts)) {
@@ -51,7 +51,13 @@ class Base {
     const { NAME, BASE_NODE_NAME, Default, _data, _templates, allInstances } =
       this.constructor;
 
-    if (elem?.id && allInstances.get(elem.id)?.constructor?.NAME === NAME)
+    if (
+      elem?.id &&
+      arrayFrom(allInstances).find(
+        (instance) =>
+          instance.base === elem && instance.constructor.NAME === NAME,
+      )
+    )
       return;
 
     Base.components[NAME] = this.constructor;
@@ -95,7 +101,7 @@ class Base {
 
     this.baseOpts = this.opts = opts;
 
-    this.uuid = uuidGenerator(UI_PREFIX + NAME + "-");
+    this.uuid = uuidGenerator();
 
     this.id = elem.id || this.uuid;
 
@@ -123,7 +129,7 @@ class Base {
       this.init();
     }
 
-    allInstances.set(this.id, this);
+    allInstances.add(this);
 
     return this;
   }
@@ -152,6 +158,17 @@ class Base {
           } else if (this.isInit) {
             this._update?.();
           } else {
+            Base.allInstances.forEach((instance) => {
+              if (
+                instance.breakpoints &&
+                instance.base === this.base &&
+                instance !== this &&
+                instance.isInit &&
+                instance.breakpoints.checkBreakpoints()[0].destroy
+              ) {
+                instance.destroy({ keepInstance: true });
+              }
+            });
             this.init();
           }
           this.breakpoint = breakpoint;

@@ -11,13 +11,13 @@ import {
   TRANSITION,
 } from "../constants";
 import { removeAttribute, removeClass } from "../dom/index.js";
+import { destroyInstance } from "./index.js";
 
 export default (
   instance,
   { remove = false, keepInstance = false, keepState = false } = {},
 ) => {
-  const { base, off, emit, id, uuid, instances, breakpoints, constructor } =
-    instance;
+  const { base, off, emit, constructor } = instance;
 
   const stateElem = instance[constructor.NAME];
 
@@ -32,11 +32,8 @@ export default (
 
   off();
 
-  base.id.includes(uuid) && base.removeAttribute(ID);
-
   if (!keepInstance) {
-    breakpoints?.destroy();
-    instances.delete(id);
+    destroyInstance(instance);
   }
   if (remove) {
     base.remove();

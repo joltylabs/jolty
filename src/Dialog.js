@@ -330,9 +330,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       }
       this[suffix] = elem;
       if (!elem) return;
-      const id = elem
-        ? (elem.id ||= uuidGenerator(DIALOG + "-" + suffix + "-"))
-        : elem;
+      const id = elem ? (elem.id ||= uuidGenerator()) : elem;
       setAttribute(base, name, id);
     }
     return this;
