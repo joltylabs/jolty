@@ -1,4 +1,4 @@
 ## Documentation
 
-For full documentation, visit [jolty.io](https://jolty.io/).
+For full documentation, visit [jolty.dev](https://jolty.dev).
 
