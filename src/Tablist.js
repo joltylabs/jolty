@@ -399,7 +399,7 @@ class Tablist extends Base {
         removeAttribute(
           tab,
           ROLE,
-          a11y[TABINDEX] && TABINDEX,
+          TABINDEX,
           ARIA_CONTROLS,
           ARIA_EXPANDED,
           a11y[OPTION_STATE_ATTRIBUTE],
