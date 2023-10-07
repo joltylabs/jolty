@@ -27,7 +27,7 @@ import {
   CLASS_ACTIVE,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
-import { fragment, inDOM, toggleClass } from "./helpers/dom";
+import { fragment, inDOM, setAttribute, toggleClass } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   arrayFrom,
@@ -281,8 +281,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     );
 
     if (a11y) {
-      wrapper[TABINDEX] = -1;
-      wrapper.role = REGION;
+      wrapper.setAttribute(TABINDEX, -1);
+      wrapper.setAttribute(ROLE, REGION);
     }
 
     rootWrappers.add({ wrapper, container, position, root, keepTopLayer });

@@ -38,7 +38,6 @@ import {
   ACTION_SHOW,
   ACTION_TOGGLE,
   DEFAULT_OPTIONS,
-  ID,
   HORIZONTAL,
   VERTICAL,
   A11Y,
@@ -220,6 +219,9 @@ class Tablist extends Base {
         removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
         setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
         setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
+        if (!/BUTTON|A/.test(tab.nodeName) && !tab.hasAttribute(TABINDEX)) {
+          tab.setAttribute(TABINDEX, 0);
+        }
         setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
         setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
         setAttribute(item, ROLE, NONE);
