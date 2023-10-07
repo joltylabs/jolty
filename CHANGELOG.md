@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.4.6] - 2023-10-07
+### Fixed
+- fix Dialog, Tablist and Toast tabindex attribute
+- fix Tablist set instance
+- fix Tablist destroy without arguments
 ## [0.4.5] - 2023-09-30
 ### Fixed
 - fix memory leak
