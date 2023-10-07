@@ -288,7 +288,7 @@ class Tablist extends Base {
     return emit(EVENT_INIT);
   }
 
-  destroy({ keepInstance = false, keepState = false }) {
+  destroy({ keepInstance = false, keepState = false } = {}) {
     const {
       tablist,
       tabs,
@@ -392,7 +392,7 @@ class Tablist extends Base {
       cleanStyles = true,
       remove = false,
       keepState = false,
-    }) => {
+    } = {}) => {
       const opts = this.opts;
       const a11y = opts.a11y;
       if (a11y) {
