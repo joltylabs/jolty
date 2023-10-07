@@ -3178,8 +3178,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     if (isDialogElem) {
       on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     } else if (opts.a11y) {
-      base[TABINDEX] = -1;
-      setAttribute(base, ROLE, DIALOG);
+      base.setAttribute(TABINDEX, -1);
+      base.setAttribute(ROLE, DIALOG);
     }
 
     base.popover =
@@ -3636,6 +3636,9 @@ class Tablist extends Base {
         removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
         setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
         setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
+        if (!/BUTTON|A/.test(tab.nodeName) && !tab.hasAttribute(TABINDEX)) {
+          tab.setAttribute(TABINDEX, 0);
+        }
         setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
         setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
         setAttribute(item, ROLE, NONE);
@@ -3697,12 +3700,12 @@ class Tablist extends Base {
 
     this._update();
 
+    this.instances.set(this.id, this);
     this.isInit = true;
-
     return emit(EVENT_INIT);
   }
 
-  destroy({ keepInstance = false, keepState = false }) {
+  destroy({ keepInstance = false, keepState = false } = {}) {
     const {
       tablist,
       tabs,
@@ -3806,14 +3809,14 @@ class Tablist extends Base {
       cleanStyles = true,
       remove = false,
       keepState = false,
-    }) => {
+    } = {}) => {
       const opts = this.opts;
       const a11y = opts.a11y;
       if (a11y) {
         removeAttribute(
           tab,
           ROLE,
-          a11y[TABINDEX] && TABINDEX,
+          TABINDEX,
           ARIA_CONTROLS,
           ARIA_EXPANDED,
           a11y[OPTION_STATE_ATTRIBUTE],
@@ -4497,8 +4500,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     );
 
     if (a11y) {
-      wrapper[TABINDEX] = -1;
-      wrapper.role = REGION;
+      wrapper.setAttribute(TABINDEX, -1);
+      wrapper.setAttribute(ROLE, REGION);
     }
 
     rootWrappers.add({ wrapper, container, position, root, keepTopLayer });
