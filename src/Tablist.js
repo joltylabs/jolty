@@ -283,8 +283,8 @@ class Tablist extends Base {
 
     this._update();
 
+    this.instances.set(this.id, this);
     this.isInit = true;
-
     return emit(EVENT_INIT);
   }
 
