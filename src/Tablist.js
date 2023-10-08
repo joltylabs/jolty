@@ -58,6 +58,8 @@ import {
   EVENT_MOUSEDOWN,
   HIDDEN_CLASS,
   SHOWN_CLASS,
+  UNTIL_FOUND,
+  MODE_HIDDEN_UNTIL_FOUND,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -362,6 +364,10 @@ class Tablist extends Base {
 
     if (!tabpanel) return;
 
+    if (opts[HIDE_MODE] === HIDDEN && tabpanel[HIDDEN] === UNTIL_FOUND) {
+      opts[HIDE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
+    }
+
     const uuid = uuidGenerator();
     const id = (tabpanel.id ||= uuid);
     tab.id ||= uuid;
@@ -385,7 +391,7 @@ class Tablist extends Base {
     });
     on(tab, EVENT_CLICK, (event) => {
       event.preventDefault();
-      this.toggle(event.currentTarget, null, { event, trigger: tab });
+      this.toggle(tab, null, { event, trigger: tab });
     });
 
     const destroy = ({

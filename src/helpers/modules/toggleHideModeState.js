@@ -3,13 +3,16 @@ import {
   CLASS_HIDDEN_MODE,
   CLASS_SHOWN_MODE,
   doc,
+  EVENT_BEFORE_MATCH,
   FLOATING_DATA_ATTRIBUTE,
   HIDDEN,
   HIDDEN_CLASS,
   HIDE_MODE,
+  MODE_HIDDEN_UNTIL_FOUND,
   PLACEHOLDER,
   SHOWN_CLASS,
   UI_PREFIX,
+  UNTIL_FOUND,
 } from "../constants/index.js";
 
 export default (
@@ -48,7 +51,19 @@ export default (
       }
     }
   } else if (mode !== CLASS_HIDDEN_MODE && mode !== CLASS_SHOWN_MODE) {
-    target.toggleAttribute(mode, !s);
+    if (mode === MODE_HIDDEN_UNTIL_FOUND) {
+      if (s) {
+        target.removeAttribute(HIDDEN);
+        instance.off(target, EVENT_BEFORE_MATCH);
+      } else {
+        target.setAttribute(HIDDEN, UNTIL_FOUND);
+        instance.on(target, EVENT_BEFORE_MATCH, (event) => {
+          instance.toggle(target, true, { animated: false, event });
+        });
+      }
+    } else {
+      target.toggleAttribute(mode, !s);
+    }
   }
 
   target.classList.toggle(HIDDEN_CLASS, !s && mode === CLASS_HIDDEN_MODE);

@@ -195,6 +195,10 @@ export const EVENT_SCROLL = SCROLL;
 export const EVENT_RESIZE = "resize";
 export const EVENT_DISABLED = DISABLED;
 export const EVENT_ENABLED = "enabled";
+export const EVENT_BEFORE_MATCH = BEFORE + "match";
+
+export const UNTIL_FOUND = "until-found";
+export const MODE_HIDDEN_UNTIL_FOUND = HIDDEN + "-" + UNTIL_FOUND;
 
 export const ARIA = "aria";
 export const ARIA_CONTROLS = ARIA + "-controls";

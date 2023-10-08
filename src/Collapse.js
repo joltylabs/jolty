@@ -23,6 +23,8 @@ import {
   TELEPORT,
   OPTION_HASH_NAVIGATION,
   OPTION_AUTODESTROY,
+  UNTIL_FOUND,
+  MODE_HIDDEN_UNTIL_FOUND,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -83,6 +85,11 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   }
   _update() {
     const { base, opts } = this;
+
+    if (opts[HIDE_MODE] === HIDDEN && base[HIDDEN] === UNTIL_FOUND) {
+      opts[HIDE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
+    }
+
     updateOptsByData(
       opts,
       base,
