@@ -120,7 +120,15 @@ const OPTION_STATE_ATTRIBUTE = "stateAttribute";
 const OPTION_ALWAYS_EXPANDED = "alwaysExpanded";
 const OPTION_MULTI_EXPAND = "multiExpand";
 
-const TABLIST_SECONDARY_METHODS = ["getTab", "isTab", "initTab", "initTabs"];
+const ACTION_INIT_TAB = "initTab";
+const ACTION_DESTROY_TAB = "destroyTab";
+
+const TABLIST_SECONDARY_METHODS = [
+  "getTab",
+  "isTab",
+  ACTION_INIT_TAB,
+  "initTabs",
+];
 
 const DEFAULT_ACCORDION_OPTIONS = {
   [OPTION_ALWAYS_EXPANDED]: false,
@@ -340,7 +348,7 @@ class Tablist extends Base {
   initTab(tab) {
     if (this.getTab(tab)) return;
 
-    const { tabs, tablist, opts, shownTabs, on, off } = this;
+    const { tabs, tablist, opts, shownTabs, on, off, emit } = this;
     const index = tabs.length;
 
     const item = isString(opts[ITEM])
@@ -442,6 +450,8 @@ class Tablist extends Base {
           removeAttribute(elem, HIDDEN, INERT);
         }
       });
+
+      emit(ACTION_DESTROY_TAB, tabInstance);
     };
 
     const toggleDisabled = (s = null) => {
@@ -462,7 +472,7 @@ class Tablist extends Base {
       return !disabled;
     };
 
-    const elems = [tab, item, tabpanel];
+    const elems = [tab, item, tabpanel].filter(Boolean);
     const tabInstance = {
       id,
       uuid,
@@ -501,6 +511,9 @@ class Tablist extends Base {
     }
 
     tabs.push(tabInstance);
+
+    emit(ACTION_INIT_TAB, tabInstance);
+
     return tabInstance;
   }
   isTab(tab, value) {

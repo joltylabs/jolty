@@ -161,13 +161,13 @@ export const POPOVER_API_MODE_MANUAL = "manual";
 export const PLACEHOLDER = "placeholder";
 
 export const EVENT_INIT = ACTION_INIT;
-export const EVENT_BEFORE_INIT = BEFORE + upperFirst(EVENT_INIT);
+export const EVENT_BEFORE_INIT = BEFORE + "Init";
 export const EVENT_DESTROY = ACTION_DESTROY;
-export const EVENT_BEFORE_DESTROY = BEFORE + upperFirst(EVENT_DESTROY);
-export const EVENT_BEFORE_SHOW = BEFORE + upperFirst(SHOW);
+export const EVENT_BEFORE_DESTROY = BEFORE + "Destroy";
+export const EVENT_BEFORE_SHOW = BEFORE + "Show";
 export const EVENT_SHOW = SHOW;
 export const EVENT_SHOWN = SHOWN;
-export const EVENT_BEFORE_HIDE = BEFORE + upperFirst(HIDE);
+export const EVENT_BEFORE_HIDE = BEFORE + "Hide";
 export const EVENT_HIDE = HIDE;
 export const EVENT_HIDDEN = HIDDEN;
 export const EVENT_PAUSE = ACTION_PAUSE;
