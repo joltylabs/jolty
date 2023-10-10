@@ -112,6 +112,7 @@ export const FALSE = "false";
 
 export const doc = document;
 export const body = doc.body;
+export const ROOT_ELEM = doc.documentElement;
 export const BODY = "body";
 
 export const ENTER = "enter";

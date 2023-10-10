@@ -2,16 +2,8 @@ import {
   DEFAULT_OPTIONS,
   body,
   ROLE,
-  UI_PREFIX,
-  VAR_UI_PREFIX,
-  PX,
   CONTENT,
   BACKDROP,
-  SCROLL,
-  WIDTH,
-  ROOT,
-  SELECTOR_ROOT,
-  ACTION_PREVENT,
   ARIA_LABELLEDBY,
   ARIA_DESCRIBEDBY,
   TABINDEX,
@@ -87,6 +79,7 @@ import {
   addHashNavigation,
   toggleHideModeState,
   updateModule,
+  togglePreventScroll,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -94,24 +87,9 @@ import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 import { FocusGuards } from "./helpers/modules/index.js";
 
-// const DOM_ELEMENTS = [DIALOG, BACKDROP, CONTENT];
-const CLASS_PREVENT_SCROLL =
-  UI_PREFIX + DIALOG + "-" + ACTION_PREVENT + "-" + SCROLL;
-
-const PROPERTY_ROOT_SCROLLBAR_WIDTH =
-  VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
 const ARIA_SUFFIX = {
   [ARIA_LABELLEDBY]: TITLE,
   [ARIA_DESCRIBEDBY]: "description",
-};
-
-const updateBodyScrollbarWidth = () => {
-  return doc
-    .querySelector(SELECTOR_ROOT)
-    .style.setProperty(
-      PROPERTY_ROOT_SCROLLBAR_WIDTH,
-      window.innerWidth - doc.documentElement.clientWidth + PX,
-    );
 };
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
@@ -302,7 +280,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this[DIALOG].close?.();
     this[DIALOG].popover = null;
 
-    this.preventScroll(false);
+    togglePreventScroll(this, false);
 
     this.opts.a11y &&
       removeAttribute(
@@ -335,21 +313,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
     return this;
   }
-  preventScroll(s) {
-    const hasPreventScrollDialogs = Dialog.shownDialogs.filter(
-      ({ opts }) => opts[OPTION_PREVENT_SCROLL],
-    ).length;
 
-    if ((s && hasPreventScrollDialogs) || (!s && !hasPreventScrollDialogs)) {
-      toggleClass(
-        body,
-        isString(this.opts[OPTION_PREVENT_SCROLL])
-          ? this.opts[OPTION_PREVENT_SCROLL]
-          : CLASS_PREVENT_SCROLL,
-        s,
-      );
-    }
-  }
   async toggle(s, params) {
     const {
       opts,
@@ -414,15 +378,18 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     toggleConfirm(s, this);
 
-    const backdropIsOpen = Dialog.shownDialogs.find(
-      (instance) => instance !== this && instance[BACKDROP] === backdrop,
+    const backdropIsOpen = arrayFrom(this.instances.values()).find(
+      (instance) =>
+        instance !== this && instance.isOpen && instance[BACKDROP] === backdrop,
     );
 
-    const shownGroupDialogs = this.shownGroupDialogs;
+    const openGroupDialogs = this.groupDialogs.filter(
+      ({ isOpen, opts }) => opts.group && isOpen,
+    );
     if (s) {
-      if (shownGroupDialogs.length > 1) {
+      if (openGroupDialogs.length > 1) {
         const promises = Promise.allSettled(
-          shownGroupDialogs
+          openGroupDialogs
             .filter((m) => m !== this)
             .map((instance) => {
               !instance.groupClosing && instance.hide();
@@ -433,7 +400,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           await promises;
         }
       }
-    } else if (!s && !shownGroupDialogs.length) {
+    } else if (!s && !openGroupDialogs.length) {
       optReturnFocusAwait = false;
     }
 
@@ -467,7 +434,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       backdrop.style.transition = "";
     }
 
-    this.preventScroll(s);
+    s && togglePreventScroll(this, true);
 
     if (!s && !optReturnFocusAwait) {
       this._toggleApi(false);
@@ -494,6 +461,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           this.returnFocus();
         }
         toggleHideModeState(false, this);
+        togglePreventScroll(this, false);
       }
 
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
@@ -556,15 +524,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     return arrayFrom(this.instances.values()).filter(
       ({ opts }) => opts.group?.name === this.opts.group?.name,
     );
-  }
-  static get shownDialogs() {
-    return arrayFrom(this.instances.values()).filter(({ isOpen }) => isOpen);
-  }
-  get shownGroupDialogs() {
-    return this.groupDialogs.filter(({ isOpen, opts }) => opts.group && isOpen);
-  }
-  static updateBodyScrollbarWidth() {
-    updateBodyScrollbarWidth();
   }
 }
 
