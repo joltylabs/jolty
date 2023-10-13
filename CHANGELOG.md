@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 ## [0.5.0] - 2023-10-14
 ### Changed
-- change .ui-dialog-prevent-scroll class to .ui-prevent-scroll
+- rename .ui-dialog-prevent-scroll class to .ui-prevent-scroll
 ### Added
 - add preventScroll option to the Popover and Dropdown components
 - add hidden-until-found hideMode
