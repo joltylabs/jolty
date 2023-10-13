@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - add preventScroll option to the Popover and Dropdown components
 - add hidden-until-found hideMode
-- add initTab ad destroyTab events to the Tablist component
+- add initTab and destroyTab events to the Tablist component
 ## [0.4.6] - 2023-10-07
 ### Fixed
 - fix Dialog, Tablist and Toast tabindex attribute
