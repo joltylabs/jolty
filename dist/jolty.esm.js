@@ -113,6 +113,7 @@ const FALSE = "false";
 
 const doc = document;
 const body = doc.body;
+const ROOT_ELEM = doc.documentElement;
 const BODY = "body";
 
 const ENTER = "enter";
@@ -160,13 +161,13 @@ const POPOVER_API_MODE_MANUAL = "manual";
 const PLACEHOLDER = "placeholder";
 
 const EVENT_INIT = ACTION_INIT;
-const EVENT_BEFORE_INIT = BEFORE + upperFirst(EVENT_INIT);
+const EVENT_BEFORE_INIT = BEFORE + "Init";
 const EVENT_DESTROY = ACTION_DESTROY;
-const EVENT_BEFORE_DESTROY = BEFORE + upperFirst(EVENT_DESTROY);
-const EVENT_BEFORE_SHOW = BEFORE + upperFirst(SHOW);
+const EVENT_BEFORE_DESTROY = BEFORE + "Destroy";
+const EVENT_BEFORE_SHOW = BEFORE + "Show";
 const EVENT_SHOW = SHOW;
 const EVENT_SHOWN = SHOWN;
-const EVENT_BEFORE_HIDE = BEFORE + upperFirst(HIDE);
+const EVENT_BEFORE_HIDE = BEFORE + "Hide";
 const EVENT_HIDE = HIDE;
 const EVENT_HIDDEN = HIDDEN;
 const EVENT_PAUSE = ACTION_PAUSE;
@@ -189,6 +190,10 @@ const EVENT_HIDE_PREVENTED = "hidePrevented";
 const EVENT_ACTION_OUTSIDE = `${EVENT_CLICK}.outside ${EVENT_KEYUP}.outside`;
 const EVENT_SCROLL = SCROLL;
 const EVENT_RESIZE = "resize";
+const EVENT_BEFORE_MATCH = BEFORE + "match";
+
+const UNTIL_FOUND = "until-found";
+const MODE_HIDDEN_UNTIL_FOUND = HIDDEN + "-" + UNTIL_FOUND;
 
 const ARIA = "aria";
 const ARIA_CONTROLS = ARIA + "-controls";
@@ -281,8 +286,6 @@ const DEFAULT_FLOATING_OPTIONS = {
 };
 const SELECTOR_DISABLED = `[${DISABLED}]`;
 const SELECTOR_INERT = `[${INERT}]`;
-
-const SELECTOR_ROOT = ":" + ROOT;
 
 const MIRROR = {
   [TOP]: BOTTOM,
@@ -1032,7 +1035,9 @@ var isShown = (elem, hideMode) => {
     ? !elem.classList.contains(HIDDEN_CLASS)
     : hideMode === CLASS_SHOWN_MODE
     ? elem.classList.contains(SHOWN_CLASS)
-    : !elem.hasAttribute(hideMode);
+    : !elem.hasAttribute(
+        hideMode === MODE_HIDDEN_UNTIL_FOUND ? HIDDEN : hideMode,
+      );
 };
 
 var getBooleanDataAttrValue = (elem, name) => {
@@ -1256,7 +1261,7 @@ class Breakpoints {
 }
 
 if (!POPOVER_API_SUPPORTED) {
-  document.documentElement.classList.add(UI_PREFIX + "no-" + POPOVER);
+  ROOT_ELEM.classList.add(UI_PREFIX + "no-" + POPOVER);
 }
 
 function getDataValue(_data, dataName, elem) {
@@ -1350,13 +1355,13 @@ class Base {
       ACTION_EMIT,
     ].forEach((action) => (this[action] = this[action]?.bind(this)));
 
+    allInstances.add(this);
+
     if (this.baseOpts.breakpoints) {
       this._initBreakpoints();
     } else {
       this.init();
     }
-
-    allInstances.add(this);
 
     return this;
   }
@@ -2449,7 +2454,19 @@ var toggleHideModeState = (
       }
     }
   } else if (mode !== CLASS_HIDDEN_MODE && mode !== CLASS_SHOWN_MODE) {
-    target.toggleAttribute(mode, !s);
+    if (mode === MODE_HIDDEN_UNTIL_FOUND) {
+      if (s) {
+        target.removeAttribute(HIDDEN);
+        instance.off(target, EVENT_BEFORE_MATCH);
+      } else {
+        target.setAttribute(HIDDEN, UNTIL_FOUND);
+        instance.on(target, EVENT_BEFORE_MATCH, (event) => {
+          instance.show(target, { animated: false, event });
+        });
+      }
+    } else {
+      target.toggleAttribute(mode, !s);
+    }
   }
 
   target.classList.toggle(HIDDEN_CLASS, !s && mode === CLASS_HIDDEN_MODE);
@@ -2470,6 +2487,7 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
   s && toggleHideModeState(true, instance, target);
 
   if (s) {
+    togglePreventScroll(instance, true);
     instance[FLOATING] = new Floating({
       teleport,
       base,
@@ -2534,6 +2552,7 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
       instance[FLOATING]?.destroy();
       instance[FLOATING] = null;
       toggleHideModeState(false, instance, target);
+      togglePreventScroll(instance, false);
     }
     emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
   })();
@@ -2658,6 +2677,28 @@ var destroyInstance = (instance) => {
   Base.allInstances.delete(instance);
 };
 
+const PROPERTY_ROOT_SCROLLBAR_WIDTH =
+  VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
+
+const updateBodyScrollbarWidth = (s) => {
+  return s
+    ? ROOT_ELEM.style.setProperty(
+        PROPERTY_ROOT_SCROLLBAR_WIDTH,
+        window.innerWidth - doc.documentElement.clientWidth + PX,
+      )
+    : ROOT_ELEM.style.removeProperty(PROPERTY_ROOT_SCROLLBAR_WIDTH);
+};
+
+var togglePreventScroll = (instance, s) => {
+  const hasPreventScrollInstances = arrayFrom(Base.allInstances).find(
+    (instance) => instance.opts[OPTION_PREVENT_SCROLL] && instance.isOpen,
+  );
+  if ((s && hasPreventScrollInstances) || (!s && !hasPreventScrollInstances)) {
+    updateBodyScrollbarWidth(s);
+    toggleClass(ROOT_ELEM, UI_PREFIX + ACTION_PREVENT + "-" + SCROLL, s);
+  }
+};
+
 const COLLAPSE = "collapse";
 
 class Collapse extends ToggleMixin(Base, COLLAPSE) {
@@ -2688,6 +2729,11 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   }
   _update() {
     const { base, opts } = this;
+
+    if (opts[HIDE_MODE] === HIDDEN && base[HIDDEN] === UNTIL_FOUND) {
+      opts[HIDE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
+    }
+
     updateOptsByData(
       opts,
       base,
@@ -2845,6 +2891,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DROPDOWN + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [OPTION_PREVENT_SCROLL]: false,
   };
 
   constructor(elem, opts) {
@@ -2888,7 +2935,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   _update() {
     const { base, opts, on, off, hide } = this;
-    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
+    updateOptsByData(
+      opts,
+      base,
+      [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [OPTION_PREVENT_SCROLL],
+    );
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
@@ -3002,6 +3054,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
+    togglePreventScroll(this, false);
     return baseDestroy(this, destroyOpts);
   }
 
@@ -3046,24 +3099,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 }
 
-// const DOM_ELEMENTS = [DIALOG, BACKDROP, CONTENT];
-const CLASS_PREVENT_SCROLL =
-  UI_PREFIX + DIALOG + "-" + ACTION_PREVENT + "-" + SCROLL;
-
-const PROPERTY_ROOT_SCROLLBAR_WIDTH =
-  VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
 const ARIA_SUFFIX = {
   [ARIA_LABELLEDBY]: TITLE,
   [ARIA_DESCRIBEDBY]: "description",
-};
-
-const updateBodyScrollbarWidth = () => {
-  return doc
-    .querySelector(SELECTOR_ROOT)
-    .style.setProperty(
-      PROPERTY_ROOT_SCROLLBAR_WIDTH,
-      window.innerWidth - doc.documentElement.clientWidth + PX,
-    );
 };
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
@@ -3082,7 +3120,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     returnFocus: true,
     preventHide: false,
     dismiss: true,
-    preventScroll: true,
+    [OPTION_PREVENT_SCROLL]: true,
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${DIALOG}"]`,
@@ -3254,7 +3292,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this[DIALOG].close?.();
     this[DIALOG].popover = null;
 
-    this.preventScroll(false);
+    togglePreventScroll(this, false);
 
     this.opts.a11y &&
       removeAttribute(
@@ -3287,21 +3325,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
     return this;
   }
-  preventScroll(s) {
-    const hasPreventScrollDialogs = Dialog.shownDialogs.filter(
-      ({ opts }) => opts[OPTION_PREVENT_SCROLL],
-    ).length;
 
-    if ((s && hasPreventScrollDialogs) || (!s && !hasPreventScrollDialogs)) {
-      toggleClass(
-        body,
-        isString(this.opts[OPTION_PREVENT_SCROLL])
-          ? this.opts[OPTION_PREVENT_SCROLL]
-          : CLASS_PREVENT_SCROLL,
-        s,
-      );
-    }
-  }
   async toggle(s, params) {
     const {
       opts,
@@ -3366,15 +3390,18 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     toggleConfirm(s, this);
 
-    const backdropIsOpen = Dialog.shownDialogs.find(
-      (instance) => instance !== this && instance[BACKDROP] === backdrop,
+    const backdropIsOpen = arrayFrom(this.instances.values()).find(
+      (instance) =>
+        instance !== this && instance.isOpen && instance[BACKDROP] === backdrop,
     );
 
-    const shownGroupDialogs = this.shownGroupDialogs;
+    const openGroupDialogs = this.groupDialogs.filter(
+      ({ isOpen, opts }) => opts.group && isOpen,
+    );
     if (s) {
-      if (shownGroupDialogs.length > 1) {
+      if (openGroupDialogs.length > 1) {
         const promises = Promise.allSettled(
-          shownGroupDialogs
+          openGroupDialogs
             .filter((m) => m !== this)
             .map((instance) => {
               !instance.groupClosing && instance.hide();
@@ -3385,7 +3412,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           await promises;
         }
       }
-    } else if (!s && !shownGroupDialogs.length) {
+    } else if (!s && !openGroupDialogs.length) {
       optReturnFocusAwait = false;
     }
 
@@ -3419,7 +3446,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       backdrop.style.transition = "";
     }
 
-    this.preventScroll(s);
+    s && togglePreventScroll(this, true);
 
     if (!s && !optReturnFocusAwait) {
       this._toggleApi(false);
@@ -3446,6 +3473,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           this.returnFocus();
         }
         toggleHideModeState(false, this);
+        togglePreventScroll(this, false);
       }
 
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
@@ -3509,15 +3537,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       ({ opts }) => opts.group?.name === this.opts.group?.name,
     );
   }
-  static get shownDialogs() {
-    return arrayFrom(this.instances.values()).filter(({ isOpen }) => isOpen);
-  }
-  get shownGroupDialogs() {
-    return this.groupDialogs.filter(({ isOpen, opts }) => opts.group && isOpen);
-  }
-  static updateBodyScrollbarWidth() {
-    updateBodyScrollbarWidth();
-  }
 }
 
 const TABLIST = "tablist";
@@ -3535,7 +3554,15 @@ const OPTION_STATE_ATTRIBUTE = "stateAttribute";
 const OPTION_ALWAYS_EXPANDED = "alwaysExpanded";
 const OPTION_MULTI_EXPAND = "multiExpand";
 
-const TABLIST_SECONDARY_METHODS = ["getTab", "isTab", "initTab", "initTabs"];
+const ACTION_INIT_TAB = "initTab";
+const ACTION_DESTROY_TAB = "destroyTab";
+
+const TABLIST_SECONDARY_METHODS = [
+  "getTab",
+  "isTab",
+  ACTION_INIT_TAB,
+  "initTabs",
+];
 
 const DEFAULT_ACCORDION_OPTIONS = {
   [OPTION_ALWAYS_EXPANDED]: false,
@@ -3755,7 +3782,7 @@ class Tablist extends Base {
   initTab(tab) {
     if (this.getTab(tab)) return;
 
-    const { tabs, tablist, opts, shownTabs, on, off } = this;
+    const { tabs, tablist, opts, shownTabs, on, off, emit } = this;
     const index = tabs.length;
 
     const item = isString(opts[ITEM])
@@ -3778,6 +3805,10 @@ class Tablist extends Base {
     }
 
     if (!tabpanel) return;
+
+    if (opts[HIDE_MODE] === HIDDEN && tabpanel[HIDDEN] === UNTIL_FOUND) {
+      opts[HIDE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
+    }
 
     const uuid = uuidGenerator();
     const id = (tabpanel.id ||= uuid);
@@ -3802,7 +3833,7 @@ class Tablist extends Base {
     });
     on(tab, EVENT_CLICK, (event) => {
       event.preventDefault();
-      this.toggle(event.currentTarget, null, { event, trigger: tab });
+      this.toggle(tab, null, { event, trigger: tab });
     });
 
     const destroy = ({
@@ -3853,6 +3884,8 @@ class Tablist extends Base {
           removeAttribute(elem, HIDDEN, INERT);
         }
       });
+
+      emit(ACTION_DESTROY_TAB, tabInstance);
     };
 
     const toggleDisabled = (s = null) => {
@@ -3873,7 +3906,7 @@ class Tablist extends Base {
       return !disabled;
     };
 
-    const elems = [tab, item, tabpanel];
+    const elems = [tab, item, tabpanel].filter(Boolean);
     const tabInstance = {
       id,
       uuid,
@@ -3912,6 +3945,9 @@ class Tablist extends Base {
     }
 
     tabs.push(tabInstance);
+
+    emit(ACTION_INIT_TAB, tabInstance);
+
     return tabInstance;
   }
   isTab(tab, value) {
@@ -4716,6 +4752,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
+    [OPTION_PREVENT_SCROLL]: false,
   };
 
   constructor(elem, opts) {
@@ -4734,7 +4771,12 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   _update() {
     const { base, opts } = this;
-    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
+    updateOptsByData(
+      opts,
+      base,
+      [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [OPTION_PREVENT_SCROLL],
+    );
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
@@ -4764,6 +4806,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
+    togglePreventScroll(this, false);
     return baseDestroy(this, destroyOpts);
   }
 
