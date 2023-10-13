@@ -32,6 +32,7 @@ import {
   RIGHT,
   DOWN,
   UP,
+  OPTION_PREVENT_SCROLL,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -89,7 +90,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DROPDOWN + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    preventScroll: false,
+    [OPTION_PREVENT_SCROLL]: false,
   };
 
   constructor(elem, opts) {
@@ -133,7 +134,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   _update() {
     const { base, opts, on, off, hide } = this;
-    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
+    updateOptsByData(
+      opts,
+      base,
+      [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [OPTION_PREVENT_SCROLL],
+    );
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],

@@ -17,6 +17,7 @@ import {
   HIDE_MODE,
   TRANSITION,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
+  OPTION_PREVENT_SCROLL,
 } from "./helpers/constants";
 
 import {
@@ -63,7 +64,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
-    preventScroll: false,
+    [OPTION_PREVENT_SCROLL]: false,
   };
 
   constructor(elem, opts) {
@@ -82,7 +83,12 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   _update() {
     const { base, opts } = this;
-    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
+    updateOptsByData(
+      opts,
+      base,
+      [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [OPTION_PREVENT_SCROLL],
+    );
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],

@@ -108,7 +108,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     returnFocus: true,
     preventHide: false,
     dismiss: true,
-    preventScroll: true,
+    [OPTION_PREVENT_SCROLL]: true,
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${DIALOG}"]`,
