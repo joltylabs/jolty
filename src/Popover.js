@@ -17,6 +17,7 @@ import {
   HIDE_MODE,
   TRANSITION,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
+  OPTION_PREVENT_SCROLL,
 } from "./helpers/constants";
 
 import {
@@ -40,6 +41,7 @@ import {
   callShowInit,
   toggleConfirm,
   checkFloatings,
+  togglePreventScroll,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -62,6 +64,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
+    [OPTION_PREVENT_SCROLL]: false,
   };
 
   constructor(elem, opts) {
@@ -80,7 +83,12 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
   _update() {
     const { base, opts } = this;
-    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
+    updateOptsByData(
+      opts,
+      base,
+      [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [OPTION_PREVENT_SCROLL],
+    );
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
@@ -110,6 +118,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
+    togglePreventScroll(this, false);
     return baseDestroy(this, destroyOpts);
   }
 

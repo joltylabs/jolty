@@ -14,6 +14,7 @@ import {
   POPOVER_API_SUPPORTED,
   UI_PREFIX,
   POPOVER,
+  ROOT_ELEM,
 } from "./constants";
 import { isArray, isFunction, isHTML, isObject, isString } from "./is";
 import { getElement, fragment } from "./dom";
@@ -29,7 +30,7 @@ import { EventHandler } from "./EventHandler";
 import Breakpoints from "./Breakpoints";
 
 if (!POPOVER_API_SUPPORTED) {
-  document.documentElement.classList.add(UI_PREFIX + "no-" + POPOVER);
+  ROOT_ELEM.classList.add(UI_PREFIX + "no-" + POPOVER);
 }
 
 function getDataValue(_data, dataName, elem) {
@@ -123,13 +124,13 @@ class Base {
       ACTION_EMIT,
     ].forEach((action) => (this[action] = this[action]?.bind(this)));
 
+    allInstances.add(this);
+
     if (this.baseOpts.breakpoints) {
       this._initBreakpoints();
     } else {
       this.init();
     }
-
-    allInstances.add(this);
 
     return this;
   }

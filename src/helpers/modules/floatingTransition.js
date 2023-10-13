@@ -17,6 +17,7 @@ import { closest, focus } from "../dom/index.js";
 import addEscapeHide from "./addEscapeHide.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
+import { togglePreventScroll } from "./index.js";
 
 export default (instance, { s, animated, silent, eventParams }) => {
   const { transition, base, opts, toggler, emit, constructor, teleport } =
@@ -28,6 +29,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
   s && toggleHideModeState(true, instance, target);
 
   if (s) {
+    togglePreventScroll(instance, true);
     instance[FLOATING] = new Floating({
       teleport,
       base,
@@ -92,6 +94,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
       instance[FLOATING]?.destroy();
       instance[FLOATING] = null;
       toggleHideModeState(false, instance, target);
+      togglePreventScroll(instance, false);
     }
     emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
   })();

@@ -1,3 +1,5 @@
+import { arrayFrom } from "./utils/index.js";
+
 export default (Base, NAME) =>
   class extends Base {
     static _data = {};

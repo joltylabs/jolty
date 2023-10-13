@@ -32,6 +32,7 @@ import {
   RIGHT,
   DOWN,
   UP,
+  OPTION_PREVENT_SCROLL,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -62,6 +63,7 @@ import {
   floatingTransition,
   callShowInit,
   checkFloatings,
+  togglePreventScroll,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 import { isFunction } from "./helpers/is/index.js";
@@ -88,6 +90,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DROPDOWN + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
+    [OPTION_PREVENT_SCROLL]: false,
   };
 
   constructor(elem, opts) {
@@ -131,7 +134,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
   _update() {
     const { base, opts, on, off, hide } = this;
-    updateOptsByData(opts, base, [TRIGGER, HIDE_MODE]);
+    updateOptsByData(
+      opts,
+      base,
+      [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [OPTION_PREVENT_SCROLL],
+    );
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
@@ -247,6 +255,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
+    togglePreventScroll(this, false);
     return baseDestroy(this, destroyOpts);
   }
 

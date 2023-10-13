@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.5.0] - 2023-10-14
+### Changed
+- change .ui-dialog-prevent-scroll class to .ui-prevent-scroll
+### Added
+- add preventScroll option to the Popover and Dropdown components
+- add hidden-until-found hideMode
+- add initTab ad destroyTab events to the Tablist component
 ## [0.4.6] - 2023-10-07
 ### Fixed
 - fix Dialog, Tablist and Toast tabindex attribute
