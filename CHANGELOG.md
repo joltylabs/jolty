@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 - fix preventScroll when another component is open
 - fix autofocus when focusTrap is disabled
 ### Removed
-- remove ignoreConditions and ignoreAutofocus private options
+- remove ignoreConditions and ignoreAutofocus toggle options
 ## [0.5.0] - 2023-10-14
 ### Changed
 - rename .ui-dialog-prevent-scroll class to .ui-prevent-scroll
