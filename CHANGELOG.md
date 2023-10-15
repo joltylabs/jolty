@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.5.1] - 2023-10-15
+### Fixed
+- fix errors when the transition option is false
+- fix preventScroll when another component is open
+- fix autofocus when focusTrap is disabled
+### Removed
+- remove ignoreConditions and ignoreAutofocus private options
 ## [0.5.0] - 2023-10-14
 ### Changed
 - rename .ui-dialog-prevent-scroll class to .ui-prevent-scroll

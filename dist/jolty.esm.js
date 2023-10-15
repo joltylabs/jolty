@@ -1565,13 +1565,13 @@ class Transition {
 
     return this;
   }
+
   toggleVariables(s) {
     const { offsetWidth, offsetHeight, style } = this.elem;
-    const rect = [offsetWidth, offsetHeight];
     [WIDTH, HEIGHT].forEach((name, i) => {
       const prop = VAR_UI_PREFIX + TRANSITION + "-" + name;
       if (s) {
-        style.setProperty(prop, rect[i] + PX);
+        style.setProperty(prop, (i ? offsetHeight : offsetWidth) + PX);
       } else {
         style.removeProperty(prop);
       }
@@ -1841,7 +1841,7 @@ var callAutofocus = (instance, elem = instance.base) => {
 
   focusElem ||= elem.contains(doc.activeElement) && doc.activeElement;
 
-  if (!focusElem && instance.opts.focusTrap && !isDialog(elem)) {
+  if (!focusElem && !isDialog(elem)) {
     focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR) ?? elem;
   }
 
@@ -1924,7 +1924,7 @@ var toggleOnInterection = (
       if (
         (pointerType === MOUSE && triggerHover) ||
         (instance.isOpen &&
-          instance.transition.isAnimating &&
+          instance.transition?.isAnimating &&
           instance.floating.floatings.size)
       ) {
         pointerType = null;
@@ -2536,7 +2536,7 @@ var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
     );
 
   if (s) {
-    opts.autofocus && callAutofocus(instance);
+    (opts.autofocus || opts.focusTrap) && callAutofocus(instance);
   } else {
     !s && target.contains(doc.activeElement) && focus(toggler);
   }
@@ -2580,8 +2580,6 @@ var callShowInit = (instance, target = instance.base, stateElem = target) => {
         opts.appear ??
         instance._fromHTML
       ),
-      ignoreConditions: true,
-      ignoreAutofocus: !instance._fromHTML,
       __initial: true,
     });
   } else {
@@ -2680,22 +2678,30 @@ var destroyInstance = (instance) => {
 const PROPERTY_ROOT_SCROLLBAR_WIDTH =
   VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
 
+const PREVENT_SCROLL_CLASS = UI_PREFIX + ACTION_PREVENT + "-" + SCROLL;
 const updateBodyScrollbarWidth = (s) => {
   return s
     ? ROOT_ELEM.style.setProperty(
         PROPERTY_ROOT_SCROLLBAR_WIDTH,
-        window.innerWidth - doc.documentElement.clientWidth + PX,
+        window.innerWidth - ROOT_ELEM.clientWidth + PX,
       )
     : ROOT_ELEM.style.removeProperty(PROPERTY_ROOT_SCROLLBAR_WIDTH);
 };
 
-var togglePreventScroll = (instance, s) => {
-  const hasPreventScrollInstances = arrayFrom(Base.allInstances).find(
-    (instance) => instance.opts[OPTION_PREVENT_SCROLL] && instance.isOpen,
+const findPreventScrollInstance = () =>
+  arrayFrom(Base.allInstances).find(
+    (inst) => inst.opts[OPTION_PREVENT_SCROLL] && inst.isOpen,
   );
-  if ((s && hasPreventScrollInstances) || (!s && !hasPreventScrollInstances)) {
+
+var togglePreventScroll = (instance, s) => {
+  if (
+    (s &&
+      instance.opts[OPTION_PREVENT_SCROLL] &&
+      !ROOT_ELEM.classList.contains(PREVENT_SCROLL_CLASS)) ||
+    (!s && !findPreventScrollInstance())
+  ) {
     updateBodyScrollbarWidth(s);
-    toggleClass(ROOT_ELEM, UI_PREFIX + ACTION_PREVENT + "-" + SCROLL, s);
+    ROOT_ELEM.classList.toggle(PREVENT_SCROLL_CLASS, s);
   }
 };
 
@@ -2827,13 +2833,12 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   async toggle(s, params) {
     const { base, togglers, opts, emit, isOpen, isAnimating } = this;
     const { awaitAnimation, a11y } = opts;
-    const { animated, silent, trigger, event, ignoreConditions } =
+    const { animated, silent, trigger, event } =
       normalizeToggleParameters(params);
 
     s ??= !isOpen;
 
-    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
-      return;
+    if ((awaitAnimation && isAnimating) || s === isOpen) return;
 
     this.isOpen = s;
 
@@ -2885,7 +2890,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     eventPrefix: getEventsPrefix(DROPDOWN),
     itemClickHide: true,
     arrowActivation: "y",
-    autofocus: true,
+    autofocus: false,
     items: getDataSelector(DROPDOWN + "-" + ITEM),
     trigger: CLICK,
     [TOGGLER]: null,
@@ -3061,13 +3066,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   async toggle(s, params) {
     const { isOpen, isAnimating, toggler, base, opts, emit } = this;
     const { awaitAnimation, a11y } = opts;
-    const { animated, silent, trigger, event, ignoreConditions } =
+    const { animated, silent, trigger, event } =
       normalizeToggleParameters(params);
 
     s ??= !isOpen;
 
-    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
-      return;
+    if ((awaitAnimation && isAnimating) || s === isOpen) return;
 
     this.isOpen = s;
 
@@ -3342,23 +3346,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
-    const {
-      animated,
-      silent,
-      trigger,
-      event,
-      ignoreConditions,
-      ignoreAutofocus,
-      __initial,
-    } = normalizeToggleParameters(params);
+    const { animated, silent, trigger, event, __initial } =
+      normalizeToggleParameters(params);
 
     s = !!(s ?? !isOpen);
 
-    if (
-      !ignoreConditions &&
-      ((opts.awaitAnimation && isAnimating) || s === isOpen)
-    )
-      return;
+    if ((opts.awaitAnimation && isAnimating) || s === isOpen) return;
 
     let groupClosingFinish;
     if (!s && opts.group) {
@@ -3456,7 +3449,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     opts.escapeHide && addEscapeHide(this, s, base);
 
     if (s) {
-      !ignoreAutofocus && opts.autofocus && callAutofocus(this);
+      (opts.autofocus || opts.focusTrap) && callAutofocus(this);
       on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
         this._mousedownTarget = e.target;
       });
@@ -4071,7 +4064,7 @@ class Tablist extends Base {
     if (
       s === isOpen ||
       (awaitAnimation &&
-        transition.isAnimating &&
+        transition?.isAnimating &&
         ((shownTabs.length <= 1 && !opts[OPTION_MULTI_EXPAND]) ||
           opts[OPTION_MULTI_EXPAND])) ||
       (isOpen && opts[OPTION_ALWAYS_EXPANDED] && !s && shownTabs.length < 2) ||
@@ -4079,7 +4072,7 @@ class Tablist extends Base {
     )
       return;
 
-    if (transition.isAnimating && !awaitAnimation) {
+    if (transition?.isAnimating && !awaitAnimation) {
       await transition.cancel();
     }
 
@@ -4093,10 +4086,10 @@ class Tablist extends Base {
     if (!opts[OPTION_MULTI_EXPAND] && s) {
       const animatedOrShownTabs = this.tabs.filter(
         (tab) =>
-          tab !== tabInstance && (tab.transition.isAnimating || tab.isOpen),
+          tab !== tabInstance && (tab.transition?.isAnimating || tab.isOpen),
       );
       for (const tab of animatedOrShownTabs) {
-        if (tab.isOpen && tab.transition.isAnimating) {
+        if (tab.isOpen && tab.transition?.isAnimating) {
           tab.hide(false);
           tab.transition.cancel();
           continue;
@@ -4683,14 +4676,14 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     const { anchor, tooltip, id, opts, emit, _cache, isOpen, isAnimating } =
       this;
     const awaitAnimation = opts.awaitAnimation;
-    const { animated, trigger, silent, event, ignoreConditions } =
+    const { animated, trigger, silent, event } =
       normalizeToggleParameters(params);
 
     s ??= !isOpen;
 
     if (
-      (!ignoreConditions &&
-        ((awaitAnimation && isAnimating) || s === isOpen)) ||
+      (awaitAnimation && isAnimating) ||
+      s === isOpen ||
       (!s && !inDOM(tooltip))
     )
       return;
@@ -4813,13 +4806,12 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   async toggle(s, params) {
     const { isOpen, isAnimating, toggler, base, opts, emit } = this;
     const { awaitAnimation, a11y } = opts;
-    const { animated, silent, trigger, event, ignoreConditions } =
+    const { animated, silent, trigger, event } =
       normalizeToggleParameters(params);
 
     s ??= !isOpen;
 
-    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
-      return;
+    if ((awaitAnimation && isAnimating) || s === isOpen) return;
 
     this.isOpen = s;
 
