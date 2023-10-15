@@ -32,7 +32,9 @@ const findPreventScrollInstance = () =>
 
 export default (instance, s) => {
   if (
-    (s && !ROOT_ELEM.classList.contains(PREVENT_SCROLL_CLASS)) ||
+    (s &&
+      instance.opts[OPTION_PREVENT_SCROLL] &&
+      !ROOT_ELEM.classList.contains(PREVENT_SCROLL_CLASS)) ||
     (!s && !findPreventScrollInstance())
   ) {
     updateBodyScrollbarWidth(s);
