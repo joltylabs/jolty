@@ -28,7 +28,6 @@ export default (instance, target = instance.base, stateElem = target) => {
         instance._fromHTML
       ),
       ignoreConditions: true,
-      ignoreAutofocus: !instance._fromHTML,
       __initial: true,
     });
   } else {

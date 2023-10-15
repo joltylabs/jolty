@@ -22,7 +22,7 @@ export default (instance, elem = instance.base) => {
 
   focusElem ||= elem.contains(doc.activeElement) && doc.activeElement;
 
-  if (!focusElem && instance.opts.focusTrap && !isDialog(elem)) {
+  if (!focusElem && !isDialog(elem)) {
     focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR) ?? elem;
   }
 

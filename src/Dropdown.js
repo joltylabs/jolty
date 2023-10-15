@@ -84,7 +84,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     eventPrefix: getEventsPrefix(DROPDOWN),
     itemClickHide: true,
     arrowActivation: "y",
-    autofocus: true,
+    autofocus: false,
     items: getDataSelector(DROPDOWN + "-" + ITEM),
     trigger: CLICK,
     [TOGGLER]: null,

@@ -330,15 +330,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
-    const {
-      animated,
-      silent,
-      trigger,
-      event,
-      ignoreConditions,
-      ignoreAutofocus,
-      __initial,
-    } = normalizeToggleParameters(params);
+    const { animated, silent, trigger, event, ignoreConditions, __initial } =
+      normalizeToggleParameters(params);
 
     s = !!(s ?? !isOpen);
 
@@ -444,7 +437,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     opts.escapeHide && addEscapeHide(this, s, base);
 
     if (s) {
-      !ignoreAutofocus && opts.autofocus && callAutofocus(this);
+      (opts.autofocus || opts.focusTrap) && callAutofocus(this);
       on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
         this._mousedownTarget = e.target;
       });
