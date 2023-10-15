@@ -637,7 +637,7 @@ class Tablist extends Base {
     if (
       s === isOpen ||
       (awaitAnimation &&
-        transition.isAnimating &&
+        transition?.isAnimating &&
         ((shownTabs.length <= 1 && !opts[OPTION_MULTI_EXPAND]) ||
           opts[OPTION_MULTI_EXPAND])) ||
       (isOpen && opts[OPTION_ALWAYS_EXPANDED] && !s && shownTabs.length < 2) ||
@@ -645,7 +645,7 @@ class Tablist extends Base {
     )
       return;
 
-    if (transition.isAnimating && !awaitAnimation) {
+    if (transition?.isAnimating && !awaitAnimation) {
       await transition.cancel();
     }
 
@@ -659,10 +659,10 @@ class Tablist extends Base {
     if (!opts[OPTION_MULTI_EXPAND] && s) {
       const animatedOrShownTabs = this.tabs.filter(
         (tab) =>
-          tab !== tabInstance && (tab.transition.isAnimating || tab.isOpen),
+          tab !== tabInstance && (tab.transition?.isAnimating || tab.isOpen),
       );
       for (const tab of animatedOrShownTabs) {
-        if (tab.isOpen && tab.transition.isAnimating) {
+        if (tab.isOpen && tab.transition?.isAnimating) {
           tab.hide(false);
           tab.transition.cancel();
           continue;

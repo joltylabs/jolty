@@ -10,7 +10,7 @@ import {
   TABINDEX,
 } from "../constants/index.js";
 
-import { focus } from "../dom/index.js";
+import focus from "../dom/focus.js";
 
 const FOCUS_GUARD = FOCUS + "-guard";
 

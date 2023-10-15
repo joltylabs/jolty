@@ -27,8 +27,6 @@ export default (instance, target = instance.base, stateElem = target) => {
         opts.appear ??
         instance._fromHTML
       ),
-      ignoreConditions: true,
-      ignoreAutofocus: !instance._fromHTML,
       __initial: true,
     });
   } else {

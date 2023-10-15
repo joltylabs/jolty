@@ -78,7 +78,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
     );
 
   if (s) {
-    opts.autofocus && callAutofocus(instance);
+    (opts.autofocus || opts.focusTrap) && callAutofocus(instance);
   } else {
     !s && target.contains(doc.activeElement) && focus(toggler);
   }

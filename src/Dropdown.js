@@ -84,7 +84,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     eventPrefix: getEventsPrefix(DROPDOWN),
     itemClickHide: true,
     arrowActivation: "y",
-    autofocus: true,
+    autofocus: false,
     items: getDataSelector(DROPDOWN + "-" + ITEM),
     trigger: CLICK,
     [TOGGLER]: null,
@@ -262,13 +262,12 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   async toggle(s, params) {
     const { isOpen, isAnimating, toggler, base, opts, emit } = this;
     const { awaitAnimation, a11y } = opts;
-    const { animated, silent, trigger, event, ignoreConditions } =
+    const { animated, silent, trigger, event } =
       normalizeToggleParameters(params);
 
     s ??= !isOpen;
 
-    if (!ignoreConditions && ((awaitAnimation && isAnimating) || s === isOpen))
-      return;
+    if ((awaitAnimation && isAnimating) || s === isOpen) return;
 
     this.isOpen = s;
 
