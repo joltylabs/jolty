@@ -56,7 +56,7 @@ export default (
       if (
         (pointerType === MOUSE && triggerHover) ||
         (instance.isOpen &&
-          instance.transition.isAnimating &&
+          instance.transition?.isAnimating &&
           instance.floating.floatings.size)
       ) {
         pointerType = null;

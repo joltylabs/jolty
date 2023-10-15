@@ -67,13 +67,13 @@ export default class Transition {
 
     return this;
   }
+
   toggleVariables(s) {
     const { offsetWidth, offsetHeight, style } = this.elem;
-    const rect = [offsetWidth, offsetHeight];
     [WIDTH, HEIGHT].forEach((name, i) => {
       const prop = VAR_UI_PREFIX + TRANSITION + "-" + name;
       if (s) {
-        style.setProperty(prop, rect[i] + PX);
+        style.setProperty(prop, (i ? offsetHeight : offsetWidth) + PX);
       } else {
         style.removeProperty(prop);
       }
