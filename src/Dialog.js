@@ -330,16 +330,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
 
-    const { animated, silent, trigger, event, ignoreConditions, __initial } =
+    const { animated, silent, trigger, event, __initial } =
       normalizeToggleParameters(params);
 
     s = !!(s ?? !isOpen);
 
-    if (
-      !ignoreConditions &&
-      ((opts.awaitAnimation && isAnimating) || s === isOpen)
-    )
-      return;
+    if ((opts.awaitAnimation && isAnimating) || s === isOpen) return;
 
     let groupClosingFinish;
     if (!s && opts.group) {

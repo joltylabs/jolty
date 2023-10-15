@@ -27,7 +27,6 @@ export default (instance, target = instance.base, stateElem = target) => {
         opts.appear ??
         instance._fromHTML
       ),
-      ignoreConditions: true,
       __initial: true,
     });
   } else {

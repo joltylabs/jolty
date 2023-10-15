@@ -146,14 +146,14 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     const { anchor, tooltip, id, opts, emit, _cache, isOpen, isAnimating } =
       this;
     const awaitAnimation = opts.awaitAnimation;
-    const { animated, trigger, silent, event, ignoreConditions } =
+    const { animated, trigger, silent, event } =
       normalizeToggleParameters(params);
 
     s ??= !isOpen;
 
     if (
-      (!ignoreConditions &&
-        ((awaitAnimation && isAnimating) || s === isOpen)) ||
+      (awaitAnimation && isAnimating) ||
+      s === isOpen ||
       (!s && !inDOM(tooltip))
     )
       return;
