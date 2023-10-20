@@ -188,15 +188,16 @@ export const EVENT_KEYUP = KEY + UP;
 export const EVENT_FOCUS = FOCUS;
 export const EVENT_FOCUSIN = FOCUS + IN;
 export const EVENT_FOCUSOUT = FOCUS + OUT;
-export const EVENT_RIGHT_CLICK = "contextmenu";
+export const EVENT_CONTEXT_MENU_CLICK = "contextmenu";
 export const EVENT_VISIBILITY_CHANGE = "visibilitychange";
+
 export const EVENT_HIDE_PREVENTED = "hidePrevented";
-export const EVENT_ACTION_OUTSIDE = `${EVENT_CLICK}.outside ${EVENT_KEYUP}.outside`;
 export const EVENT_SCROLL = SCROLL;
 export const EVENT_RESIZE = "resize";
 export const EVENT_DISABLED = DISABLED;
 export const EVENT_ENABLED = "enabled";
 export const EVENT_BEFORE_MATCH = BEFORE + "match";
+export const EVENT_SUFFIX_OUTSIDE = ".outside";
 
 export const UNTIL_FOUND = "until-found";
 export const MODE_HIDDEN_UNTIL_FOUND = HIDDEN + "-" + UNTIL_FOUND;

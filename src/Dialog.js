@@ -1,6 +1,5 @@
 import {
   DEFAULT_OPTIONS,
-  body,
   ROLE,
   CONTENT,
   BACKDROP,
@@ -11,8 +10,7 @@ import {
   EVENT_SHOW,
   EVENT_HIDE,
   EVENT_CLICK,
-  EVENT_MOUSEDOWN,
-  EVENT_RIGHT_CLICK,
+  EVENT_CONTEXT_MENU_CLICK,
   EVENT_HIDE_PREVENTED,
   EVENT_BEFORE_INIT,
   EVENT_HIDDEN,
@@ -34,7 +32,6 @@ import {
   MODAL,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_SCROLL,
-  POPOVER,
   POPOVER_API_MODE_MANUAL,
   DATA_UI_PREFIX,
   ACTION_REMOVE,
@@ -74,6 +71,7 @@ import {
   getOptionElem,
   updateOptsByData,
   awaitPromise,
+  isClickOutsideElem,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -87,6 +85,7 @@ import {
   updateModule,
   togglePreventScroll,
   FocusGuards,
+  toggleMouseDownTarget,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -113,7 +112,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(DIALOG),
     escapeHide: true,
-    backdropHide: true,
+    outsideHide: true,
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
     preventHide: false,
@@ -144,6 +143,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     root: BODY,
     moveToRoot: true,
   };
+
+  get primaryElem() {
+    return this[CONTENT] || this[DIALOG];
+  }
 
   constructor(elem, opts) {
     super(elem, opts);
@@ -204,7 +207,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
-      this[CONTENT],
+      this.primaryElem,
       opts[TRANSITION],
     );
 
@@ -227,11 +230,11 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     addDismiss(this);
   }
   init() {
-    const { opts, isInit, base, on, emit, hide, toggle } = this;
+    const { opts, isInit, on, emit, base, toggle } = this;
 
     if (isInit) return;
 
-    this.base.id = this.id;
+    base.id = this.id;
 
     emit(EVENT_BEFORE_INIT);
 
@@ -239,27 +242,37 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this.updateAriaTargets();
 
     on(
-      base,
+      document,
       [
         EVENT_CLICK,
-        opts.backdropHide &&
-          (opts.backdropHide?.rightClick ?? true) &&
-          EVENT_RIGHT_CLICK,
+        opts.outsideHide &&
+          (opts.outsideHide?.contextMenuClick ?? true) &&
+          EVENT_CONTEXT_MENU_CLICK,
       ],
       (event) => {
-        if (
-          this.opts.backdropHide &&
-          !this[CONTENT].contains(event.target) &&
-          !this._mousedownTarget
-        ) {
-          hide({ event });
-          emit(CANCEL, { event });
+        if (!this.isOpen) return;
+
+        if (this.opts.outsideHide) {
+          let isClickOutside;
+          if (this[CONTENT]) {
+            isClickOutside =
+              !this[CONTENT].contains(event.target) && !this._mousedownTarget;
+          } else {
+            isClickOutside =
+              isClickOutsideElem(base, event) && this._mousedownTarget === base;
+          }
+
+          if (isClickOutside) {
+            this.hide({ event });
+            emit(CANCEL, { event });
+          }
         }
+
         this._mousedownTarget = null;
       },
     );
 
-    on(body, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+    on(document, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
       const togglers = this._togglers;
       const trigger = isString(togglers)
         ? event.target.closest(togglers)
@@ -332,6 +345,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       isAnimating,
       base,
       content,
+      primaryElem,
       backdrop,
     } = this;
 
@@ -440,14 +454,11 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     opts.escapeHide && addEscapeHide(this, s, base);
 
+    toggleMouseDownTarget(this, primaryElem, s);
+
     if (s) {
       (opts.autofocus || opts.focusTrap) && callAutofocus(this);
-      on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
-        this._mousedownTarget = e.target;
-      });
     } else {
-      this._mousedownTarget = null;
-      off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
       this.returnFocusElem = null;
     }
 

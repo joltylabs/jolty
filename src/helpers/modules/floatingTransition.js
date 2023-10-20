@@ -6,10 +6,12 @@ import {
   EVENT_SHOWN,
   EVENT_HIDDEN,
   FLOATING,
-  EVENT_ACTION_OUTSIDE,
-  MODAL,
   POPOVER_API_SUPPORTED,
   POPOVER_API_MODE_MANUAL,
+  EVENT_CONTEXT_MENU_CLICK,
+  EVENT_CLICK,
+  EVENT_KEYUP,
+  EVENT_SUFFIX_OUTSIDE,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
@@ -17,7 +19,8 @@ import { closest, focus } from "../dom/index.js";
 import addEscapeHide from "./addEscapeHide.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
-import { togglePreventScroll } from "./index.js";
+import { toggleMouseDownTarget, togglePreventScroll } from "./index.js";
+import { isModal } from "../is/index.js";
 
 export default (instance, { s, animated, silent, eventParams }) => {
   const { transition, base, opts, toggler, emit, constructor, teleport } =
@@ -46,7 +49,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   const wrapper = instance[FLOATING]?.wrapper;
 
-  if (!s && wrapper?.matches(":" + MODAL)) {
+  if (!s && isModal(wrapper)) {
     wrapper.close();
     if (POPOVER_API_SUPPORTED) {
       wrapper.popover = POPOVER_API_MODE_MANUAL;
@@ -58,16 +61,25 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   const promise = transition?.run(s, animated);
 
+  toggleMouseDownTarget(instance, target, s);
+
   if (s && opts.outsideHide) {
-    instance.on(
-      doc,
-      EVENT_ACTION_OUTSIDE,
-      (event) =>
+    const outsideHideEvents = [
+      EVENT_CLICK + EVENT_SUFFIX_OUTSIDE,
+      EVENT_KEYUP + EVENT_SUFFIX_OUTSIDE,
+      (opts.outsideHide.contextMenuClick ?? true) &&
+        EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_OUTSIDE,
+    ];
+    instance.on(doc, outsideHideEvents, (event) => {
+      if (!instance.isOpen) return;
+      if (!instance._mousedownTarget) {
         !closest(event.target, [toggler ?? base, target]) &&
-        instance.hide({ event }),
-    );
+          instance.hide({ event });
+      }
+      instance._mousedownTarget = null;
+    });
   } else {
-    instance.off(doc, EVENT_ACTION_OUTSIDE);
+    instance.off(doc, ".outside");
   }
 
   opts.escapeHide &&

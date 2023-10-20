@@ -35,3 +35,4 @@ export { default as isShown } from "./isShown";
 export { default as getBooleanDataAttrValue } from "./getBooleanDataAttrValue.js";
 export { default as getDatasetValue } from "./getDatasetValue.js";
 export { default as awaitPromise } from "./awaitPromise.js";
+export { default as isClickOutsideElem } from "./isClickOutsideElem.js";
