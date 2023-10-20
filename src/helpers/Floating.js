@@ -69,6 +69,7 @@ import {
 
 import { isDialog } from "./is/index.js";
 import FocusGuards from "./modules/FocusGuards.js";
+import { destroyTopLayer, toggleTopLayer } from "./modules/toggleTopLayer.js";
 
 ResetFloatingCssVariables();
 
@@ -324,31 +325,15 @@ export default class Floating {
 
   _toggleApi(useFocusGuards) {
     const { wrapper, opts, mode, topLayer, anchor, target, instance } = this;
-    const wrapperIsDialog = isDialog(wrapper);
-    const isModal = mode === MODAL;
-    const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
 
-    const onTopLayer = (type) => instance.constructor.dispatchTopLayer(type);
+    toggleTopLayer(wrapper, true, {
+      modal: mode === MODAL,
+      topLayer,
+      constructor: instance.constructor,
+      target,
+    });
 
-    if (wrapperIsDialog) {
-      if (isModal) {
-        if (wrapper.open) wrapper.close();
-        wrapper.showModal();
-        onTopLayer?.(MODAL);
-      } else {
-        if (isPopover) {
-          wrapper.showPopover();
-          wrapper.open = true;
-          onTopLayer?.(POPOVER);
-        } else {
-          wrapper.show();
-        }
-      }
-      this.on(wrapper, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-    } else if (isPopover) {
-      wrapper.showPopover();
-      onTopLayer?.(POPOVER);
-    }
+    this.on(wrapper, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
 
     if (useFocusGuards) {
       this.focusGuards = new FocusGuards(target, {
@@ -356,11 +341,11 @@ export default class Floating {
         anchor,
         topLayer,
         strategy: ABSOLUTE,
-        onFocusOut: () => {
-          if (wrapperIsDialog) {
+        onFocusOut:
+          isDialog(wrapper) &&
+          (() => {
             instance.hide?.();
-          }
-        },
+          }),
       });
     }
   }
@@ -436,10 +421,9 @@ export default class Floating {
   destroy() {
     this.off();
     resizeObserver.unobserve(this.target);
-    this.wrapper.close?.();
-    if (this.wrapper.popover && POPOVER_API_SUPPORTED) {
-      this.wrapper.hidePopover();
-    }
+
+    destroyTopLayer(this.wrapper);
+
     this.base.style.pointerEvents = "";
     this.focusGuards?.destroy();
     this.wrapper.remove();

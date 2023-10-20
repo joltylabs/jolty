@@ -48,7 +48,13 @@ import {
   OPTION_MOVE_TO_ROOT,
   BODY,
 } from "./helpers/constants";
-import { isString, isElement, isFunction, isDialog } from "./helpers/is";
+import {
+  isString,
+  isElement,
+  isFunction,
+  isDialog,
+  isModal,
+} from "./helpers/is";
 import {
   getElements,
   toggleClass,
@@ -80,12 +86,16 @@ import {
   toggleHideModeState,
   updateModule,
   togglePreventScroll,
+  FocusGuards,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
-import { FocusGuards } from "./helpers/modules/index.js";
+import {
+  destroyTopLayer,
+  toggleTopLayer,
+} from "./helpers/modules/toggleTopLayer.js";
 
 const ARIA_SUFFIX = {
   [ARIA_LABELLEDBY]: TITLE,
@@ -276,9 +286,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this.isOpen = false;
 
-    this[DIALOG].hidePopover?.();
-    this[DIALOG].close?.();
-    this[DIALOG].popover = null;
+    destroyTopLayer(this[DIALOG]);
 
     togglePreventScroll(this, false);
 
@@ -426,7 +434,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     s && togglePreventScroll(this, true);
 
     if (!s && !optReturnFocusAwait) {
-      this._toggleApi(false);
+      this._toggleApi(false, true);
       this.returnFocus();
     }
 
@@ -446,9 +454,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     awaitPromise(promise, () => {
       if (!s) {
         if (optReturnFocusAwait) {
-          this._toggleApi(false);
           this.returnFocus();
         }
+        this._toggleApi(false);
+
         toggleHideModeState(false, this);
         togglePreventScroll(this, false);
       }
@@ -466,41 +475,20 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     return this;
   }
-  _toggleApi(s) {
-    const { base, opts } = this;
-    const baseIsDialog = isDialog(base);
-    if (s) {
-      const isModal = baseIsDialog && opts.modal;
-      const isPopover = opts.topLayer && POPOVER_API_SUPPORTED;
+  _toggleApi(s, keepTopLayer) {
+    const { opts, base, constructor } = this;
 
-      if (baseIsDialog) {
-        if (isModal) {
-          if (base.open) base.close();
-          base.showModal();
-          Dialog.dispatchTopLayer(MODAL);
-        } else {
-          if (isPopover) {
-            base.showPopover();
-            base.open = true;
-            Dialog.dispatchTopLayer(POPOVER);
-          } else {
-            base.show();
-          }
-        }
-      } else if (isPopover) {
-        base.showPopover();
-        Dialog.dispatchTopLayer(POPOVER);
-      }
-      if (opts.focusTrap && !isModal) {
-        this.focusGuards = new FocusGuards(base);
-      }
-    } else {
-      base.close?.();
-      base.popover && base.hidePopover();
-      if (this.focusGuards) {
-        this.focusGuards?.destroy();
-        this.focusGuards = null;
-      }
+    toggleTopLayer(base, s, {
+      modal: opts.modal,
+      keepTopLayer,
+      constructor,
+    });
+
+    if (s && opts.focusTrap && !isModal(base)) {
+      this.focusGuards = new FocusGuards(base);
+    } else if (!s && this.focusGuards) {
+      this.focusGuards?.destroy();
+      this.focusGuards = null;
     }
   }
   returnFocus() {
