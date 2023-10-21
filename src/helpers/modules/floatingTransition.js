@@ -12,11 +12,12 @@ import {
   EVENT_CLICK,
   EVENT_KEYUP,
   EVENT_SUFFIX_OUTSIDE,
+  OPTION_BACK_DISMISS,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
 import { closest, focus } from "../dom/index.js";
-import addBackHide from "./addBackHide.js";
+import addBackDismiss from "./addBackDismiss.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
 import { toggleMouseDownTarget, togglePreventScroll } from "./index.js";
@@ -82,8 +83,8 @@ export default (instance, { s, animated, silent, eventParams }) => {
     instance.off(doc, ".outside");
   }
 
-  opts.backHide &&
-    addBackHide(
+  opts[OPTION_BACK_DISMISS] &&
+    addBackDismiss(
       instance,
       s,
       instance.toggler ? [instance.toggler, instance.base] : doc,

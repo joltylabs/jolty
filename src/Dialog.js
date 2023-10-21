@@ -40,11 +40,11 @@ import {
   TRANSITION,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_HASH_NAVIGATION,
-  NONE,
   OPTION_AUTODESTROY,
   OPTION_MOVE_TO_ROOT,
   BODY,
   OPTION_LIGHT_DISMISS,
+  OPTION_BACK_DISMISS,
 } from "./helpers/constants";
 import {
   isString,
@@ -79,7 +79,7 @@ import {
   addDismiss,
   baseDestroy,
   callAutofocus,
-  addBackHide,
+  addBackDismiss,
   callShowInit,
   toggleConfirm,
   addHashNavigation,
@@ -113,7 +113,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(DIALOG),
-    backHide: true,
+    [OPTION_BACK_DISMISS]: true,
     [OPTION_LIGHT_DISMISS]: true,
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
@@ -170,6 +170,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         OPTION_AUTODESTROY,
         OPTION_MOVE_TO_ROOT,
         OPTION_LIGHT_DISMISS,
+        OPTION_BACK_DISMISS,
       ],
       [
         MODAL,
@@ -179,6 +180,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         OPTION_HASH_NAVIGATION,
         OPTION_AUTODESTROY,
         OPTION_LIGHT_DISMISS,
+        OPTION_BACK_DISMISS,
       ],
     );
     updateModule(this, OPTION_GROUP, NAME);
@@ -251,8 +253,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       document,
       [
         EVENT_CLICK + UI_EVENT_PREFIX,
-        opts.lightDismiss &&
-          (opts.lightDismiss?.contextMenuClick ?? true) &&
+        opts[OPTION_LIGHT_DISMISS] &&
+          (opts[OPTION_LIGHT_DISMISS]?.contextMenuClick ?? true) &&
           EVENT_CONTEXT_MENU_CLICK + UI_EVENT_PREFIX,
       ],
       (event) => {
@@ -262,7 +264,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         )
           return;
 
-        if (this.opts.lightDismiss) {
+        if (opts[OPTION_LIGHT_DISMISS]) {
           let isClickOutside;
           if (this[CONTENT]) {
             isClickOutside =
@@ -444,7 +446,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       resetTransition(backdrop);
     }
 
-    opts.backHide && addBackHide(this, s, base);
+    opts[OPTION_BACK_DISMISS] && addBackDismiss(this, s, base);
 
     toggleMouseDownTarget(this, main, s);
 
