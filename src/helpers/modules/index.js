@@ -1,5 +1,5 @@
 export { default as addDismiss } from "./addDismiss";
-export { default as addEscapeHide } from "./addEscapeHide";
+export { default as addBackHide } from "./addBackHide.js";
 export { default as callAutofocus } from "./callAutofocus";
 export { default as baseDestroy } from "./baseDestroy";
 export { default as toggleOnInterection } from "./toggleOnInterection";

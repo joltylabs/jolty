@@ -283,7 +283,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   shrink: false,
   flip: true,
   sticky: true,
-  escapeHide: true,
+  backHide: true,
   outsideHide: true,
   focusTrap: false,
   topLayer: true,

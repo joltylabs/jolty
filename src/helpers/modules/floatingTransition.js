@@ -16,7 +16,7 @@ import {
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
 import { closest, focus } from "../dom/index.js";
-import addEscapeHide from "./addEscapeHide.js";
+import addBackHide from "./addBackHide.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
 import { toggleMouseDownTarget, togglePreventScroll } from "./index.js";
@@ -82,8 +82,8 @@ export default (instance, { s, animated, silent, eventParams }) => {
     instance.off(doc, ".outside");
   }
 
-  opts.escapeHide &&
-    addEscapeHide(
+  opts.backHide &&
+    addBackHide(
       instance,
       s,
       instance.toggler ? [instance.toggler, instance.base] : doc,

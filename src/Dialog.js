@@ -77,7 +77,7 @@ import {
   addDismiss,
   baseDestroy,
   callAutofocus,
-  addEscapeHide,
+  addBackHide,
   callShowInit,
   toggleConfirm,
   addHashNavigation,
@@ -111,7 +111,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   static Default = {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(DIALOG),
-    escapeHide: true,
+    backHide: true,
     outsideHide: true,
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
@@ -453,7 +453,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       this.returnFocus();
     }
 
-    opts.escapeHide && addEscapeHide(this, s, base);
+    opts.backHide && addBackHide(this, s, base);
 
     toggleMouseDownTarget(this, main, s);
 
