@@ -21,7 +21,7 @@ import {
 } from "./constants";
 
 import { isString, isFunction, isObject } from "./is";
-import { camelToKebab, updateOptsByData } from "./utils";
+import { camelToKebab, resetTransition, updateOptsByData } from "./utils";
 
 export default class Transition {
   static Default = {
@@ -81,10 +81,9 @@ export default class Transition {
   }
 
   toggleAnimationClasses(s) {
-    this.elem.style.transition = NONE;
-    this.setClasses([s ? ENTER_FROM : LEAVE_FROM]);
-    this.elem.offsetWidth;
-    this.elem.style.transition = "";
+    resetTransition(this.elem, () =>
+      this.setClasses([s ? ENTER_FROM : LEAVE_FROM]),
+    );
     this.setClasses([s ? ENTER_ACTIVE : LEAVE_ACTIVE, s ? ENTER_TO : LEAVE_TO]);
     return this;
   }

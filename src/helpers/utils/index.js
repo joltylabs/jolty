@@ -36,3 +36,4 @@ export { default as getBooleanDataAttrValue } from "./getBooleanDataAttrValue.js
 export { default as getDatasetValue } from "./getDatasetValue.js";
 export { default as awaitPromise } from "./awaitPromise.js";
 export { default as isClickOutsideElem } from "./isClickOutsideElem.js";
+export { default as resetTransition } from "./resetTransition.js";

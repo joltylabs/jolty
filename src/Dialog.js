@@ -73,6 +73,7 @@ import {
   updateOptsByData,
   awaitPromise,
   isClickOutsideElem,
+  resetTransition,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -429,31 +430,18 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
+      togglePreventScroll(this, true);
+      !animated && this._toggleClasses(s, backdropIsOpen);
       this._toggleApi(true);
-    }
-
-    toggleClass(
-      getElements(this._togglers),
-      opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-      s,
-    );
-    toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
-    toggleClass(content, opts[CONTENT + CLASS_ACTIVE_SUFFIX], s);
-    if (!backdropIsOpen) {
-      toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
-    }
-
-    if (__initial && !animated && backdrop) {
-      backdrop.style.transition = NONE;
-      backdrop.offsetWidth;
-      backdrop.style.transition = "";
-    }
-
-    s && togglePreventScroll(this, true);
-
-    if (!s && !optReturnFocusAwait) {
+    } else if (!optReturnFocusAwait) {
       this._toggleApi(false, true);
       this.returnFocus();
+    }
+
+    animated && this._toggleClasses(s, backdropIsOpen);
+
+    if (__initial && !animated && backdrop) {
+      resetTransition(backdrop);
     }
 
     opts.backHide && addBackHide(this, s, base);
@@ -489,6 +477,19 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     animated && opts.awaitAnimation && (await promise);
 
     return this;
+  }
+  _toggleClasses(s, backdropIsOpen) {
+    const { opts, base, content, backdrop } = this;
+    toggleClass(
+      getElements(this._togglers),
+      opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
+      s,
+    );
+    toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
+    toggleClass(content, opts[CONTENT + CLASS_ACTIVE_SUFFIX], s);
+    if (!backdropIsOpen) {
+      toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
+    }
   }
   _toggleApi(s, keepTopLayer) {
     const { opts, base, constructor } = this;
