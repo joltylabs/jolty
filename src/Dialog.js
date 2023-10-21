@@ -44,6 +44,7 @@ import {
   OPTION_AUTODESTROY,
   OPTION_MOVE_TO_ROOT,
   BODY,
+  OPTION_LIGHT_DISMISS,
 } from "./helpers/constants";
 import {
   isString,
@@ -112,7 +113,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(DIALOG),
     backHide: true,
-    lightDismiss: true,
+    [OPTION_LIGHT_DISMISS]: true,
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
     preventHide: false,
@@ -167,6 +168,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         OPTION_GROUP,
         OPTION_AUTODESTROY,
         OPTION_MOVE_TO_ROOT,
+        OPTION_LIGHT_DISMISS,
       ],
       [
         MODAL,
@@ -175,6 +177,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         OPTION_PREVENT_SCROLL,
         OPTION_HASH_NAVIGATION,
         OPTION_AUTODESTROY,
+        OPTION_LIGHT_DISMISS,
       ],
     );
     updateModule(this, OPTION_GROUP, NAME);

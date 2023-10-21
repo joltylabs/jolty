@@ -242,6 +242,7 @@ export const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
 export const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
 export const OPTION_TOP_LAYER = "topLayer";
 export const OPTION_MOVE_TO_ROOT = "moveToRoot";
+export const OPTION_LIGHT_DISMISS = "lightDismiss";
 
 export const OPTION_FLOATING_CLASS = FLOATING + "Class";
 export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
