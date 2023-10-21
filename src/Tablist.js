@@ -99,6 +99,7 @@ import {
   addDismiss,
   destroyInstance,
   toggleHideModeState,
+  toggleInitClass,
   updateModule,
 } from "./helpers/modules";
 import Transition from "./helpers/Transition.js";
@@ -295,6 +296,7 @@ class Tablist extends Base {
 
     this.instances.set(this.id, this);
     this.isInit = true;
+    toggleInitClass(this, true);
     return emit(EVENT_INIT);
   }
 
@@ -327,6 +329,8 @@ class Tablist extends Base {
     if (!keepInstance) {
       destroyInstance(this);
     }
+
+    toggleInitClass(this, false);
 
     this.isInit = false;
 

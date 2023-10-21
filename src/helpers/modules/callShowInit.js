@@ -6,12 +6,14 @@ import {
   isShown,
 } from "../utils";
 import toggleHideModeState from "./toggleHideModeState.js";
+import { toggleInitClass } from "./index.js";
 
 export default (instance, target = instance.base, stateElem = target) => {
   const { opts, show, id } = instance;
 
   instance.instances.set(id, instance);
   instance.isInit = true;
+  toggleInitClass(instance, true);
   instance.emit(EVENT_INIT);
 
   const shown =

@@ -3,7 +3,6 @@ import {
   FLOATING,
   HIDDEN,
   HIDDEN_CLASS,
-  ID,
   INERT,
   PLACEHOLDER,
   SHOWN_CLASS,
@@ -11,7 +10,7 @@ import {
   TRANSITION,
 } from "../constants";
 import { removeAttribute, removeClass } from "../dom/index.js";
-import { destroyInstance } from "./index.js";
+import { destroyInstance, toggleInitClass } from "./index.js";
 
 export default (
   instance,
@@ -43,6 +42,8 @@ export default (
   }
 
   instance.isInit = false;
+
+  toggleInitClass(instance, false);
 
   emit(EVENT_DESTROY);
 
