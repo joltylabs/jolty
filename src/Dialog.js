@@ -144,7 +144,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     moveToRoot: true,
   };
 
-  get primaryElem() {
+  get main() {
     return this[CONTENT] || this[DIALOG];
   }
 
@@ -207,7 +207,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this[TRANSITION] = Transition.createOrUpdate(
       this[TRANSITION],
-      this.primaryElem,
+      this.main,
       opts[TRANSITION],
     );
 
@@ -241,16 +241,22 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this._update();
     this.updateAriaTargets();
 
+    let isClosing = false;
+
     on(
       document,
       [
-        EVENT_CLICK,
+        EVENT_CLICK + UI_EVENT_PREFIX,
         opts.outsideHide &&
           (opts.outsideHide?.contextMenuClick ?? true) &&
-          EVENT_CONTEXT_MENU_CLICK,
+          EVENT_CONTEXT_MENU_CLICK + UI_EVENT_PREFIX,
       ],
       (event) => {
-        if (!this.isOpen) return;
+        if (
+          !this.isOpen ||
+          (opts.awaitAnimation && this.transition?.isAnimating)
+        )
+          return;
 
         if (this.opts.outsideHide) {
           let isClickOutside;
@@ -259,7 +265,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
               !this[CONTENT].contains(event.target) && !this._mousedownTarget;
           } else {
             isClickOutside =
-              isClickOutsideElem(base, event) && this._mousedownTarget === base;
+              isClickOutsideElem(base, event) &&
+              (!this._mousedownTarget || this._mousedownTarget === base);
           }
 
           if (isClickOutside) {
@@ -269,10 +276,14 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         }
 
         this._mousedownTarget = null;
+
+        isClosing = true;
+        requestAnimationFrame(() => (isClosing = false));
       },
     );
 
     on(document, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+      if (isClosing) return;
       const togglers = this._togglers;
       const trigger = isString(togglers)
         ? event.target.closest(togglers)
@@ -336,18 +347,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   async toggle(s, params) {
-    const {
-      opts,
-      isOpen,
-      emit,
-      on,
-      off,
-      isAnimating,
-      base,
-      content,
-      primaryElem,
-      backdrop,
-    } = this;
+    const { opts, isOpen, emit, isAnimating, base, content, main, backdrop } =
+      this;
 
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
@@ -454,7 +455,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     opts.escapeHide && addEscapeHide(this, s, base);
 
-    toggleMouseDownTarget(this, primaryElem, s);
+    toggleMouseDownTarget(this, main, s);
 
     if (s) {
       (opts.autofocus || opts.focusTrap) && callAutofocus(this);
@@ -491,6 +492,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     toggleTopLayer(base, s, {
       modal: opts.modal,
+      topLayer: opts.topLayer,
       keepTopLayer,
       constructor,
     });

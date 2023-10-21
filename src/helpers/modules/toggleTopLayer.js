@@ -1,4 +1,4 @@
-import { isDialog, isModal } from "../is/index.js";
+import { isDialog } from "../is/index.js";
 import {
   MODAL,
   POPOVER,
@@ -41,7 +41,7 @@ export const toggleTopLayer = (
     }
   } else {
     target.close?.();
-    if (isModal(target)) {
+    if (targetIsModal) {
       if (POPOVER_API_SUPPORTED && keepTopLayer) {
         target[POPOVER] = POPOVER_API_MODE_MANUAL;
         target.showPopover();
