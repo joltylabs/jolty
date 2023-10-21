@@ -29,7 +29,6 @@ export const toggleTopLayer = (
       } else {
         if (targetIsPopover) {
           target.showPopover();
-          target.open = true;
           constructor.dispatchTopLayer(POPOVER);
         } else {
           target.show();

@@ -36,7 +36,6 @@ import {
   DATA_UI_PREFIX,
   ACTION_REMOVE,
   HIDDEN,
-  TELEPORT,
   TRANSITION,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_HASH_NAVIGATION,
@@ -354,8 +353,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   async toggle(s, params) {
-    const { opts, isOpen, emit, isAnimating, base, content, main, backdrop } =
-      this;
+    const { opts, isOpen, emit, isAnimating, base, main, backdrop } = this;
 
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
