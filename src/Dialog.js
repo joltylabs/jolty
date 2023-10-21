@@ -112,7 +112,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(DIALOG),
     backHide: true,
-    outsideHide: true,
+    lightDismiss: true,
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
     preventHide: false,
@@ -247,8 +247,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       document,
       [
         EVENT_CLICK + UI_EVENT_PREFIX,
-        opts.outsideHide &&
-          (opts.outsideHide?.contextMenuClick ?? true) &&
+        opts.lightDismiss &&
+          (opts.lightDismiss?.contextMenuClick ?? true) &&
           EVENT_CONTEXT_MENU_CLICK + UI_EVENT_PREFIX,
       ],
       (event) => {
@@ -258,7 +258,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         )
           return;
 
-        if (this.opts.outsideHide) {
+        if (this.opts.lightDismiss) {
           let isClickOutside;
           if (this[CONTENT]) {
             isClickOutside =
