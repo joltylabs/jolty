@@ -19,7 +19,6 @@ import {
   CONTENT,
   TOOLTIP,
   CLASS_ACTIVE_SUFFIX,
-  TRANSITION,
   CLASS_ACTIVE,
 } from "./helpers/constants";
 
@@ -79,9 +78,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     const { tooltip, base, opts } = this;
 
     this.transition = Transition.createOrUpdate(
-      this[TRANSITION],
+      this.transition,
       tooltip,
-      opts[TRANSITION],
+      opts.transition,
     );
 
     addDismiss(this, tooltip);
@@ -163,7 +162,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     if (opts.interactive && checkFloatings(this, s)) return;
 
     if (isAnimating && !awaitAnimation) {
-      await this[TRANSITION].cancel();
+      await this.transition.cancel();
     }
 
     const eventParams = { event, trigger };

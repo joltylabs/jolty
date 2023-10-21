@@ -47,8 +47,6 @@ import {
   doc,
   UI_PREFIX,
   HIDE_MODE,
-  TRANSITION,
-  TELEPORT,
   ACTION_REMOVE,
   APPEAR,
   OPTION_HASH_NAVIGATION,
@@ -60,6 +58,7 @@ import {
   SHOWN_CLASS,
   UNTIL_FOUND,
   MODE_HIDDEN_UNTIL_FOUND,
+  TRANSITION,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -196,6 +195,7 @@ class Tablist extends Base {
       opts,
       base,
       [
+        TRANSITION,
         HIDE_MODE,
         OPTION_HASH_NAVIGATION,
         OPTION_ALWAYS_EXPANDED,
@@ -261,10 +261,10 @@ class Tablist extends Base {
       tabWithState[0][0] = true;
     }
     tabWithState.forEach(([isOpen, tabInstance]) => {
-      tabInstance[TRANSITION] = Transition.createOrUpdate(
-        tabInstance[TRANSITION],
+      tabInstance.transition = Transition.createOrUpdate(
+        tabInstance.transition,
         tabInstance[TABPANEL],
-        opts[TRANSITION],
+        opts.transition,
         { cssVariables: true },
       );
       tabInstance.toggle(isOpen, {
@@ -436,8 +436,8 @@ class Tablist extends Base {
         ELEMS.forEach((name) =>
           removeClass(tabInstance[name], opts[name + CLASS_ACTIVE_SUFFIX]),
         );
-        tabInstance[TRANSITION]?.destroy();
-        tabInstance[TELEPORT]?.destroy();
+        tabInstance.transition?.destroy();
+        tabInstance.teleport?.destroy();
       }
 
       elems.forEach((elem) => {
@@ -481,8 +481,8 @@ class Tablist extends Base {
       tabpanel,
       elems,
       index,
-      transition: opts[TRANSITION]
-        ? new Transition(tabpanel, opts[TRANSITION])
+      transition: opts.transition
+        ? new Transition(tabpanel, opts.transition)
         : undefined,
       destroy: destroy.bind(this),
       toggleDisabled: toggleDisabled.bind(this),
@@ -492,7 +492,7 @@ class Tablist extends Base {
       },
       get initialPlaceNode() {
         return (
-          tabInstance[TELEPORT]?.placeholder ??
+          tabInstance.teleport?.placeholder ??
           tabInstance.placeholder ??
           tabpanel
         );

@@ -108,10 +108,10 @@ class Toast extends ToggleMixin(Base, TOAST) {
       toggleHideModeState(false, this);
     }
 
-    this[TRANSITION] = Transition.createOrUpdate(
-      this[TRANSITION],
+    this.transition = Transition.createOrUpdate(
+      this.transition,
       base,
-      opts[TRANSITION],
+      opts.transition,
     );
     this.autohide = Autoaction.createOrUpdate(
       autohide,

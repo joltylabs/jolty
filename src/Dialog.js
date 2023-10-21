@@ -160,15 +160,16 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       opts,
       base,
       [
-        MODAL,
+        TRANSITION,
         BACKDROP,
-        OPTION_TOP_LAYER,
-        OPTION_PREVENT_SCROLL,
-        OPTION_HASH_NAVIGATION,
         HIDE_MODE,
         OPTION_GROUP,
-        OPTION_AUTODESTROY,
+        MODAL,
+        OPTION_TOP_LAYER,
         OPTION_MOVE_TO_ROOT,
+        OPTION_PREVENT_SCROLL,
+        OPTION_HASH_NAVIGATION,
+        OPTION_AUTODESTROY,
         OPTION_LIGHT_DISMISS,
         OPTION_BACK_DISMISS,
       ],
@@ -198,8 +199,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     const isDialogElem = isDialog(base);
 
-    this[TELEPORT] = Teleport.createOrUpdate(
-      this[TELEPORT],
+    this.teleport = Teleport.createOrUpdate(
+      this.teleport,
       base,
       opts.moveToRoot ? opts.root : false,
       {
@@ -211,10 +212,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       toggleHideModeState(false, this);
     }
 
-    this[TRANSITION] = Transition.createOrUpdate(
-      this[TRANSITION],
+    this.transition = Transition.createOrUpdate(
+      this.transition,
       this.main,
-      opts[TRANSITION],
+      opts.transition,
     );
 
     this._togglers =
@@ -374,7 +375,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     if (isAnimating && !opts.awaitAnimation) {
-      await this[TRANSITION]?.cancel();
+      await this.transition?.cancel();
     }
 
     const eventParams = { trigger, event };
@@ -426,14 +427,15 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-    const promise = this[TRANSITION]?.run(s, animated);
+    const promise = this.transition?.run(s, animated);
+
+    !animated && this._toggleClasses(s, backdropIsOpen);
 
     if (s) {
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
       togglePreventScroll(this, true);
-      !animated && this._toggleClasses(s, backdropIsOpen);
       this._toggleApi(true);
     } else if (!optReturnFocusAwait) {
       this._toggleApi(false, true);

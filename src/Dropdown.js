@@ -128,7 +128,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       }
     });
 
-    this[TELEPORT] = new Teleport(base, { disableAttributes: true });
+    this.teleport = new Teleport(base, { disableAttributes: true });
 
     return callShowInit(this);
   }
@@ -137,14 +137,14 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     updateOptsByData(
       opts,
       base,
-      [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
       [OPTION_PREVENT_SCROLL],
     );
 
-    this[TRANSITION] = Transition.createOrUpdate(
-      this[TRANSITION],
+    this.transition = Transition.createOrUpdate(
+      this.transition,
       base,
-      opts[TRANSITION],
+      opts.transition,
     );
 
     this.updateToggler();
@@ -274,7 +274,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     if (checkFloatings(this, s)) return;
 
     if (isAnimating && !awaitAnimation) {
-      await this[TRANSITION].cancel();
+      await this.transition.cancel();
     }
 
     const eventParams = { event, trigger };

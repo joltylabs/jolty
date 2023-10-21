@@ -86,14 +86,14 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     updateOptsByData(
       opts,
       base,
-      [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
       [OPTION_PREVENT_SCROLL],
     );
 
-    this[TRANSITION] = Transition.createOrUpdate(
-      this[TRANSITION],
+    this.transition = Transition.createOrUpdate(
+      this.transition,
       base,
-      opts[TRANSITION],
+      opts.transition,
     );
 
     this.updateToggler();
@@ -137,7 +137,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     if (opts.interactive && checkFloatings(this, s)) return;
 
     if (isAnimating && !awaitAnimation) {
-      await this[TRANSITION].cancel();
+      await this.transition.cancel();
     }
 
     const eventParams = { event, trigger };

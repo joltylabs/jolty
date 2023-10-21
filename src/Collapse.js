@@ -93,24 +93,24 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     updateOptsByData(
       opts,
       base,
-      [HIDE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
+      [TRANSITION, HIDE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
       [OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
     );
 
-    this[TELEPORT] = Teleport.createOrUpdate(
-      this[TELEPORT],
+    this.teleport = Teleport.createOrUpdate(
+      this.teleport,
       base,
-      opts[TELEPORT],
+      opts.teleport,
     )?.move(this);
 
     if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
       toggleHideModeState(false, this);
     }
 
-    this[TRANSITION] = Transition.createOrUpdate(
-      this[TRANSITION],
+    this.transition = Transition.createOrUpdate(
+      this.transition,
       base,
-      opts[TRANSITION],
+      opts.transition,
       { cssVariables: true },
     );
 
@@ -193,7 +193,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     this.isOpen = s;
 
     if (isAnimating && !awaitAnimation) {
-      await this[TRANSITION].cancel();
+      await this.transition.cancel();
     }
 
     const eventParams = { trigger, event };
@@ -204,7 +204,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-    const promise = this[TRANSITION]?.run(s, animated);
+    const promise = this.transition?.run(s, animated);
 
     a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
     toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
