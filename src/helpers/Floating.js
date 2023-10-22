@@ -56,6 +56,7 @@ import {
   collectCssVariables,
   arrayFrom,
   camelToKebab,
+  debounce,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import {
@@ -294,11 +295,14 @@ export default class Floating {
       });
     };
 
-    observeResize(target, (width, height) => {
-      targetRect[WIDTH] = width;
-      targetRect[HEIGHT] = height;
-      updatePosition();
-    });
+    observeResize(
+      target,
+      debounce((width, height) => {
+        targetRect[WIDTH] = width;
+        targetRect[HEIGHT] = height;
+        updatePosition();
+      }, 100),
+    );
 
     updatePosition();
 

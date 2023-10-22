@@ -61,6 +61,7 @@ import {
   closest,
   setAttribute,
   removeAttribute,
+  animateClass,
 } from "./helpers/dom";
 import {
   arrayFrom,
@@ -74,7 +75,6 @@ import {
   awaitPromise,
   isClickOutsideElem,
   resetTransition,
-  animateClass,
   camelToKebab,
 } from "./helpers/utils";
 import {

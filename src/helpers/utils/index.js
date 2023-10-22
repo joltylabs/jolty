@@ -37,4 +37,4 @@ export { default as getDatasetValue } from "./getDatasetValue.js";
 export { default as awaitPromise } from "./awaitPromise.js";
 export { default as isClickOutsideElem } from "./isClickOutsideElem.js";
 export { default as resetTransition } from "./resetTransition.js";
-export { default as animateClass } from "../dom/animateClass.js";
+export { default as debounce } from "./debounce.js";

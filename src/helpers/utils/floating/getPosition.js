@@ -113,17 +113,27 @@ export default function ({
     anchorSpace[m] -= offset + boundaryOffset[m];
     anchorSpace[MIRROR[m]] -= boundaryOffset[dirS] + boundaryOffset[mirrorDirS];
 
+    const sumBoundaryOffsetS =
+      boundaryOffset[mirrorDirS] + boundaryOffset[dirS];
+
     let availableSizesOffset;
     if (sticky) {
-      availableSizesOffset = viewRect[mirrorSize] - sumPadding;
+      availableSizesOffset =
+        viewRect[mirrorSize] - sumPadding - sumBoundaryOffsetS;
     } else {
       availableSizesOffset = viewRect[mirrorSize] - anchorRect[mirrorSize] / 2;
       if (isStart) {
         availableSizesOffset =
-          anchorSpace[mirrorDirS] + anchorRect[mirrorSize] - sumPadding;
+          anchorSpace[mirrorDirS] +
+          anchorRect[mirrorSize] -
+          sumPadding -
+          boundaryOffset[mirrorDirS];
       } else if (isEnd) {
         availableSizesOffset =
-          anchorSpace[dirS] + anchorRect[mirrorSize] - sumPadding;
+          anchorSpace[dirS] +
+          anchorRect[mirrorSize] -
+          sumPadding -
+          boundaryOffset[dirS];
       }
     }
 

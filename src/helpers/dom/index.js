@@ -20,6 +20,7 @@ export { default as removeClass } from "./removeClass";
 export { default as setAttribute } from "./setAttribute";
 export { default as siblings } from "./siblings";
 export { default as toggleClass } from "./toggleClass";
+export { default as animateClass } from "./animateClass.js";
 export { default as getBoundingClientRect } from "./getBoundingClientRect";
 export { default as getPropertyValue } from "./getPropertyValue";
 export { default as isRtl } from "./isRtl";
