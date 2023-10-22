@@ -312,6 +312,7 @@ export const MIRROR = {
   [END]: START,
   [WIDTH]: HEIGHT,
   [HEIGHT]: WIDTH,
+  [CENTER]: CENTER,
   x: "y",
   y: "x",
 };
