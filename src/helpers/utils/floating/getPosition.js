@@ -113,31 +113,31 @@ export default function ({
     anchorSpace[m] -= offset + boundaryOffset[m];
     anchorSpace[MIRROR[m]] -= boundaryOffset[dirS] + boundaryOffset[mirrorDirS];
 
-    let awailableSizesOffset;
+    let availableSizesOffset;
     if (sticky) {
-      awailableSizesOffset = viewRect[mirrorSize] - sumPadding;
+      availableSizesOffset = viewRect[mirrorSize] - sumPadding;
     } else {
-      awailableSizesOffset = viewRect[mirrorSize] - anchorRect[mirrorSize] / 2;
+      availableSizesOffset = viewRect[mirrorSize] - anchorRect[mirrorSize] / 2;
       if (isStart) {
-        awailableSizesOffset =
+        availableSizesOffset =
           anchorSpace[mirrorDirS] + anchorRect[mirrorSize] - sumPadding;
       } else if (isEnd) {
-        awailableSizesOffset =
+        availableSizesOffset =
           anchorSpace[dirS] + anchorRect[mirrorSize] - sumPadding;
       }
     }
 
-    const awailableSizes = {
+    const availableSizes = {
       [size]: max(minRect[size], anchorSpace[m]),
-      [mirrorSize]: max(minRect[mirrorSize], awailableSizesOffset),
+      [mirrorSize]: max(minRect[mirrorSize], availableSizesOffset),
     };
 
     const currentSize = {
       [size]: shrink
-        ? min(targetRect[size], awailableSizes[size])
+        ? min(targetRect[size], availableSizes[size])
         : targetRect[size],
       [mirrorSize]: shrink
-        ? min(targetRect[mirrorSize], awailableSizes[mirrorSize])
+        ? min(targetRect[mirrorSize], availableSizes[mirrorSize])
         : targetRect[mirrorSize],
     };
 
@@ -262,8 +262,8 @@ export default function ({
     return {
       [dir]: mo,
       [dirS]: so,
-      [AVAILABLE_WIDTH]: awailableSizes[WIDTH],
-      [AVAILABLE_HEIGHT]: awailableSizes[HEIGHT],
+      [AVAILABLE_WIDTH]: availableSizes[WIDTH],
+      [AVAILABLE_HEIGHT]: availableSizes[HEIGHT],
       arrow: arrowPosition,
       placement: useFlipM ? MIRROR[placement] : placement,
       transformOrigin,

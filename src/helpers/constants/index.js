@@ -71,7 +71,7 @@ export const SHOWN = "shown";
 export const APPEAR = "appear";
 
 export const TARGET = "target";
-export const AVAILABLE = "awailable";
+export const AVAILABLE = "available";
 export const AVAILABLE_WIDTH = AVAILABLE + "-" + WIDTH;
 export const AVAILABLE_HEIGHT = AVAILABLE + "-" + HEIGHT;
 export const ANCHOR = "anchor";
