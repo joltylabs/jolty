@@ -65,6 +65,7 @@ import {
   setAttribute,
   focus,
   getElement,
+  isRtl,
 } from "./dom";
 
 import { isDialog } from "./is/index.js";
@@ -227,6 +228,7 @@ export default class Floating {
       padding,
       minHeight: parseFloat(targetStyles.minHeight) || 0,
       minWidth: parseFloat(targetStyles.minWidth) || 0,
+      isRtl: isRtl(anchor),
     };
 
     let prevTop = 0;

@@ -16,6 +16,7 @@ import isArray from "../../is/isArray.js";
 import createInset from "./createInset.js";
 
 const { min, max } = Math;
+const viewRect = visualViewport;
 
 export default function ({
   anchorRect,
@@ -31,6 +32,7 @@ export default function ({
   sticky = false,
   minWidth = 0,
   minHeight = 0,
+  isRtl = false,
 }) {
   boundaryOffset = createInset(boundaryOffset);
 
@@ -46,8 +48,20 @@ export default function ({
     sticky = false;
   }
 
-  const [baseM, baseS = CENTER] = placement.split("-");
+  // eslint-disable-next-line prefer-const
+  let [baseM, baseS = CENTER] = placement.split("-");
+
+  if (baseM === START) {
+    baseM = isRtl ? RIGHT : LEFT;
+  } else if (baseM === END) {
+    baseM = isRtl ? LEFT : RIGHT;
+  }
+
   const hor = baseM === LEFT || baseM === RIGHT;
+
+  if (isRtl && !hor) {
+    baseS = MIRROR[baseS];
+  }
 
   const size = hor ? WIDTH : HEIGHT;
   const dir = hor ? LEFT : TOP;
@@ -57,8 +71,6 @@ export default function ({
 
   let useFlipM = null;
   let useFlipS = null;
-
-  const viewRect = visualViewport;
 
   const hasScale =
     viewRect.scale !== 1 && Math.abs(window.innerWidth - viewRect.width) > 2;
