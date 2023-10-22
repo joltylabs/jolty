@@ -44,6 +44,7 @@ import {
   BODY,
   OPTION_LIGHT_DISMISS,
   OPTION_BACK_DISMISS,
+  UI_PREFIX,
 } from "./helpers/constants";
 import {
   isString,
@@ -73,6 +74,8 @@ import {
   awaitPromise,
   isClickOutsideElem,
   resetTransition,
+  animateClass,
+  camelToKebab,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -388,6 +391,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         : opts.preventHide)
     ) {
       this.groupClosing = false;
+      animateClass(this.main, camelToKebab(UI_PREFIX + EVENT_HIDE_PREVENTED));
       return emit(EVENT_HIDE_PREVENTED, eventParams);
     }
 
