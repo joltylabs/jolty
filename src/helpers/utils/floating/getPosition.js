@@ -52,7 +52,6 @@ export default function ({
     sticky = false;
   }
 
-  // eslint-disable-next-line prefer-const
   let [baseM, baseS = CENTER] = placement.split("-");
 
   if (baseM === START) {
