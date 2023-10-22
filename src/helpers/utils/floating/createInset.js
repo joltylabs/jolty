@@ -1,5 +1,5 @@
 import { isArray, isObject, isNumber } from "../../is/index.js";
-export default (input, returnArray) => {
+export default (input, returnArray, isRtl) => {
   let top = 0,
     right = 0,
     bottom = 0,
@@ -13,24 +13,20 @@ export default (input, returnArray) => {
       top = bottom = input[0];
       right = left = input[1];
     } else if (input.length === 3) {
-      top = input[0];
-      right = left = input[1];
-      bottom = input[2];
+      [top, right, bottom] = input;
+      left = right;
     } else {
-      top = input[0];
-      right = input[1];
-      bottom = input[2];
-      left = input[3];
+      [top, right, bottom, left] = input;
     }
   } else if (isObject(input)) {
-    top = input.top || 0;
-    right = input.right || 0;
-    bottom = input.bottom || 0;
-    left = input.left || 0;
+    ({ top = 0, right = 0, bottom = 0, left = 0 } = input);
   }
-  if (returnArray) {
-    return [top, right, bottom, left];
-  } else {
-    return { top, right, bottom, left };
+
+  if (isRtl) {
+    [right, left] = [left, right];
   }
+
+  return returnArray
+    ? [top, right, bottom, left]
+    : { top, right, bottom, left };
 };

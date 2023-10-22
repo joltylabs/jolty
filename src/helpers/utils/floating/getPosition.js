@@ -34,13 +34,17 @@ export default function ({
   minHeight = 0,
   isRtl = false,
 }) {
-  boundaryOffset = createInset(boundaryOffset);
+  boundaryOffset = createInset(boundaryOffset, false, isRtl);
 
   flip = isArray(flip) ? flip : [flip];
   flip[1] ??= flip[0];
 
   padding = isArray(padding) ? padding : [padding];
   padding[1] ??= padding[0];
+
+  if (sticky) {
+    flip[1] = false;
+  }
 
   if (!inTopLayer) {
     shrink = false;
@@ -146,16 +150,18 @@ export default function ({
       ) {
         useFlipM = true;
       }
-      if (
-        flip[1] &&
-        anchorSpace[mirrorDirS] <
-          targetRect[mirrorSize] -
-            anchorRect[mirrorSize] +
-            padding[0] +
-            boundaryOffset[mirrorDirS]
-      ) {
+
+      const targetOffset =
+        anchorSpace[isStart ? mirrorDirS : dirS] +
+        anchorRect[mirrorSize] -
+        targetRect[mirrorSize] +
+        padding[0] +
+        boundaryOffset[mirrorDirS];
+
+      if (flip[1] && targetOffset < 0) {
         useFlipS = true;
       }
+
       if (useFlipM || useFlipS) {
         return calculate();
       }
