@@ -245,7 +245,6 @@ export const OPTION_MOVE_TO_ROOT = "moveToRoot";
 export const OPTION_LIGHT_DISMISS = "lightDismiss";
 export const OPTION_BACK_DISMISS = "backDismiss";
 
-export const OPTION_FLOATING_CLASS = FLOATING + "Class";
 export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = upperFirst(ROLE);
@@ -291,8 +290,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   topLayer: true,
   root: BODY,
   moveToRoot: false,
-  mode: false,
-  [OPTION_FLOATING_CLASS]: "",
+  modal: false,
   shown: false,
   arrow: null,
 };

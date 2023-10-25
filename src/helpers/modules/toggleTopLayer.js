@@ -7,9 +7,18 @@ import {
 } from "../constants/index.js";
 
 export const destroyTopLayer = (elem) => {
-  elem.hidePopover?.();
+  elem.popover && elem.hidePopover?.();
   elem.close?.();
   elem.popover = null;
+};
+
+export const addPopoverAttribute = (instance, elem = instance.base) => {
+  elem.popover =
+    instance.opts.topLayer &&
+    (!isDialog(elem) || !instance.opts.modal) &&
+    POPOVER_API_SUPPORTED
+      ? POPOVER_API_MODE_MANUAL
+      : null;
 };
 
 export const toggleTopLayer = (
@@ -40,11 +49,9 @@ export const toggleTopLayer = (
     }
   } else {
     target.close?.();
-    if (targetIsModal) {
-      if (POPOVER_API_SUPPORTED && keepTopLayer) {
-        target[POPOVER] = POPOVER_API_MODE_MANUAL;
-        target.showPopover();
-      }
+    if (targetIsModal && POPOVER_API_SUPPORTED && keepTopLayer) {
+      target[POPOVER] = POPOVER_API_MODE_MANUAL;
+      target.showPopover();
     }
     if (!keepTopLayer) {
       target[POPOVER] && target.hidePopover?.();

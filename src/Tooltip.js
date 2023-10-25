@@ -20,6 +20,10 @@ import {
   TOOLTIP,
   CLASS_ACTIVE_SUFFIX,
   CLASS_ACTIVE,
+  TRANSITION,
+  TRIGGER,
+  HIDE_MODE,
+  OPTION_PREVENT_SCROLL,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -37,6 +41,7 @@ import {
   normalizeToggleParameters,
   getEventsPrefix,
   getClassActive,
+  updateOptsByData,
 } from "./helpers/utils";
 import {
   baseDestroy,
@@ -47,6 +52,7 @@ import {
   checkFloatings,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
+import { addPopoverAttribute } from "./helpers/modules/toggleTopLayer.js";
 
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
@@ -77,6 +83,13 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   _update() {
     const { tooltip, base, opts } = this;
 
+    updateOptsByData(
+      opts,
+      base,
+      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
+      [OPTION_PREVENT_SCROLL],
+    );
+
     this.transition = Transition.createOrUpdate(
       this.transition,
       tooltip,
@@ -85,6 +98,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     addDismiss(this, tooltip);
 
+    addPopoverAttribute(this, tooltip);
     toggleOnInterection(this, base, tooltip);
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);

@@ -48,13 +48,13 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-  const wrapper = instance[FLOATING]?.wrapper;
+  // const wrapper = instance[FLOATING]?.wrapper;
 
-  if (!s && isModal(wrapper)) {
-    wrapper.close();
+  if (!s && isModal(target)) {
+    target.close();
     if (POPOVER_API_SUPPORTED) {
-      wrapper.popover = POPOVER_API_MODE_MANUAL;
-      wrapper.showPopover();
+      target.popover = POPOVER_API_MODE_MANUAL;
+      target.showPopover();
     } else {
       animated = false;
     }
@@ -102,7 +102,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
         await promise;
       }
       if (instance.placeholder) {
-        wrapper.replaceWith(instance.placeholder);
+        target.replaceWith(instance.placeholder);
       }
       instance[FLOATING]?.destroy();
       instance[FLOATING] = null;

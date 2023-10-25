@@ -14,7 +14,7 @@ import createInset from "./createInset.js";
 import valuesToArray from "../valuesToArray.js";
 import kebabToCamel from "../kebabToCamel.js";
 
-export default (anchorStyles, targetStyles, wrapper, PREFIX) => {
+export default (anchorStyles, targetStyles, target, PREFIX) => {
   const valuesNames = [
     PADDING,
     OFFSET,
@@ -51,15 +51,15 @@ export default (anchorStyles, targetStyles, wrapper, PREFIX) => {
     })
     .join(",");
 
-  wrapper.style.setProperty(CLIP_PATH_PROPERTY, `polygon(${polygonValues})`);
+  target.style.setProperty(CLIP_PATH_PROPERTY, `polygon(${polygonValues})`);
 
-  const wrapperComputedStyle = getComputedStyle(wrapper);
+  const targetComputedStyle = getComputedStyle(target);
 
-  const computedValues = wrapperComputedStyle[CLIP_PATH_PROPERTY].slice(8, -1)
+  const computedValues = targetComputedStyle[CLIP_PATH_PROPERTY].slice(8, -1)
     .split(",")
     .values();
 
-  const result = { wrapperComputedStyle };
+  const result = { targetComputedStyle };
 
   if (values.length) {
     values.forEach(({ name }) => {
@@ -74,7 +74,7 @@ export default (anchorStyles, targetStyles, wrapper, PREFIX) => {
   }
 
   if (values.length) {
-    wrapper.style.removeProperty(CLIP_PATH_PROPERTY);
+    target.style.removeProperty(CLIP_PATH_PROPERTY);
   }
 
   return result;

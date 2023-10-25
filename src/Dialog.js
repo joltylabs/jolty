@@ -28,11 +28,9 @@ import {
   DIALOG,
   doc,
   UI_EVENT_PREFIX,
-  POPOVER_API_SUPPORTED,
   MODAL,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_SCROLL,
-  POPOVER_API_MODE_MANUAL,
   DATA_UI_PREFIX,
   ACTION_REMOVE,
   HIDDEN,
@@ -96,6 +94,7 @@ import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
 import {
+  addPopoverAttribute,
   destroyTopLayer,
   toggleTopLayer,
 } from "./helpers/modules/toggleTopLayer.js";
@@ -157,7 +156,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   _update() {
-    const { base, opts, id, on } = this;
+    const { base, opts, id } = this;
     updateOptsByData(
       opts,
       base,
@@ -199,8 +198,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
 
-    const isDialogElem = isDialog(base);
-
     this.teleport = Teleport.createOrUpdate(
       this.teleport,
       base,
@@ -223,18 +220,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this._togglers =
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
 
-    if (isDialogElem) {
-      on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-    } else if (opts.a11y) {
-      base.setAttribute(TABINDEX, -1);
-      base.setAttribute(ROLE, DIALOG);
-    }
-
-    base.popover =
-      opts.topLayer && (!isDialogElem || !opts.modal) && POPOVER_API_SUPPORTED
-        ? POPOVER_API_MODE_MANUAL
-        : null;
-
+    addPopoverAttribute(this);
     addHashNavigation(this);
     addDismiss(this);
   }
@@ -249,6 +235,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this._update();
     this.updateAriaTargets();
+
+    const isDialogElem = isDialog(base);
 
     let isClosing = false;
 
@@ -303,34 +291,37 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       }
     });
 
+    if (isDialogElem) {
+      on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
+    } else if (opts.a11y) {
+      base.setAttribute(TABINDEX, -1);
+      base.setAttribute(ROLE, DIALOG);
+    }
+
     return callShowInit(this);
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
 
-    removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+    const { base, opts } = this;
+
+    removeClass(this._togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     [DIALOG, CONTENT, BACKDROP].forEach((name) =>
-      removeClass(this[name], this.opts[name + CLASS_ACTIVE_SUFFIX]),
+      removeClass(this[name], opts[name + CLASS_ACTIVE_SUFFIX]),
     );
 
     this.focusGuards?.destroy();
     this.focusGuards = null;
-    this.placeholder?.replaceWith(this.base);
+    this.placeholder?.replaceWith(base);
 
     this.isOpen = false;
 
-    destroyTopLayer(this[DIALOG]);
+    destroyTopLayer(base);
 
     togglePreventScroll(this, false);
 
-    this.opts.a11y &&
-      removeAttribute(
-        this.base,
-        TABINDEX,
-        ROLE,
-        ARIA_LABELLEDBY,
-        ARIA_DESCRIBEDBY,
-      );
+    opts.a11y &&
+      removeAttribute(base, TABINDEX, ROLE, ARIA_LABELLEDBY, ARIA_DESCRIBEDBY);
 
     baseDestroy(this, destroyOpts);
     return this;

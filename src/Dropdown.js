@@ -33,6 +33,7 @@ import {
   DOWN,
   UP,
   OPTION_PREVENT_SCROLL,
+  MODAL,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -67,6 +68,7 @@ import {
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 import { isFunction } from "./helpers/is/index.js";
+import { addPopoverAttribute } from "./helpers/modules/toggleTopLayer.js";
 
 const DIRECTIONS = {
   [KEY_ARROW_LEFT]: LEFT,
@@ -137,8 +139,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     updateOptsByData(
       opts,
       base,
-      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
-      [OPTION_PREVENT_SCROLL],
+      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL, MODAL],
+      [OPTION_PREVENT_SCROLL, MODAL],
     );
 
     this.transition = Transition.createOrUpdate(
@@ -170,9 +172,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       off(base, EVENT_CLICK);
     }
 
+    addPopoverAttribute(this);
     toggleOnInterection(this);
-
-    addDismiss(this, base);
+    addDismiss(this);
   }
   updateToggler() {
     const { opts, id } = this;

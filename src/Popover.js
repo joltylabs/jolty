@@ -18,6 +18,7 @@ import {
   TRANSITION,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_PREVENT_SCROLL,
+  MODAL,
 } from "./helpers/constants";
 
 import {
@@ -47,6 +48,7 @@ import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
+import { addPopoverAttribute } from "./helpers/modules/toggleTopLayer.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
   static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
@@ -86,8 +88,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     updateOptsByData(
       opts,
       base,
-      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
-      [OPTION_PREVENT_SCROLL],
+      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL, MODAL],
+      [OPTION_PREVENT_SCROLL, MODAL],
     );
 
     this.transition = Transition.createOrUpdate(
@@ -98,6 +100,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     this.updateToggler();
 
+    addPopoverAttribute(this);
     addDismiss(this);
     toggleOnInterection(this);
   }
