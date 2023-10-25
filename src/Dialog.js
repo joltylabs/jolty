@@ -116,7 +116,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     ...DEFAULT_OPTIONS,
     ...TOP_LAYER_OPTIONS,
     eventPrefix: getEventsPrefix(DIALOG),
-    [OPTION_BACK_DISMISS]: true,
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
     preventHide: false,
@@ -134,12 +133,9 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [CONTENT + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-
     [OPTION_AUTODESTROY]: false,
-
     autofocus: true,
     focusTrap: true,
-
     moveToRoot: true,
   };
 

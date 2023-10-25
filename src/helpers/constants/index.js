@@ -256,6 +256,7 @@ export const TOP_LAYER_OPTIONS = {
   moveToRoot: false,
   modal: false,
   [OPTION_LIGHT_DISMISS]: true,
+  [OPTION_BACK_DISMISS]: true,
 };
 
 export const DEFAULT_OPTIONS = {
@@ -285,7 +286,6 @@ export const DEFAULT_FLOATING_OPTIONS = {
   shrink: false,
   flip: true,
   sticky: true,
-  [OPTION_BACK_DISMISS]: true,
   focusTrap: false,
   shown: false,
   arrow: null,
