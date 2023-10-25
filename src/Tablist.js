@@ -41,7 +41,6 @@ import {
   HORIZONTAL,
   VERTICAL,
   A11Y,
-  OPTION_ARIA_HIDDEN,
   CLASS_ACTIVE_SUFFIX,
   ROLE_SUFFIX,
   doc,
@@ -78,7 +77,6 @@ import {
   uuidGenerator,
   normalizeToggleParameters,
   getEventsPrefix,
-  kebabToCamel,
   upperFirst,
   getOptionElems,
   isShown,
@@ -115,7 +113,6 @@ const ELEMS = [ITEM, TAB, TABPANEL];
 const OPTION_TAB_ROLE = TAB + ROLE_SUFFIX;
 const OPTION_TABPANEL_ROLE = TABPANEL + ROLE_SUFFIX;
 const OPTION_TABPANEL_TABINDEX = TABPANEL + upperFirst(TABINDEX);
-const OPTION_ARIA_ORIENTRATION = kebabToCamel(ARIA_ORIENTATION);
 const OPTION_STATE_ATTRIBUTE = "stateAttribute";
 const OPTION_ALWAYS_EXPANDED = "alwaysExpanded";
 const OPTION_MULTI_EXPAND = "multiExpand";
@@ -143,7 +140,7 @@ const A11Y_DEFAULTS = {
     [ROLE]: null,
     [OPTION_TAB_ROLE]: BUTTON,
     [OPTION_TABPANEL_ROLE]: REGION,
-    [OPTION_ARIA_ORIENTRATION]: false,
+    [ARIA_ORIENTATION]: false,
     [OPTION_STATE_ATTRIBUTE]: ARIA_EXPANDED,
     [TABINDEX]: false,
     [OPTION_TABPANEL_TABINDEX]: false,
@@ -152,7 +149,7 @@ const A11Y_DEFAULTS = {
     [ROLE]: TABLIST,
     [OPTION_TAB_ROLE]: TAB,
     [OPTION_TABPANEL_ROLE]: TABPANEL,
-    [OPTION_ARIA_ORIENTRATION]: true,
+    [ARIA_ORIENTATION]: true,
     [OPTION_STATE_ATTRIBUTE]: ARIA_SELECTED,
     [TABINDEX]: true,
     [OPTION_TABPANEL_TABINDEX]: true,
@@ -211,13 +208,9 @@ class Tablist extends Base {
     );
 
     if (a11y) {
-      setAttribute(base, ROLE, a11y[ROLE]);
-      a11y[OPTION_ARIA_ORIENTRATION] &&
-        setAttribute(
-          base,
-          ARIA_ORIENTATION,
-          opts[HORIZONTAL] ? HORIZONTAL : VERTICAL,
-        );
+      base[ROLE] = a11y[ROLE];
+      a11y[ARIA_ORIENTATION] &&
+        (base[ARIA_ORIENTATION] = opts[HORIZONTAL] ? HORIZONTAL : VERTICAL);
     }
 
     const shown = lastShownTab?.index ?? opts.shown;
@@ -228,13 +221,13 @@ class Tablist extends Base {
       if (a11y) {
         removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
         setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
-        setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
+        tab[ROLE] = a11y[OPTION_TAB_ROLE];
         if (!/BUTTON|A/.test(tab.nodeName) && !tab.hasAttribute(TABINDEX)) {
-          tab.setAttribute(TABINDEX, 0);
+          tab[TABINDEX] = 0;
         }
-        setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
+        tabpanel[ROLE] = a11y[OPTION_TABPANEL_ROLE];
         setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
-        setAttribute(item, ROLE, NONE);
+        item && (item[ROLE] = NONE);
       }
 
       tabObj.teleport = Teleport.createOrUpdate(
@@ -319,7 +312,7 @@ class Tablist extends Base {
       removeAttribute(
         tablist,
         a11y[ROLE] && ROLE,
-        a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
+        a11y[ARIA_ORIENTATION] && ARIA_ORIENTATION,
       );
     }
 
@@ -426,7 +419,7 @@ class Tablist extends Base {
           ROLE,
           a11y[OPTION_TABPANEL_TABINDEX] && TABINDEX,
           ARIA_LABELLEDBY,
-          a11y[OPTION_ARIA_HIDDEN] && ARIA_HIDDEN,
+          a11y[ARIA_HIDDEN] && ARIA_HIDDEN,
           HIDDEN,
           INERT,
         );

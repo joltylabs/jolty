@@ -13,13 +13,11 @@ import {
   POPOVER,
   ACTION_REMOVE,
   HIDDEN,
-  TRANSITION,
   ROLE,
   ARIA_LIVE,
   ALERT,
   STATUS,
   ARIA_ATOMIC,
-  OPTION_ARIA_LIVE,
   A11Y,
   TABINDEX,
   REGION,
@@ -27,7 +25,7 @@ import {
   CLASS_ACTIVE,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
-import { fragment, inDOM, setAttribute, toggleClass } from "./helpers/dom";
+import { fragment, inDOM, toggleClass } from "./helpers/dom";
 import {
   normalizeToggleParameters,
   arrayFrom,
@@ -58,11 +56,11 @@ const _containers = {};
 const A11Y_DEFAULTS = {
   [STATUS]: {
     [ROLE]: STATUS,
-    [OPTION_ARIA_LIVE]: "polite",
+    [ARIA_LIVE]: "polite",
   },
   [ALERT]: {
     [ROLE]: ALERT,
-    [OPTION_ARIA_LIVE]: "assertive",
+    [ARIA_LIVE]: "assertive",
   },
 };
 
@@ -120,9 +118,9 @@ class Toast extends ToggleMixin(Base, TOAST) {
     );
 
     if (a11y) {
-      base.setAttribute(ARIA_ATOMIC, true);
-      base.setAttribute(ROLE, a11y[ROLE]);
-      base.setAttribute(ARIA_LIVE, a11y[OPTION_ARIA_LIVE]);
+      base[ARIA_ATOMIC] = true;
+      base[ROLE] = a11y[ROLE];
+      base[ARIA_LIVE] = a11y[ARIA_LIVE];
     }
 
     addDismiss(this);
@@ -280,8 +278,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     );
 
     if (a11y) {
-      wrapper.setAttribute(TABINDEX, -1);
-      wrapper.setAttribute(ROLE, REGION);
+      wrapper[TABINDEX] = -1;
+      wrapper[ROLE] = REGION;
     }
 
     rootWrappers.add({ wrapper, container, position, root, keepTopLayer });

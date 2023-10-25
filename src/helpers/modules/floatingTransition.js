@@ -50,8 +50,6 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-  // const wrapper = instance[FLOATING]?.wrapper;
-
   if (!s && isModal(target)) {
     target.close();
     if (POPOVER_API_SUPPORTED) {

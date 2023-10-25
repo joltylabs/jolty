@@ -146,7 +146,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-    a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
+    a11y && (toggler[ARIA_EXPANDED] = !!s);
 
     toggleConfirm(s, this);
 

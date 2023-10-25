@@ -162,7 +162,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
               v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
             );
             if (toggler.tagName !== BUTTON.toLowerCase()) {
-              setAttribute(toggler, ROLE, BUTTON);
+              toggler[ROLE] = BUTTON;
             }
           }
           toggleClass(

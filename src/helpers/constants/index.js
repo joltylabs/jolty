@@ -203,16 +203,15 @@ export const MODE_HIDDEN_UNTIL_FOUND = HIDDEN + "-" + UNTIL_FOUND;
 
 export const ARIA = "aria";
 export const ARIA_CONTROLS = ARIA + "-controls";
-export const ARIA_EXPANDED = ARIA + "-expanded";
-export const ARIA_SELECTED = ARIA + "-selected";
-export const ARIA_HIDDEN = ARIA + "-" + HIDDEN;
+export const ARIA_EXPANDED = ARIA + "Expanded";
+export const ARIA_SELECTED = ARIA + "Selected";
+export const ARIA_HIDDEN = ARIA + "Hidden";
 export const ARIA_MULTISELECTABLE = ARIA + "-multiselectable";
 export const ARIA_LABELLEDBY = ARIA + "-labelledby";
 export const ARIA_DESCRIBEDBY = ARIA + "-describedby";
-export const ARIA_ORIENTATION = ARIA + "-orientation";
-export const ARIA_MODAL = ARIA + "-" + MODAL;
-export const ARIA_LIVE = ARIA + "-live";
-export const ARIA_ATOMIC = ARIA + "-atomic";
+export const ARIA_ORIENTATION = ARIA + "Orientation";
+export const ARIA_LIVE = ARIA + "Live";
+export const ARIA_ATOMIC = ARIA + "Atomic";
 
 export const KEY_ENTER = 13;
 export const KEY_ESC = 27;
@@ -231,14 +230,7 @@ export const OPTION_GROUP = "group";
 export const OPTION_PREVENT_SCROLL = "preventScroll";
 export const OPTION_HASH_NAVIGATION = "hashNavigation";
 export const POSITION = "position";
-export const OPTION_ARIA_LABELLEDBY = kebabToCamel(ARIA_LABELLEDBY);
 export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
-export const OPTION_ARIA_EXPANDED = kebabToCamel(ARIA_EXPANDED);
-export const OPTION_ARIA_SELECTED = kebabToCamel(ARIA_SELECTED);
-export const OPTION_ARIA_CONTROLS = kebabToCamel(ARIA_CONTROLS);
-export const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
-export const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
-export const OPTION_ARIA_ATOMIC = kebabToCamel(ARIA_ATOMIC);
 export const OPTION_TOP_LAYER = "topLayer";
 export const OPTION_MOVE_TO_ROOT = "moveToRoot";
 export const OPTION_LIGHT_DISMISS = "lightDismiss";
@@ -246,7 +238,7 @@ export const OPTION_BACK_DISMISS = "backDismiss";
 
 export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
-export const ROLE_SUFFIX = upperFirst(ROLE);
+export const ROLE_SUFFIX = "Role";
 
 export const STATUS = "status";
 export const ALERT = "alert";

@@ -23,7 +23,6 @@ import {
   TRANSITION,
   TRIGGER,
   HIDE_MODE,
-  OPTION_PREVENT_SCROLL,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
