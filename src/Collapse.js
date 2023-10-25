@@ -62,7 +62,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     ...DEFAULT_OPTIONS,
     eventPrefix: getEventsPrefix(COLLAPSE),
     [OPTION_HASH_NAVIGATION]: false,
-    dismiss: true,
     [OPTION_AUTODESTROY]: false,
     [TOGGLER]: ({ id }) => getDefaultToggleSelector(id, true),
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,

@@ -83,12 +83,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   _update() {
     const { tooltip, base, opts } = this;
 
-    updateOptsByData(
-      opts,
-      base,
-      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
-      [OPTION_PREVENT_SCROLL],
-    );
+    updateOptsByData(opts, base, [TRANSITION, TRIGGER, HIDE_MODE]);
 
     this.transition = Transition.createOrUpdate(
       this.transition,

@@ -77,7 +77,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
     container: "",
     template: "",
     appear: true,
-    dismiss: true,
     limit: false,
     limitAnimateEnter: true,
     limitAnimateLeave: true,

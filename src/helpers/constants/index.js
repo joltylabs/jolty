@@ -197,7 +197,6 @@ export const EVENT_RESIZE = "resize";
 export const EVENT_DISABLED = DISABLED;
 export const EVENT_ENABLED = "enabled";
 export const EVENT_BEFORE_MATCH = BEFORE + "match";
-export const EVENT_SUFFIX_OUTSIDE = ".outside";
 
 export const UNTIL_FOUND = "until-found";
 export const MODE_HIDDEN_UNTIL_FOUND = HIDDEN + "-" + UNTIL_FOUND;
@@ -258,6 +257,15 @@ export const SHOWN_CLASS = UI_PREFIX + SHOWN;
 export const CLASS_SHOWN_MODE = CLASS + "-" + SHOWN;
 export const CLASS_HIDDEN_MODE = CLASS + "-" + HIDDEN;
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
+
+export const TOP_LAYER_OPTIONS = {
+  topLayer: true,
+  root: BODY,
+  moveToRoot: false,
+  modal: false,
+  [OPTION_LIGHT_DISMISS]: true,
+};
+
 export const DEFAULT_OPTIONS = {
   init: true,
   destroy: false,
@@ -272,6 +280,7 @@ export const DEFAULT_OPTIONS = {
   keepPlace: true,
   transition: true,
   awaitAnimation: false,
+  dismiss: true,
 };
 
 export const DEFAULT_FLOATING_OPTIONS = {
@@ -285,14 +294,10 @@ export const DEFAULT_FLOATING_OPTIONS = {
   flip: true,
   sticky: true,
   [OPTION_BACK_DISMISS]: true,
-  outsideHide: true,
   focusTrap: false,
-  topLayer: true,
-  root: BODY,
-  moveToRoot: false,
-  modal: false,
   shown: false,
   arrow: null,
+  ...TOP_LAYER_OPTIONS,
 };
 
 export const SELECTOR_AUTOFOCUS = `[${AUTOFOCUS}]`;

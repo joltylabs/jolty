@@ -11,8 +11,8 @@ import {
   EVENT_CONTEXT_MENU_CLICK,
   EVENT_CLICK,
   EVENT_KEYUP,
-  EVENT_SUFFIX_OUTSIDE,
   OPTION_BACK_DISMISS,
+  OPTION_LIGHT_DISMISS,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
@@ -22,6 +22,8 @@ import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
 import { toggleMouseDownTarget, togglePreventScroll } from "./index.js";
 import { isModal } from "../is/index.js";
+
+export const EVENT_SUFFIX_LIGHT_DISMISS = "." + OPTION_LIGHT_DISMISS;
 
 export default (instance, { s, animated, silent, eventParams }) => {
   const { transition, base, opts, toggler, emit, constructor, teleport } =
@@ -64,14 +66,14 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   toggleMouseDownTarget(instance, target, s);
 
-  if (s && opts.outsideHide) {
-    const outsideHideEvents = [
-      EVENT_CLICK + EVENT_SUFFIX_OUTSIDE,
-      EVENT_KEYUP + EVENT_SUFFIX_OUTSIDE,
-      (opts.outsideHide.contextMenuClick ?? true) &&
-        EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_OUTSIDE,
+  if (s && opts[OPTION_LIGHT_DISMISS]) {
+    const lightDismissEvents = [
+      EVENT_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
+      EVENT_KEYUP + EVENT_SUFFIX_LIGHT_DISMISS,
+      (opts[OPTION_LIGHT_DISMISS].contextMenuClick ?? true) &&
+        EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
     ];
-    instance.on(doc, outsideHideEvents, (event) => {
+    instance.on(doc, lightDismissEvents, (event) => {
       if (!instance.isOpen) return;
       if (!instance._mousedownTarget) {
         !closest(event.target, [toggler ?? base, target]) &&
@@ -80,7 +82,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
       instance._mousedownTarget = null;
     });
   } else {
-    instance.off(doc, ".outside");
+    instance.off(doc, EVENT_SUFFIX_LIGHT_DISMISS);
   }
 
   opts[OPTION_BACK_DISMISS] &&

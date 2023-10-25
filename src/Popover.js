@@ -56,7 +56,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     ...DEFAULT_OPTIONS,
     ...DEFAULT_FLOATING_OPTIONS,
     eventPrefix: getEventsPrefix(POPOVER),
-    dismiss: true,
     autofocus: true,
     interactive: true,
     trigger: CLICK,

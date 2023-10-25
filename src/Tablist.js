@@ -166,7 +166,6 @@ class Tablist extends Base {
     eventPrefix: getEventsPrefix(TABLIST),
     siblings: true,
     [OPTION_MULTI_EXPAND]: false,
-    awaitAnimation: false,
     keyboard: true,
     [OPTION_HASH_NAVIGATION]: true,
     rtl: false,

@@ -43,6 +43,7 @@ import {
   OPTION_LIGHT_DISMISS,
   OPTION_BACK_DISMISS,
   UI_PREFIX,
+  TOP_LAYER_OPTIONS,
 } from "./helpers/constants";
 import {
   isString,
@@ -113,13 +114,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   };
   static Default = {
     ...DEFAULT_OPTIONS,
+    ...TOP_LAYER_OPTIONS,
     eventPrefix: getEventsPrefix(DIALOG),
     [OPTION_BACK_DISMISS]: true,
-    [OPTION_LIGHT_DISMISS]: true,
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
     preventHide: false,
-    dismiss: true,
     [OPTION_PREVENT_SCROLL]: true,
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
@@ -127,7 +127,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     title: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_LABELLEDBY]),
     description: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
     group: "",
-    awaitAnimation: false,
     [CONTENT]: getDataSelector(DIALOG, CONTENT),
     [BACKDROP]: getDataSelector(DIALOG, BACKDROP),
     [TOGGLER]: true,
@@ -141,14 +140,11 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     autofocus: true,
     focusTrap: true,
 
-    modal: true,
-    topLayer: true,
-    root: BODY,
     moveToRoot: true,
   };
 
   get main() {
-    return this[CONTENT] || this[DIALOG];
+    return this[CONTENT] || this.base;
   }
 
   constructor(elem, opts) {
