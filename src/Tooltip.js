@@ -23,6 +23,7 @@ import {
   TRANSITION,
   TRIGGER,
   HIDE_MODE,
+  body,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -82,7 +83,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   _update() {
     const { tooltip, base, opts } = this;
 
-    updateOptsByData(opts, base, [TRANSITION, TRIGGER, HIDE_MODE]);
+    updateOptsByData(opts, base, [TRANSITION, HIDE_MODE, TRIGGER]);
 
     this.transition = Transition.createOrUpdate(
       this.transition,
@@ -144,7 +145,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     this._update();
 
-    this.teleport = new Teleport(target, { disableAttributes: true });
+    this.teleport = new Teleport(target, { to: body, disableAttributes: true });
 
     return callShowInit(this, target);
   }

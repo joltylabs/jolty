@@ -39,11 +39,11 @@ import {
   OPTION_HASH_NAVIGATION,
   OPTION_AUTODESTROY,
   OPTION_MOVE_TO_ROOT,
-  BODY,
   OPTION_LIGHT_DISMISS,
   OPTION_BACK_DISMISS,
   UI_PREFIX,
   TOP_LAYER_OPTIONS,
+  TOP_LAYER_OPTIONS_NAMES,
 } from "./helpers/constants";
 import {
   isString,
@@ -147,75 +147,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     super(elem, opts);
   }
 
-  _update() {
-    const { base, opts, id } = this;
-    updateOptsByData(
-      opts,
-      base,
-      [
-        TRANSITION,
-        BACKDROP,
-        HIDE_MODE,
-        OPTION_GROUP,
-        MODAL,
-        OPTION_TOP_LAYER,
-        OPTION_MOVE_TO_ROOT,
-        OPTION_PREVENT_SCROLL,
-        OPTION_HASH_NAVIGATION,
-        OPTION_AUTODESTROY,
-        OPTION_LIGHT_DISMISS,
-        OPTION_BACK_DISMISS,
-      ],
-      [
-        MODAL,
-        OPTION_TOP_LAYER,
-        OPTION_MOVE_TO_ROOT,
-        OPTION_PREVENT_SCROLL,
-        OPTION_HASH_NAVIGATION,
-        OPTION_AUTODESTROY,
-        OPTION_LIGHT_DISMISS,
-        OPTION_BACK_DISMISS,
-      ],
-    );
-    updateModule(this, OPTION_GROUP, NAME);
-
-    let backdrop;
-    if (isString(opts[BACKDROP])) {
-      backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
-        opts[BACKDROP],
-      );
-    }
-
-    this[BACKDROP] = backdrop;
-
-    this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
-
-    this.teleport = Teleport.createOrUpdate(
-      this.teleport,
-      base,
-      opts.moveToRoot ? opts.root : false,
-      {
-        disableAttributes: true,
-      },
-    )?.move(this);
-
-    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-      toggleHideModeState(false, this);
-    }
-
-    this.transition = Transition.createOrUpdate(
-      this.transition,
-      this.main,
-      opts.transition,
-    );
-
-    this._togglers =
-      opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
-
-    addPopoverAttribute(this);
-    addHashNavigation(this);
-    addDismiss(this);
-  }
   init() {
     const { opts, isInit, on, emit, base, toggle } = this;
 
@@ -291,6 +222,61 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     return callShowInit(this);
+  }
+  _update() {
+    const { base, opts, id } = this;
+    updateOptsByData(
+      opts,
+      base,
+      [
+        TRANSITION,
+        HIDE_MODE,
+        BACKDROP,
+        OPTION_GROUP,
+        OPTION_AUTODESTROY,
+        OPTION_HASH_NAVIGATION,
+        ...TOP_LAYER_OPTIONS_NAMES,
+      ],
+      [OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY, ...TOP_LAYER_OPTIONS_NAMES],
+    );
+    updateModule(this, OPTION_GROUP, NAME);
+
+    let backdrop;
+    if (isString(opts[BACKDROP])) {
+      backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
+        opts[BACKDROP],
+      );
+    }
+
+    this[BACKDROP] = backdrop;
+
+    this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
+
+    this.teleport = Teleport.createOrUpdate(
+      this.teleport,
+      base,
+      opts.moveToRoot ? opts.root : false,
+      {
+        disableAttributes: true,
+      },
+    )?.move(this);
+
+    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleHideModeState(false, this);
+    }
+
+    this.transition = Transition.createOrUpdate(
+      this.transition,
+      this.main,
+      opts.transition,
+    );
+
+    this._togglers =
+      opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
+
+    addPopoverAttribute(this);
+    addHashNavigation(this);
+    addDismiss(this);
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;

@@ -19,6 +19,7 @@ import {
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_PREVENT_SCROLL,
   MODAL,
+  TOP_LAYER_OPTIONS_NAMES,
 } from "./helpers/constants";
 
 import {
@@ -87,8 +88,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     updateOptsByData(
       opts,
       base,
-      [TRANSITION, TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL, MODAL],
-      [OPTION_PREVENT_SCROLL, MODAL],
+      [TRANSITION, HIDE_MODE, TRIGGER, ...TOP_LAYER_OPTIONS_NAMES],
+      TOP_LAYER_OPTIONS_NAMES,
     );
 
     this.transition = Transition.createOrUpdate(

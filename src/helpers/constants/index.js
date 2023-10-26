@@ -206,7 +206,6 @@ export const ARIA_CONTROLS = ARIA + "-controls";
 export const ARIA_EXPANDED = ARIA + "Expanded";
 export const ARIA_SELECTED = ARIA + "Selected";
 export const ARIA_HIDDEN = ARIA + "Hidden";
-export const ARIA_MULTISELECTABLE = ARIA + "-multiselectable";
 export const ARIA_LABELLEDBY = ARIA + "-labelledby";
 export const ARIA_DESCRIBEDBY = ARIA + "-describedby";
 export const ARIA_ORIENTATION = ARIA + "Orientation";
@@ -249,6 +248,15 @@ export const SHOWN_CLASS = UI_PREFIX + SHOWN;
 export const CLASS_SHOWN_MODE = CLASS + "-" + SHOWN;
 export const CLASS_HIDDEN_MODE = CLASS + "-" + HIDDEN;
 export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
+
+export const TOP_LAYER_OPTIONS_NAMES = [
+  OPTION_PREVENT_SCROLL,
+  MODAL,
+  OPTION_TOP_LAYER,
+  OPTION_MOVE_TO_ROOT,
+  OPTION_LIGHT_DISMISS,
+  OPTION_BACK_DISMISS,
+];
 
 export const TOP_LAYER_OPTIONS = {
   topLayer: true,

@@ -48,6 +48,7 @@ class Teleport {
       elem.before(this.placeholder);
     }
     to.insertAdjacentElement(position, elem);
+
     return this;
   }
   destroy() {

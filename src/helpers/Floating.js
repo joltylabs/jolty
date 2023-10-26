@@ -30,6 +30,7 @@ import {
   UI_EVENT_PREFIX,
   FALSE,
   OPTION_MOVE_TO_ROOT,
+  FLOATING,
 } from "./constants";
 import {
   getPosition,
@@ -70,16 +71,7 @@ const OPTIONS = [
 
 export default class Floating {
   static instances = new Set();
-  constructor({
-    target,
-    anchor,
-    arrow,
-    opts,
-    name = "",
-    base,
-    teleport,
-    instance,
-  }) {
+  constructor({ target, anchor, arrow, opts, name = "", base, instance }) {
     const { on, off } = new EventHandler();
 
     Object.assign(this, {
@@ -91,14 +83,14 @@ export default class Floating {
       on,
       off,
       base,
-      teleport,
       instance,
       floatings: new Set(),
     });
   }
   init() {
-    const { target, anchor, arrow, opts, name, base, on } = this;
+    const { target, anchor, arrow, opts, base, name, on } = this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
+    const FLOATING_PREFIX = VAR_UI_PREFIX + FLOATING + "-";
 
     const anchorScrollParents = parents(anchor, isOverflowElement);
     const anchorStyles = getComputedStyle(anchor);
@@ -186,9 +178,9 @@ export default class Floating {
       [HEIGHT]: target.offsetHeight,
     };
     [WIDTH, HEIGHT].forEach((size) => {
-      target.style.setProperty(PREFIX + size, targetRect[size] + PX);
+      target.style.setProperty(FLOATING_PREFIX + size, targetRect[size] + PX);
       target.style.setProperty(
-        PREFIX + ANCHOR + "-" + size,
+        FLOATING_PREFIX + ANCHOR + "-" + size,
         anchorRect[size] + PX,
       );
     });
@@ -259,22 +251,22 @@ export default class Floating {
 
       if (shrink) {
         [AVAILABLE_WIDTH, AVAILABLE_HEIGHT].forEach((name) =>
-          target.style.setProperty(PREFIX + name, position[name] + PX),
+          target.style.setProperty(FLOATING_PREFIX + name, position[name] + PX),
         );
       }
 
       [LEFT, TOP].forEach((dir, i) => {
-        target.style.setProperty(PREFIX + dir, position[dir] + PX);
+        target.style.setProperty(FLOATING_PREFIX + dir, position[dir] + PX);
         if (arrowData) {
           target.style.setProperty(
-            PREFIX + ARROW + "-" + dir,
+            FLOATING_PREFIX + ARROW + "-" + dir,
             position.arrow[i] + PX,
           );
         }
       });
 
       target.style.setProperty(
-        PREFIX + "transform-origin",
+        FLOATING_PREFIX + "transform-origin",
         `${position.transformOrigin[0]}px ${position.transformOrigin[1]}px`,
       );
 
@@ -347,7 +339,6 @@ export default class Floating {
 
     this.focusGuards?.destroy();
     // this.wrapper.remove();
-    this.teleport.reset();
     Floating.instances.delete(this);
     this.parentFloating?.floatings?.delete(this);
   }

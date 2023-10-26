@@ -13,6 +13,7 @@ import {
   EVENT_KEYUP,
   OPTION_BACK_DISMISS,
   OPTION_LIGHT_DISMISS,
+  body,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
@@ -36,14 +37,14 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   if (s) {
     togglePreventScroll(instance, true);
+    teleport.move();
     instance[FLOATING] = new Floating({
-      teleport,
       base,
       anchor,
       target,
+      name,
       arrow: target.querySelector(getDataSelector(name, ARROW)),
       opts,
-      name,
       instance,
     }).init();
   }
