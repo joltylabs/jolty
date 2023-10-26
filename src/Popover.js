@@ -49,7 +49,10 @@ import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
 import Transition from "./helpers/Transition.js";
 import Teleport from "./helpers/Teleport.js";
-import { addPopoverAttribute } from "./helpers/modules/toggleTopLayer.js";
+import {
+  addPopoverAttribute,
+  destroyTopLayer,
+} from "./helpers/modules/toggleTopLayer.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
   static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
@@ -122,6 +125,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
     togglePreventScroll(this, false);
+    destroyTopLayer(base);
     return baseDestroy(this, destroyOpts);
   }
 

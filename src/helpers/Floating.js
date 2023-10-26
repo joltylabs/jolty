@@ -52,6 +52,7 @@ import {
   setAttribute,
   focus,
   isRtl,
+  removeAttribute,
 } from "./dom";
 
 import { isDialog } from "./is/index.js";
@@ -68,6 +69,22 @@ const OPTIONS = [
   OPTION_TOP_LAYER,
   OPTION_MOVE_TO_ROOT,
 ];
+
+const CURRENT_PLACEMENT_ATTRIBUTE = DATA_UI_PREFIX + "current-" + PLACEMENT;
+const TRANSFORM_ORIGIN = "transform-origin";
+const CSS_VARIABLES = [
+  LEFT,
+  TOP,
+  AVAILABLE_WIDTH,
+  AVAILABLE_HEIGHT,
+  WIDTH,
+  HEIGHT,
+  ARROW + "-" + LEFT,
+  ARROW + "-" + TOP,
+  ANCHOR + "-" + WIDTH,
+  ANCHOR + "-" + HEIGHT,
+  TRANSFORM_ORIGIN,
+].map((name) => VAR_UI_PREFIX + FLOATING + "-" + name);
 
 export default class Floating {
   static instances = new Set();
@@ -159,7 +176,7 @@ export default class Floating {
     });
 
     if (placement === DIALOG) {
-      setAttribute(target, DATA_UI_PREFIX + "current-" + PLACEMENT, DIALOG);
+      setAttribute(target, CURRENT_PLACEMENT_ATTRIBUTE, DIALOG);
       return this;
     }
 
@@ -245,11 +262,7 @@ export default class Floating {
       }
       prevTop = position.top;
 
-      setAttribute(
-        target,
-        DATA_UI_PREFIX + "current-" + PLACEMENT,
-        position[PLACEMENT],
-      );
+      setAttribute(target, CURRENT_PLACEMENT_ATTRIBUTE, position[PLACEMENT]);
 
       if (shrink) {
         [AVAILABLE_WIDTH, AVAILABLE_HEIGHT].forEach((name) =>
@@ -268,7 +281,7 @@ export default class Floating {
       });
 
       target.style.setProperty(
-        FLOATING_PREFIX + "transform-origin",
+        FLOATING_PREFIX + TRANSFORM_ORIGIN,
         `${position.transformOrigin[0]}px ${position.transformOrigin[1]}px`,
       );
 
@@ -336,11 +349,20 @@ export default class Floating {
   }
 
   destroy() {
+    const { target } = this;
     this.off();
-    resizeObserver.unobserve(this.target);
+    resizeObserver.unobserve(target);
+
+    removeAttribute(
+      target,
+      DATA_UI_PREFIX + FLOATING,
+      CURRENT_PLACEMENT_ATTRIBUTE,
+    );
+
+    CSS_VARIABLES.forEach((name) => target.style.removeProperty(name));
 
     this.focusGuards?.destroy();
-    this.target.setAttribute(DATA_UI_PREFIX + FLOATING, this.name);
+
     Floating.instances.delete(this);
     this.parentFloating?.floatings?.delete(this);
   }
