@@ -261,7 +261,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
     togglePreventScroll(this, false);
-    destroyTopLayer(base);
     return baseDestroy(this, destroyOpts);
   }
 

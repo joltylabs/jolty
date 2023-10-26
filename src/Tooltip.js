@@ -115,7 +115,6 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     if (_cache[TITLE]) {
       anchor[TITLE] = _cache[TITLE];
     }
-    destroyTopLayer(tooltip);
     return baseDestroy(this, destroyOpts);
   }
   init() {

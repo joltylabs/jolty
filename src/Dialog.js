@@ -467,14 +467,9 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
   }
   _toggleApi(s, keepTopLayer) {
-    const { opts, base, constructor } = this;
+    const { opts, base } = this;
 
-    toggleTopLayer(base, s, {
-      modal: opts.modal,
-      topLayer: opts.topLayer,
-      keepTopLayer,
-      constructor,
-    });
+    toggleTopLayer(this, s, keepTopLayer);
 
     if (s && opts.focusTrap && !isModal(base)) {
       this.focusGuards = new FocusGuards(base);

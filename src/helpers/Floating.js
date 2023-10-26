@@ -105,7 +105,7 @@ export default class Floating {
     });
   }
   init() {
-    const { target, anchor, arrow, opts, base, name, on } = this;
+    const { target, anchor, arrow, opts, base, name, on, instance } = this;
     const PREFIX = VAR_UI_PREFIX + name + "-";
     const FLOATING_PREFIX = VAR_UI_PREFIX + FLOATING + "-";
 
@@ -168,12 +168,7 @@ export default class Floating {
       });
     }
 
-    toggleTopLayer(target, true, {
-      modal: targetIsModal,
-      topLayer,
-      constructor: this.instance.constructor,
-      target,
-    });
+    toggleTopLayer(this.instance, true);
 
     if (placement === DIALOG) {
       setAttribute(target, CURRENT_PLACEMENT_ATTRIBUTE, DIALOG);
@@ -301,7 +296,23 @@ export default class Floating {
 
     updatePosition();
 
-    this._toggleApi(useFocusGuards);
+    toggleTopLayer(instance, true);
+
+    this.on(target, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
+
+    if (useFocusGuards) {
+      this.focusGuards = new FocusGuards(target, {
+        focusAfterAnchor: !opts.focusTrap,
+        anchor,
+        topLayer,
+        strategy: ABSOLUTE,
+        onFocusOut:
+          isDialog(target) &&
+          (() => {
+            instance.hide?.();
+          }),
+      });
+    }
 
     on([anchorScrollParents, window], EVENT_SCROLL, updatePosition, {
       passive: true,
@@ -321,33 +332,6 @@ export default class Floating {
     return this;
   }
 
-  _toggleApi(useFocusGuards) {
-    const { target, opts, topLayer, anchor, instance } = this;
-
-    toggleTopLayer(target, true, {
-      modal: opts.modal && isDialog(target),
-      topLayer,
-      constructor: instance.constructor,
-      target,
-    });
-
-    this.on(target, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-
-    if (useFocusGuards) {
-      this.focusGuards = new FocusGuards(target, {
-        focusAfterAnchor: !opts.focusTrap,
-        anchor,
-        topLayer,
-        strategy: ABSOLUTE,
-        onFocusOut:
-          isDialog(target) &&
-          (() => {
-            instance.hide?.();
-          }),
-      });
-    }
-  }
-
   destroy() {
     const { target } = this;
     this.off();
@@ -358,6 +342,8 @@ export default class Floating {
       DATA_UI_PREFIX + FLOATING,
       CURRENT_PLACEMENT_ATTRIBUTE,
     );
+
+    toggleTopLayer(this.instance, false);
 
     CSS_VARIABLES.forEach((name) => target.style.removeProperty(name));
 
