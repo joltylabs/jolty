@@ -28,8 +28,6 @@ import {
   DIALOG,
   doc,
   UI_EVENT_PREFIX,
-  MODAL,
-  OPTION_TOP_LAYER,
   OPTION_PREVENT_SCROLL,
   DATA_UI_PREFIX,
   ACTION_REMOVE,
@@ -38,7 +36,6 @@ import {
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_HASH_NAVIGATION,
   OPTION_AUTODESTROY,
-  OPTION_MOVE_TO_ROOT,
   OPTION_LIGHT_DISMISS,
   OPTION_BACK_DISMISS,
   UI_PREFIX,
@@ -159,8 +156,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this._update();
     this.updateAriaTargets();
 
-    const isDialogElem = isDialog(base);
-
     let isClosing = false;
 
     on(
@@ -214,7 +209,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       }
     });
 
-    if (isDialogElem) {
+    if (isDialog(base)) {
       on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
     } else if (opts.a11y) {
       base[TABINDEX] = -1;

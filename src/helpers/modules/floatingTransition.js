@@ -13,7 +13,6 @@ import {
   EVENT_KEYUP,
   OPTION_BACK_DISMISS,
   OPTION_LIGHT_DISMISS,
-  body,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";

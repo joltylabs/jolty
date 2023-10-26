@@ -32,8 +32,9 @@ import {
   DOWN,
   UP,
   OPTION_PREVENT_SCROLL,
-  MODAL,
   TOP_LAYER_OPTIONS_NAMES,
+  CANCEL,
+  UI_EVENT_PREFIX,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -67,7 +68,7 @@ import {
   togglePreventScroll,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
-import { isFunction } from "./helpers/is/index.js";
+import { isDialog, isFunction } from "./helpers/is/index.js";
 import {
   addPopoverAttribute,
   destroyTopLayer,
@@ -109,6 +110,10 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     this._update();
 
     const { toggler, base, show, on } = this;
+
+    if (isDialog(base)) {
+      on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
+    }
 
     on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {
@@ -261,6 +266,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
     togglePreventScroll(this, false);
+    destroyTopLayer(base);
     return baseDestroy(this, destroyOpts);
   }
 

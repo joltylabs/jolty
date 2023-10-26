@@ -24,6 +24,8 @@ import {
   TRIGGER,
   HIDE_MODE,
   body,
+  CANCEL,
+  UI_EVENT_PREFIX,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -56,6 +58,7 @@ import {
   addPopoverAttribute,
   destroyTopLayer,
 } from "./helpers/modules/toggleTopLayer.js";
+import { isDialog } from "./helpers/is/index.js";
 
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
@@ -115,6 +118,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     if (_cache[TITLE]) {
       anchor[TITLE] = _cache[TITLE];
     }
+    destroyTopLayer(tooltip);
     return baseDestroy(this, destroyOpts);
   }
   init() {
@@ -137,6 +141,12 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       ),
     ));
     target.id ||= id + "-" + TARGET;
+
+    if (isDialog(this.tooltip)) {
+      this.on(this.tooltip, CANCEL + UI_EVENT_PREFIX, (e) =>
+        e.preventDefault(),
+      );
+    }
 
     anchor.removeAttribute(TITLE);
     toggleClass(

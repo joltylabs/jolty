@@ -6,7 +6,6 @@ import {
   PX,
   ACTION_ADD,
   ACTION_REMOVE,
-  NONE,
   ENTER,
   ENTER_ACTIVE,
   ENTER_FROM,

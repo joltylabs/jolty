@@ -11,7 +11,6 @@ import {
 } from "../constants";
 import { removeAttribute, removeClass } from "../dom/index.js";
 import { destroyInstance, toggleInitClass } from "./index.js";
-import { destroyTopLayer } from "./toggleTopLayer.js";
 
 export default (
   instance,
@@ -22,10 +21,6 @@ export default (
   const stateElem = instance[constructor.NAME];
 
   instance[PLACEHOLDER]?.replaceWith(base);
-
-  if (instance[FLOATING]) {
-    destroyTopLayer(stateElem);
-  }
 
   ["autohide", FLOATING, TRANSITION, TELEPORT].forEach((key) => {
     if (instance[key]) {

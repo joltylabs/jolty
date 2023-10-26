@@ -18,8 +18,9 @@ import {
   TRANSITION,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_PREVENT_SCROLL,
-  MODAL,
   TOP_LAYER_OPTIONS_NAMES,
+  CANCEL,
+  UI_EVENT_PREFIX,
 } from "./helpers/constants";
 
 import {
@@ -53,6 +54,7 @@ import {
   addPopoverAttribute,
   destroyTopLayer,
 } from "./helpers/modules/toggleTopLayer.js";
+import { isDialog } from "./helpers/is/index.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
   static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
@@ -78,11 +80,17 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   init() {
     if (this.isInit) return;
 
-    this.base.id = this.id;
+    const { base } = this;
+
+    base.id = this.id;
+
+    if (isDialog(base)) {
+      this.on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
+    }
 
     this._update();
 
-    this.teleport = new Teleport(this.base, { disableAttributes: true });
+    this.teleport = new Teleport(base, { disableAttributes: true });
 
     return callShowInit(this);
   }
@@ -125,6 +133,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
     togglePreventScroll(this, false);
+    destroyTopLayer(base);
     return baseDestroy(this, destroyOpts);
   }
 

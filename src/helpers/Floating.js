@@ -13,7 +13,6 @@ import {
   DATA_UI_PREFIX,
   DIALOG,
   ABSOLUTE,
-  CANCEL,
   FLIP,
   SHRINK,
   STICKY,
@@ -27,7 +26,6 @@ import {
   EVENT_KEYDOWN,
   FOCUSABLE_ELEMENTS_SELECTOR,
   KEY_TAB,
-  UI_EVENT_PREFIX,
   FALSE,
   OPTION_MOVE_TO_ROOT,
   FLOATING,
@@ -297,8 +295,6 @@ export default class Floating {
     updatePosition();
 
     toggleTopLayer(instance, true);
-
-    this.on(target, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
 
     if (useFocusGuards) {
       this.focusGuards = new FocusGuards(target, {
