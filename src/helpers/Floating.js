@@ -92,6 +92,8 @@ export default class Floating {
     const PREFIX = VAR_UI_PREFIX + name + "-";
     const FLOATING_PREFIX = VAR_UI_PREFIX + FLOATING + "-";
 
+    target.setAttribute(DATA_UI_PREFIX + FLOATING, name);
+
     const anchorScrollParents = parents(anchor, isOverflowElement);
     const anchorStyles = getComputedStyle(anchor);
     const targetStyles = getComputedStyle(target);
@@ -338,7 +340,7 @@ export default class Floating {
     resizeObserver.unobserve(this.target);
 
     this.focusGuards?.destroy();
-    // this.wrapper.remove();
+    this.target.setAttribute(DATA_UI_PREFIX + FLOATING, this.name);
     Floating.instances.delete(this);
     this.parentFloating?.floatings?.delete(this);
   }
