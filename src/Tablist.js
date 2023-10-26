@@ -423,7 +423,7 @@ class Tablist extends Base {
           HIDDEN,
           INERT,
         );
-        removeAttribute(item, ROLE);
+        item[ROLE] = null;
       }
 
       off(elems);

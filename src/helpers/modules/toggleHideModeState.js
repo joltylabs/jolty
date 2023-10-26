@@ -53,7 +53,7 @@ export default (
   } else if (mode !== CLASS_HIDDEN_MODE && mode !== CLASS_SHOWN_MODE) {
     if (mode === MODE_HIDDEN_UNTIL_FOUND) {
       if (s) {
-        target.removeAttribute(HIDDEN);
+        target[HIDDEN] = null;
         instance.off(target, EVENT_BEFORE_MATCH);
       } else {
         target.setAttribute(HIDDEN, UNTIL_FOUND);
