@@ -262,7 +262,7 @@ export const TOP_LAYER_OPTIONS = {
   topLayer: true,
   root: BODY,
   moveToRoot: false,
-  modal: false,
+  modal: true,
   [OPTION_LIGHT_DISMISS]: true,
   [OPTION_BACK_DISMISS]: true,
 };
