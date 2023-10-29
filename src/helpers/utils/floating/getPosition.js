@@ -163,9 +163,9 @@ export default function ({
       const targetOffset =
         anchorSpace[isStart ? mirrorDirS : dirS] +
         anchorRect[mirrorSize] -
-        targetRect[mirrorSize] +
-        padding[0] +
-        boundaryOffset[mirrorDirS];
+        targetRect[mirrorSize] -
+        padding[isStart ? 0 : 1] -
+        boundaryOffset[isStart ? mirrorDirS : dirS];
 
       if (flip[1] && targetOffset < 0) {
         useFlipS = true;
@@ -189,9 +189,9 @@ export default function ({
     } else if (isCenter) {
       so =
         anchorRect[dirS] -
-        (currentSize[mirrorSize] - anchorRect[mirrorSize]) / 2;
+        (targetRect[mirrorSize] - anchorRect[mirrorSize]) / 2;
     } else {
-      so = anchorRect[mirrorDirS] - currentSize[mirrorSize] - padding[1];
+      so = anchorRect[mirrorDirS] - targetRect[mirrorSize] - padding[1];
     }
 
     const staticSo = so;
