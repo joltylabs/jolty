@@ -33,8 +33,6 @@ import {
   UP,
   OPTION_PREVENT_SCROLL,
   TOP_LAYER_OPTIONS_NAMES,
-  CANCEL,
-  UI_EVENT_PREFIX,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -66,6 +64,7 @@ import {
   callShowInit,
   checkFloatings,
   togglePreventScroll,
+  addDialogCancel,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 import { isDialog, isFunction } from "./helpers/is/index.js";
@@ -111,9 +110,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     const { toggler, base, show, on } = this;
 
-    if (isDialog(base)) {
-      on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-    }
+    addDialogCancel(this);
 
     on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(toggler, EVENT_KEYDOWN, async (event) => {

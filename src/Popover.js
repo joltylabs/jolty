@@ -19,8 +19,6 @@ import {
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_PREVENT_SCROLL,
   TOP_LAYER_OPTIONS_NAMES,
-  CANCEL,
-  UI_EVENT_PREFIX,
 } from "./helpers/constants";
 
 import {
@@ -45,6 +43,7 @@ import {
   toggleConfirm,
   checkFloatings,
   togglePreventScroll,
+  addDialogCancel,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -54,7 +53,6 @@ import {
   addPopoverAttribute,
   destroyTopLayer,
 } from "./helpers/modules/toggleTopLayer.js";
-import { isDialog } from "./helpers/is/index.js";
 
 class Popover extends ToggleMixin(Base, POPOVER) {
   static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
@@ -84,9 +82,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     base.id = this.id;
 
-    if (isDialog(base)) {
-      this.on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-    }
+    addDialogCancel(this);
 
     this._update();
 

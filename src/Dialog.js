@@ -86,6 +86,7 @@ import {
   togglePreventScroll,
   FocusGuards,
   toggleMouseDownTarget,
+  addDialogCancel,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -210,7 +211,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     });
 
     if (isDialog(base)) {
-      on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
+      addDialogCancel(this);
     } else if (opts.a11y) {
       base[TABINDEX] = -1;
       base[ROLE] = DIALOG;
@@ -414,7 +415,9 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       resetTransition(backdrop);
     }
 
-    opts[OPTION_BACK_DISMISS] && addBackDismiss(this, s, base);
+    if (opts[OPTION_BACK_DISMISS] && !isDialog(base)) {
+      addBackDismiss(this, s, base);
+    }
 
     toggleMouseDownTarget(this, main, s);
 
