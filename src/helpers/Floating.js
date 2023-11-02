@@ -40,7 +40,6 @@ import {
   collectCssVariables,
   arrayFrom,
   camelToKebab,
-  debounce,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import {
@@ -225,11 +224,7 @@ export default class Floating {
     };
 
     let prevTop = 0;
-    let pendingUpdate = false;
     const updatePosition = () => {
-      if (pendingUpdate) return;
-      pendingUpdate = true;
-
       anchorRect = getBoundingClientRect(anchor);
 
       if (!inTopLayer) {
@@ -248,9 +243,7 @@ export default class Floating {
 
       if (prevTop && Math.abs(prevTop - position.top) > 50) {
         prevTop = position.top;
-        requestAnimationFrame(() => {
-          pendingUpdate = false;
-        });
+
         return updatePosition();
       }
       prevTop = position.top;
@@ -277,20 +270,13 @@ export default class Floating {
         FLOATING_PREFIX + TRANSFORM_ORIGIN,
         `${position.transformOrigin[0]}px ${position.transformOrigin[1]}px`,
       );
-
-      requestAnimationFrame(() => {
-        pendingUpdate = false;
-      });
     };
 
-    observeResize(
-      target,
-      debounce((width, height) => {
-        targetRect[WIDTH] = width;
-        targetRect[HEIGHT] = height;
-        updatePosition();
-      }, 100),
-    );
+    observeResize(target, (width, height) => {
+      targetRect[WIDTH] = width;
+      targetRect[HEIGHT] = height;
+      updatePosition();
+    });
 
     updatePosition();
 
