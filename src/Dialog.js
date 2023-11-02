@@ -180,9 +180,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
             isClickOutside =
               !this[CONTENT].contains(event.target) && !this._mousedownTarget;
           } else {
-            isClickOutside =
-              isClickOutsideElem(base, event) &&
-              (!this._mousedownTarget || this._mousedownTarget === base);
+            const targetDialog = Dialog.get(event.target);
+            if (!targetDialog || targetDialog === this) {
+              isClickOutside =
+                isClickOutsideElem(base, event) &&
+                (!this._mousedownTarget || this._mousedownTarget === base);
+            }
           }
 
           if (isClickOutside) {
