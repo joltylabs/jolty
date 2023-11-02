@@ -96,7 +96,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DROPDOWN + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    [OPTION_PREVENT_SCROLL]: false,
+    [OPTION_PREVENT_SCROLL]: true,
   };
 
   constructor(elem, opts) {

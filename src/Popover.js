@@ -71,7 +71,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
-    [OPTION_PREVENT_SCROLL]: false,
+    [OPTION_PREVENT_SCROLL]: true,
   };
 
   constructor(elem, opts) {
