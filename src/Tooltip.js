@@ -26,6 +26,7 @@ import {
   body,
   CANCEL,
   UI_EVENT_PREFIX,
+  INERT,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -125,6 +126,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     const { tooltip, base, opts, teleport } = this;
 
     updateOptsByData(opts, base, [TRANSITION, HIDE_MODE, TRIGGER]);
+
+    tooltip.toggleAttribute(INERT, !opts.interactive);
 
     this.transition = Transition.createOrUpdate(
       this.transition,
