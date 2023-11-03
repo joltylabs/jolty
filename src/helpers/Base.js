@@ -221,8 +221,13 @@ class Base {
     return this.constructor.Default;
   }
   static get(elem) {
-    if (elem === undefined) return [...this.instances.values()];
-    for (const [id, instance] of this.instances) {
+    const instances = this === Base ? Base.allInstances : this.instances;
+    if (elem === undefined) return [...instances.values()];
+    const entries =
+      this === Base
+        ? [...instances].map((instance) => [instance.id, instance])
+        : instances.entries();
+    for (const [id, instance] of entries) {
       if ([id, instance.base].includes(elem)) {
         return instance;
       }
