@@ -41,6 +41,7 @@ import {
   UI_PREFIX,
   TOP_LAYER_OPTIONS,
   TOP_LAYER_OPTIONS_NAMES,
+  FLOATING_DATA_ATTRIBUTE,
 } from "./helpers/constants";
 import {
   isString,
@@ -184,13 +185,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
               Dialog.get(event.target) ||
               parents(
                 event.target,
-                "[id]:where([data-ui-floating],.ui-dialog-init)",
+                `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
               ).find((parent) => {
-                const ins = Base.get(parent);
-                console.log(ins);
-                return ins;
+                return Base.get(parent);
               });
-
             if (!targetDialog || targetDialog === this) {
               isClickOutside =
                 isClickOutsideElem(base, event) &&
