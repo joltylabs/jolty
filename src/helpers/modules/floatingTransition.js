@@ -11,7 +11,6 @@ import {
   EVENT_CONTEXT_MENU_CLICK,
   EVENT_CLICK,
   EVENT_KEYUP,
-  OPTION_BACK_DISMISS,
   OPTION_LIGHT_DISMISS,
 } from "../constants";
 import { getDataSelector } from "../utils";

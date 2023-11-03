@@ -1,9 +1,4 @@
-import {
-  EVENT_KEYDOWN,
-  CANCEL,
-  OPTION_BACK_DISMISS,
-  UI_EVENT_PREFIX,
-} from "../constants";
+import { CANCEL, OPTION_BACK_DISMISS, UI_EVENT_PREFIX } from "../constants";
 import { isDialog } from "../is/index.js";
 import CloseWatcher from "../CloseWatcher.js";
 

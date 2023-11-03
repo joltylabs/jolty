@@ -1,6 +1,7 @@
 module.exports = {
   env: {
     node: true,
+    browser: true,
     es2021: true,
   },
   extends: "eslint:recommended",
@@ -18,8 +19,5 @@ module.exports = {
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
-  },
-  rules: {
-    "prefer-const": "error",
   },
 };

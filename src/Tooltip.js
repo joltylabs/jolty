@@ -24,9 +24,10 @@ import {
   TRIGGER,
   HIDE_MODE,
   body,
-  CANCEL,
-  UI_EVENT_PREFIX,
   INERT,
+  BEFORE,
+  END,
+  AFTER,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -59,7 +60,6 @@ import {
   addPopoverAttribute,
   destroyTopLayer,
 } from "./helpers/modules/toggleTopLayer.js";
-import { isDialog } from "./helpers/is/index.js";
 
 const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
 
@@ -135,13 +135,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       opts.transition,
     );
 
-    if (opts.moveToRoot) {
-      teleport.opts.to = body;
-      teleport.opts.position = "beforeend";
-    } else {
-      teleport.opts.to = base;
-      teleport.opts.position = "afterend";
-    }
+    teleport.opts.to = opts.moveToRoot ? body : base;
+    teleport.opts.position = opts.moveToRoot ? BEFORE + END : AFTER + END;
 
     addDismiss(this, tooltip);
 

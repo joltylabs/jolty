@@ -325,6 +325,7 @@ export const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
   : WEBKIT_PREFIX + CLIP_PATH;
 
 export const POPOVER_API_SUPPORTED =
+  // eslint-disable-next-line no-prototype-builtins
   HTMLElement.prototype.hasOwnProperty(POPOVER);
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
