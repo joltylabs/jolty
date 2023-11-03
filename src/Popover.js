@@ -19,6 +19,7 @@ import {
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_PREVENT_SCROLL,
   TOP_LAYER_OPTIONS_NAMES,
+  body,
 } from "./helpers/constants";
 
 import {
@@ -43,7 +44,6 @@ import {
   toggleConfirm,
   checkFloatings,
   togglePreventScroll,
-  addDialogCancel,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -82,11 +82,9 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     base.id = this.id;
 
-    addDialogCancel(this);
+    this.teleport = new Teleport(base, { disableAttributes: true });
 
     this._update();
-
-    this.teleport = new Teleport(base, { disableAttributes: true });
 
     return callShowInit(this);
   }
@@ -104,6 +102,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       base,
       opts.transition,
     );
+
+    this.teleport.opts.to = opts.moveToRoot ? body : null;
 
     this.updateToggler();
 

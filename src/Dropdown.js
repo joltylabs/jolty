@@ -33,6 +33,7 @@ import {
   UP,
   OPTION_PREVENT_SCROLL,
   TOP_LAYER_OPTIONS_NAMES,
+  body,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -64,10 +65,9 @@ import {
   callShowInit,
   checkFloatings,
   togglePreventScroll,
-  addDialogCancel,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
-import { isDialog, isFunction } from "./helpers/is/index.js";
+import { isFunction } from "./helpers/is/index.js";
 import {
   addPopoverAttribute,
   destroyTopLayer,
@@ -104,16 +104,16 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   init() {
     if (this.isInit) return;
 
-    this.base.id = this.id;
+    const { base, show, on } = this;
+
+    base.id = this.id;
+
+    this.teleport = new Teleport(base, { disableAttributes: true });
 
     this._update();
 
-    const { toggler, base, show, on } = this;
-
-    addDialogCancel(this);
-
     on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
-    on(toggler, EVENT_KEYDOWN, async (event) => {
+    on(this.toggler, EVENT_KEYDOWN, async (event) => {
       let arrowActivation = this.opts.arrowActivation;
       const { keyCode } = event;
 
@@ -126,7 +126,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       if (arrowActivated) {
         event.preventDefault();
         if (!this.isOpen) {
-          await show({ event, trigger: toggler });
+          await show({ event, trigger: this.toggler });
         }
         if (this.isAnimating && !this.isOpen) return;
         this.focusableElems
@@ -134,8 +134,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
           ?.focus();
       }
     });
-
-    this.teleport = new Teleport(base, { disableAttributes: true });
 
     return callShowInit(this);
   }
@@ -153,6 +151,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       base,
       opts.transition,
     );
+
+    this.teleport.opts.to = opts.moveToRoot ? body : null;
 
     this.updateToggler();
 

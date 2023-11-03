@@ -86,8 +86,43 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   constructor(elem, opts) {
     super(elem, opts);
   }
+  init() {
+    const { opts, anchor, id, isInit, emit } = this;
+
+    if (isInit) return;
+
+    anchor.id = id;
+
+    emit(EVENT_BEFORE_INIT);
+
+    this._cache = { [TITLE]: anchor[TITLE] };
+
+    const target = (this.tooltip = getElement(
+      opts.template(
+        opts[CONTENT] ??
+          anchor.getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + CONTENT) ??
+          anchor[TITLE],
+        this,
+      ),
+    ));
+    target.id ||= id + "-" + TARGET;
+
+    anchor.removeAttribute(TITLE);
+    toggleClass(
+      target,
+      anchor.getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + CLASS) ??
+        opts.tooltipClass,
+      true,
+    );
+
+    this.teleport = new Teleport(target, { disableAttributes: true });
+
+    this._update();
+
+    return callShowInit(this, target);
+  }
   _update() {
-    const { tooltip, base, opts } = this;
+    const { tooltip, base, opts, teleport } = this;
 
     updateOptsByData(opts, base, [TRANSITION, HIDE_MODE, TRIGGER]);
 
@@ -96,6 +131,14 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       tooltip,
       opts.transition,
     );
+
+    if (opts.moveToRoot) {
+      teleport.opts.to = body;
+      teleport.opts.position = "beforeend";
+    } else {
+      teleport.opts.to = base;
+      teleport.opts.position = "afterend";
+    }
 
     addDismiss(this, tooltip);
 
@@ -120,47 +163,6 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     }
     destroyTopLayer(tooltip);
     return baseDestroy(this, destroyOpts);
-  }
-  init() {
-    const { opts, anchor, id, isInit, emit } = this;
-
-    if (isInit) return;
-
-    anchor.id = id;
-
-    emit(EVENT_BEFORE_INIT);
-
-    this._cache = { [TITLE]: anchor[TITLE] };
-
-    const target = (this.tooltip = getElement(
-      opts.template(
-        opts[CONTENT] ??
-          anchor.getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + CONTENT) ??
-          anchor[TITLE],
-        this,
-      ),
-    ));
-    target.id ||= id + "-" + TARGET;
-
-    if (isDialog(this.tooltip)) {
-      this.on(this.tooltip, CANCEL + UI_EVENT_PREFIX, (e) =>
-        e.preventDefault(),
-      );
-    }
-
-    anchor.removeAttribute(TITLE);
-    toggleClass(
-      target,
-      anchor.getAttribute(DATA_UI_PREFIX + TOOLTIP + "-" + CLASS) ??
-        opts.tooltipClass,
-      true,
-    );
-
-    this._update();
-
-    this.teleport = new Teleport(target, { to: body, disableAttributes: true });
-
-    return callShowInit(this, target);
   }
 
   async toggle(s, params) {
