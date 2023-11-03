@@ -55,6 +55,7 @@ class Teleport {
     this.reset();
   }
   reset() {
+    console.log("reset");
     this.placeholder?.replaceWith(this.elem);
     this.placeholder = null;
     return this;
