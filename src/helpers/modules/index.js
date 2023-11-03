@@ -1,5 +1,5 @@
 export { default as addDismiss } from "./addDismiss";
-export { default as addBackDismiss } from "./addBackDismiss.js";
+export { default as toggleBackDismiss } from "./toggleBackDismiss.js";
 export { default as callAutofocus } from "./callAutofocus";
 export { default as baseDestroy } from "./baseDestroy";
 export { default as toggleOnInterection } from "./toggleOnInterection";
@@ -15,4 +15,3 @@ export { default as destroyInstance } from "./destroyInstance.js";
 export { default as togglePreventScroll } from "./togglePreventScroll.js";
 export { default as toggleMouseDownTarget } from "./toggleMouseDownTarget.js";
 export { default as toggleInitClass } from "./toggleInitClass.js";
-export { default as addDialogCancel } from "./addDialogCancel.js";

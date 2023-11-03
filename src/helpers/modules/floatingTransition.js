@@ -17,7 +17,7 @@ import {
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
 import { closest, focus } from "../dom/index.js";
-import addBackDismiss from "./addBackDismiss.js";
+import toggleBackDismiss from "./toggleBackDismiss.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
 import { toggleMouseDownTarget, togglePreventScroll } from "./index.js";
@@ -36,7 +36,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   if (s) {
     togglePreventScroll(instance, true);
-    teleport.move();
+    teleport.move(instance);
     instance[FLOATING] = new Floating({
       base,
       anchor,
@@ -83,12 +83,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
     instance.off(doc, EVENT_SUFFIX_LIGHT_DISMISS);
   }
 
-  opts[OPTION_BACK_DISMISS] &&
-    addBackDismiss(
-      instance,
-      s,
-      instance.toggler ? [instance.toggler, instance.base] : doc,
-    );
+  toggleBackDismiss(s, instance);
 
   if (s) {
     (opts.autofocus || opts.focusTrap) && callAutofocus(instance);
@@ -104,6 +99,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
       if (instance.placeholder) {
         target.replaceWith(instance.placeholder);
       }
+      teleport.reset();
       instance[FLOATING]?.destroy();
       instance[FLOATING] = null;
       toggleHideModeState(false, instance, target);

@@ -58,6 +58,7 @@ import {
   setAttribute,
   removeAttribute,
   animateClass,
+  parents,
 } from "./helpers/dom";
 import {
   arrayFrom,
@@ -77,7 +78,7 @@ import {
   addDismiss,
   baseDestroy,
   callAutofocus,
-  addBackDismiss,
+  toggleBackDismiss,
   callShowInit,
   toggleConfirm,
   addHashNavigation,
@@ -86,7 +87,6 @@ import {
   togglePreventScroll,
   FocusGuards,
   toggleMouseDownTarget,
-  addDialogCancel,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -180,7 +180,17 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
             isClickOutside =
               !this[CONTENT].contains(event.target) && !this._mousedownTarget;
           } else {
-            const targetDialog = Dialog.get(event.target);
+            const targetDialog =
+              Dialog.get(event.target) ||
+              parents(
+                event.target,
+                "[id]:where([data-ui-floating],.ui-dialog-init)",
+              ).find((parent) => {
+                const ins = Base.get(parent);
+                console.log(ins);
+                return ins;
+              });
+
             if (!targetDialog || targetDialog === this) {
               isClickOutside =
                 isClickOutsideElem(base, event) &&
@@ -213,9 +223,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       }
     });
 
-    if (isDialog(base)) {
-      addDialogCancel(this);
-    } else if (opts.a11y) {
+    if (opts.a11y && !isDialog(base)) {
       base[TABINDEX] = -1;
       base[ROLE] = DIALOG;
     }
@@ -324,7 +332,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   async toggle(s, params) {
-    const { opts, isOpen, emit, isAnimating, base, main, backdrop } = this;
+    const { opts, isOpen, emit, isAnimating, main, backdrop } = this;
 
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
@@ -418,10 +426,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       resetTransition(backdrop);
     }
 
-    if (opts[OPTION_BACK_DISMISS] && !isDialog(base)) {
-      addBackDismiss(this, s, base);
-    }
-
     toggleMouseDownTarget(this, main, s);
 
     if (s) {
@@ -429,6 +433,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     } else {
       this.returnFocusElem = null;
     }
+
+    toggleBackDismiss(s, this);
 
     awaitPromise(promise, () => {
       if (!s) {
