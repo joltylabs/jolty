@@ -29,6 +29,7 @@ import {
   FALSE,
   OPTION_MOVE_TO_ROOT,
   FLOATING,
+  OPTION_NON_MODAL,
 } from "./constants";
 import {
   getPosition,
@@ -143,7 +144,7 @@ export default class Floating {
 
     const { shrink, sticky, topLayer, moveToRoot, flip, placement } = this;
 
-    const targetIsModal = opts.modal && isDialog(target);
+    const targetIsModal = !opts[OPTION_NON_MODAL] && isDialog(target);
 
     const usePopoverApi = topLayer && !targetIsModal && POPOVER_API_SUPPORTED;
 

@@ -233,6 +233,7 @@ export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
 export const OPTION_TOP_LAYER = "topLayer";
 export const OPTION_MOVE_TO_ROOT = "moveToRoot";
 export const OPTION_LIGHT_DISMISS = "lightDismiss";
+export const OPTION_NON_MODAL = "nonModal";
 export const OPTION_BACK_DISMISS = "backDismiss";
 
 export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
@@ -251,7 +252,7 @@ export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
 
 export const TOP_LAYER_OPTIONS_NAMES = [
   OPTION_PREVENT_SCROLL,
-  MODAL,
+  OPTION_NON_MODAL,
   OPTION_TOP_LAYER,
   OPTION_MOVE_TO_ROOT,
   OPTION_LIGHT_DISMISS,
@@ -259,10 +260,10 @@ export const TOP_LAYER_OPTIONS_NAMES = [
 ];
 
 export const TOP_LAYER_OPTIONS = {
-  topLayer: true,
   root: BODY,
-  moveToRoot: false,
-  modal: true,
+  [OPTION_TOP_LAYER]: true,
+  [OPTION_MOVE_TO_ROOT]: false,
+  [OPTION_NON_MODAL]: false,
   [OPTION_LIGHT_DISMISS]: true,
   [OPTION_BACK_DISMISS]: true,
 };

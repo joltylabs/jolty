@@ -1,6 +1,7 @@
 import { isDialog } from "../is/index.js";
 import {
   MODAL,
+  OPTION_NON_MODAL,
   POPOVER,
   POPOVER_API_MODE_MANUAL,
   POPOVER_API_SUPPORTED,
@@ -15,7 +16,7 @@ export const destroyTopLayer = (elem) => {
 export const addPopoverAttribute = (instance, elem = instance.base) => {
   elem.popover =
     instance.opts.topLayer &&
-    (!isDialog(elem) || !instance.opts.modal) &&
+    (instance.opts[OPTION_NON_MODAL] || !isDialog(elem)) &&
     POPOVER_API_SUPPORTED
       ? POPOVER_API_MODE_MANUAL
       : null;
@@ -25,7 +26,7 @@ export const toggleTopLayer = (instance, s, keepTopLayer) => {
   const { constructor, opts } = instance;
   const target = instance[constructor.NAME];
   const targetIsDialog = isDialog(target);
-  const targetIsModal = targetIsDialog && opts.modal;
+  const targetIsModal = targetIsDialog && !opts[OPTION_NON_MODAL];
   const targetIsPopover =
     opts.topLayer && POPOVER_API_SUPPORTED && target.popover;
   if (s) {
