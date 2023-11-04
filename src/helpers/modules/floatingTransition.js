@@ -34,7 +34,6 @@ export default (instance, { s, animated, silent, eventParams }) => {
   s && toggleHideModeState(true, instance, target);
 
   if (s) {
-    togglePreventScroll(instance, true);
     teleport.move(instance);
     instance[FLOATING] = new Floating({
       base,
@@ -45,6 +44,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
       opts,
       instance,
     }).init();
+    togglePreventScroll(instance, true);
   }
 
   !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);

@@ -1,5 +1,6 @@
 import {
   ACTION_PREVENT,
+  AUTO,
   OPTION_PREVENT_SCROLL,
   PX,
   ROOT,
@@ -11,6 +12,7 @@ import {
 } from "../constants/index.js";
 import { arrayFrom } from "../utils/index.js";
 import Base from "../Base.js";
+import { isModal } from "../is/index.js";
 
 const PROPERTY_ROOT_SCROLLBAR_WIDTH =
   VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
@@ -25,17 +27,20 @@ const updateBodyScrollbarWidth = (s) => {
     : ROOT_ELEM.style.removeProperty(PROPERTY_ROOT_SCROLLBAR_WIDTH);
 };
 
-const findPreventScrollInstance = () =>
-  arrayFrom(Base.allInstances).find(
-    (inst) => inst.opts[OPTION_PREVENT_SCROLL] && inst.isOpen,
-  );
+const checkPreventScroll = (instance) => {
+  const preventScrollOption = instance.opts[OPTION_PREVENT_SCROLL];
+  if (!instance.isOpen) return;
+  return preventScrollOption === AUTO
+    ? isModal(instance.base)
+    : preventScrollOption;
+};
 
 export default (instance, s) => {
   if (
     (s &&
-      instance.opts[OPTION_PREVENT_SCROLL] &&
+      checkPreventScroll(instance) &&
       !ROOT_ELEM.classList.contains(PREVENT_SCROLL_CLASS)) ||
-    (!s && !findPreventScrollInstance())
+    (!s && !arrayFrom(Base.allInstances).find(checkPreventScroll))
   ) {
     updateBodyScrollbarWidth(s);
     ROOT_ELEM.classList.toggle(PREVENT_SCROLL_CLASS, s);

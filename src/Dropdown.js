@@ -34,6 +34,7 @@ import {
   OPTION_PREVENT_SCROLL,
   TOP_LAYER_OPTIONS_NAMES,
   body,
+  AUTO,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -95,7 +96,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     [TOGGLER]: null,
     [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [DROPDOWN + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-    [OPTION_PREVENT_SCROLL]: true,
+    [OPTION_PREVENT_SCROLL]: AUTO,
   };
 
   constructor(elem, opts) {

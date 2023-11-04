@@ -20,6 +20,7 @@ import {
   OPTION_PREVENT_SCROLL,
   TOP_LAYER_OPTIONS_NAMES,
   body,
+  AUTO,
 } from "./helpers/constants";
 
 import {
@@ -69,7 +70,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
-    [OPTION_PREVENT_SCROLL]: true,
+    [OPTION_PREVENT_SCROLL]: AUTO,
   };
 
   constructor(elem, opts) {

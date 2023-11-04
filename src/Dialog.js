@@ -41,6 +41,7 @@ import {
   TOP_LAYER_OPTIONS,
   TOP_LAYER_OPTIONS_NAMES,
   FLOATING_DATA_ATTRIBUTE,
+  AUTO,
 } from "./helpers/constants";
 import {
   isString,
@@ -117,7 +118,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
     preventHide: false,
-    [OPTION_PREVENT_SCROLL]: true,
+    [OPTION_PREVENT_SCROLL]: AUTO,
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${DIALOG}"]`,
@@ -410,8 +411,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
-      togglePreventScroll(this, true);
       this._toggleApi(true);
+      togglePreventScroll(this, true);
     } else if (!optReturnFocusAwait) {
       this._toggleApi(false, true);
       this.returnFocus();

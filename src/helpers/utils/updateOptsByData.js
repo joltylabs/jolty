@@ -1,4 +1,4 @@
-import { UI, TRUE, FALSE } from "../constants";
+import { UI, TRUE, FALSE, OPTION_PREVENT_SCROLL, AUTO } from "../constants";
 import upperFirst from "./upperFirst.js";
 import isArray from "../is/isArray.js";
 
@@ -14,12 +14,10 @@ export default (opts, { dataset }, names, booleanOptions) => {
     const hasAttribute = value !== undefined;
     if (hasAttribute) {
       if (booleanOptions?.includes(optionName)) {
-        value =
-          value === "" || value === TRUE
-            ? true
-            : value === FALSE
-            ? false
-            : undefined;
+        const isTrue = value === "" || value === TRUE;
+        const isFalse = value === FALSE;
+        const isAuto = value === AUTO && optionName === OPTION_PREVENT_SCROLL;
+        value = isTrue ? true : isFalse ? false : isAuto ? AUTO : undefined;
       } else if (value && value[0] === "{") {
         value = JSON.parse(value);
       }
