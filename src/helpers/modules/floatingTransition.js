@@ -9,6 +9,8 @@ import {
   POPOVER_API_SUPPORTED,
   POPOVER_API_MODE_MANUAL,
   OPTION_LIGHT_DISMISS,
+  AUTO,
+  OPTION_NON_MODAL,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
@@ -58,7 +60,11 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   const promise = transition?.run(s, animated);
 
-  if (opts[OPTION_LIGHT_DISMISS]) {
+  if (
+    opts[OPTION_LIGHT_DISMISS] === AUTO
+      ? !opts[OPTION_NON_MODAL]
+      : opts[OPTION_LIGHT_DISMISS]
+  ) {
     if (s) {
       addLightDismiss(instance);
     } else {

@@ -44,42 +44,39 @@ export default (instance, onHide) => {
 
     const _mousedownEvent = instance._mousedownEvent;
 
-    if (opts[OPTION_LIGHT_DISMISS]) {
-      let isClickOutside;
+    let isClickOutside;
 
-      if (constructor.NAME === DIALOG && instance.content) {
+    if (constructor.NAME === DIALOG && instance.content) {
+      isClickOutside =
+        !instance.content.contains(event.target) && !_mousedownEvent;
+    } else {
+      const targetInstance =
+        constructor.get(event.target) ||
+        parents(
+          event.target,
+          `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
+        ).find((parent) => {
+          return Base.get(parent);
+        });
+
+      if (!targetInstance || targetInstance === instance) {
+        if (
+          instance.floating &&
+          (instance.floating.anchor === event.target ||
+            instance.floating.anchor.contains(event.target))
+        )
+          return;
+
         isClickOutside =
-          !instance.content.contains(event.target) && !_mousedownEvent;
-        console.log(_mousedownEvent);
-      } else {
-        const targetInstance =
-          constructor.get(event.target) ||
-          parents(
-            event.target,
-            `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
-          ).find((parent) => {
-            return Base.get(parent);
-          });
-
-        if (!targetInstance || targetInstance === instance) {
-          if (
-            instance.floating &&
-            (instance.floating.anchor === event.target ||
-              instance.floating.anchor.contains(event.target))
-          )
-            return;
-
-          isClickOutside =
-            (!_mousedownEvent && isClickOutsideElem(base, event)) ||
-            (_mousedownEvent && isClickOutsideElem(base, _mousedownEvent));
-        }
+          (!_mousedownEvent && isClickOutsideElem(base, event)) ||
+          (_mousedownEvent && isClickOutsideElem(base, _mousedownEvent));
       }
+    }
 
-      if (isClickOutside) {
-        instance.hide({ event });
-        if (constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
-          emit(CANCEL, { event });
-        }
+    if (isClickOutside) {
+      instance.hide({ event });
+      if (constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
+        emit(CANCEL, { event });
       }
     }
 

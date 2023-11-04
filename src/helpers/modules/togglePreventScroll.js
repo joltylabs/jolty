@@ -1,6 +1,7 @@
 import {
   ACTION_PREVENT,
   AUTO,
+  OPTION_NON_MODAL,
   OPTION_PREVENT_SCROLL,
   PX,
   ROOT,
@@ -12,7 +13,6 @@ import {
 } from "../constants/index.js";
 import { arrayFrom } from "../utils/index.js";
 import Base from "../Base.js";
-import { isModal } from "../is/index.js";
 
 const PROPERTY_ROOT_SCROLLBAR_WIDTH =
   VAR_UI_PREFIX + ROOT + "-scrollbar-" + WIDTH;
@@ -31,7 +31,7 @@ const checkPreventScroll = (instance) => {
   const preventScrollOption = instance.opts[OPTION_PREVENT_SCROLL];
   if (!instance.isOpen) return;
   return preventScrollOption === AUTO
-    ? isModal(instance.base)
+    ? !instance.opts[OPTION_NON_MODAL]
     : preventScrollOption;
 };
 
