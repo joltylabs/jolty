@@ -27,9 +27,13 @@ export default (instance, onHide) => {
       EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
   ];
 
-  instance.on(base, EVENT_MOUSEDOWN + EVENT_SUFFIX_LIGHT_DISMISS, (e) => {
-    instance._mousedownEvent = e;
-  });
+  instance.on(
+    (constructor.NAME === DIALOG && instance.content) || base,
+    EVENT_MOUSEDOWN + EVENT_SUFFIX_LIGHT_DISMISS,
+    (e) => {
+      instance._mousedownEvent = e;
+    },
+  );
 
   on(document, events, (event) => {
     if (
@@ -46,6 +50,7 @@ export default (instance, onHide) => {
       if (constructor.NAME === DIALOG && instance.content) {
         isClickOutside =
           !instance.content.contains(event.target) && !_mousedownEvent;
+        console.log(_mousedownEvent);
       } else {
         const targetInstance =
           constructor.get(event.target) ||
@@ -55,6 +60,7 @@ export default (instance, onHide) => {
           ).find((parent) => {
             return Base.get(parent);
           });
+
         if (!targetInstance || targetInstance === instance) {
           if (
             instance.floating &&
@@ -62,6 +68,7 @@ export default (instance, onHide) => {
               instance.floating.anchor.contains(event.target))
           )
             return;
+
           isClickOutside =
             (!_mousedownEvent && isClickOutsideElem(base, event)) ||
             (_mousedownEvent && isClickOutsideElem(base, _mousedownEvent));
