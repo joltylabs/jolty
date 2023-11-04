@@ -16,7 +16,7 @@ import Base from "../Base.js";
 import { isClickOutsideElem } from "../utils/index.js";
 
 export default (instance, onHide) => {
-  const { constructor, opts, on, emit, floating } = instance;
+  const { constructor, opts, on, emit } = instance;
   const base = instance[constructor.NAME];
 
   const events = [
@@ -57,8 +57,9 @@ export default (instance, onHide) => {
           });
         if (!targetInstance || targetInstance === instance) {
           if (
-            (floating && floating.anchor === event.target) ||
-            floating.anchor.contains(event.target)
+            instance.floating &&
+            (instance.floating.anchor === event.target ||
+              instance.floating.anchor.contains(event.target))
           )
             return;
           isClickOutside =
