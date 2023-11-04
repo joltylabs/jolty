@@ -66,6 +66,7 @@ import {
   callShowInit,
   checkFloatings,
   togglePreventScroll,
+  addLightDismiss,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 import { isFunction } from "./helpers/is/index.js";
@@ -112,6 +113,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     this.teleport = new Teleport(base, { disableAttributes: true });
 
     this._update();
+
+    addLightDismiss(this);
 
     on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(this.toggler, EVENT_KEYDOWN, async (event) => {

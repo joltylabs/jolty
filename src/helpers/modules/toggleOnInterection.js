@@ -62,6 +62,7 @@ export default (
         pointerType = null;
         return;
       }
+
       toggle(null, { event, trigger: toggler });
     });
   }

@@ -13,5 +13,5 @@ export { default as updateModule } from "./updateModule.js";
 export { default as checkFloatings } from "./checkFloatings.js";
 export { default as destroyInstance } from "./destroyInstance.js";
 export { default as togglePreventScroll } from "./togglePreventScroll.js";
-export { default as toggleMouseDownTarget } from "./toggleMouseDownTarget.js";
 export { default as toggleInitClass } from "./toggleInitClass.js";
+export { default as addLightDismiss } from "./addLightDismiss.js";

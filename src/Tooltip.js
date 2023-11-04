@@ -54,6 +54,7 @@ import {
   toggleOnInterection,
   addDismiss,
   checkFloatings,
+  addLightDismiss,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 import {
@@ -119,6 +120,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     this.teleport = new Teleport(target, { disableAttributes: true });
 
     this._update();
+
+    addLightDismiss(this);
 
     return callShowInit(this, target);
   }

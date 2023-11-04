@@ -59,7 +59,6 @@ import {
   setAttribute,
   removeAttribute,
   animateClass,
-  parents,
 } from "./helpers/dom";
 import {
   arrayFrom,
@@ -71,7 +70,6 @@ import {
   getOptionElem,
   updateOptsByData,
   awaitPromise,
-  isClickOutsideElem,
   resetTransition,
   camelToKebab,
 } from "./helpers/utils";
@@ -87,7 +85,7 @@ import {
   updateModule,
   togglePreventScroll,
   FocusGuards,
-  toggleMouseDownTarget,
+  addLightDismiss,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -158,56 +156,13 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this._update();
     this.updateAriaTargets();
 
-    let isClosing = false;
-
-    on(
-      document,
-      [
-        EVENT_CLICK + UI_EVENT_PREFIX,
-        opts[OPTION_LIGHT_DISMISS] &&
-          (opts[OPTION_LIGHT_DISMISS]?.contextMenuClick ?? true) &&
-          EVENT_CONTEXT_MENU_CLICK + UI_EVENT_PREFIX,
-      ],
-      (event) => {
-        if (
-          !this.isOpen ||
-          (opts.awaitAnimation && this.transition?.isAnimating)
-        )
-          return;
-
-        if (opts[OPTION_LIGHT_DISMISS]) {
-          let isClickOutside;
-          if (this[CONTENT]) {
-            isClickOutside =
-              !this[CONTENT].contains(event.target) && !this._mousedownTarget;
-          } else {
-            const targetDialog =
-              Dialog.get(event.target) ||
-              parents(
-                event.target,
-                `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
-              ).find((parent) => {
-                return Base.get(parent);
-              });
-            if (!targetDialog || targetDialog === this) {
-              isClickOutside =
-                isClickOutsideElem(base, event) &&
-                (!this._mousedownTarget || this._mousedownTarget === base);
-            }
-          }
-
-          if (isClickOutside) {
-            this.hide({ event });
-            emit(CANCEL, { event });
-          }
-        }
-
-        this._mousedownTarget = null;
-
+    let isClosing;
+    if (opts[OPTION_LIGHT_DISMISS]) {
+      addLightDismiss(this, () => {
         isClosing = true;
         requestAnimationFrame(() => (isClosing = false));
-      },
-    );
+      });
+    }
 
     on(document, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
       if (isClosing) return;
@@ -225,6 +180,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       base[TABINDEX] = -1;
       base[ROLE] = DIALOG;
     }
+
+    opts[CONFIRM] && toggleConfirm(this);
 
     return callShowInit(this);
   }
@@ -371,8 +328,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     this.isOpen = s;
 
-    toggleConfirm(s, this);
-
     const backdropIsOpen = arrayFrom(this.instances.values()).find(
       (instance) =>
         instance !== this && instance.isOpen && instance[BACKDROP] === backdrop,
@@ -423,8 +378,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     if (__initial && !animated && backdrop) {
       resetTransition(backdrop);
     }
-
-    toggleMouseDownTarget(this, main, s);
 
     if (s) {
       (opts.autofocus || opts.focusTrap) && callAutofocus(this);

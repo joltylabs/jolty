@@ -42,9 +42,9 @@ import {
   toggleOnInterection,
   floatingTransition,
   callShowInit,
-  toggleConfirm,
   checkFloatings,
   togglePreventScroll,
+  toggleConfirm,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -79,13 +79,15 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   init() {
     if (this.isInit) return;
 
-    const { base } = this;
+    const { base, opts } = this;
 
     base.id = this.id;
 
     this.teleport = new Teleport(base, { disableAttributes: true });
 
     this._update();
+
+    opts[CONFIRM] && toggleConfirm(this);
 
     return callShowInit(this);
   }
@@ -157,8 +159,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     a11y && (toggler[ARIA_EXPANDED] = !!s);
-
-    toggleConfirm(s, this);
 
     const promise = floatingTransition(this, {
       s,

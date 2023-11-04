@@ -19,7 +19,7 @@ import { closest, focus } from "../dom/index.js";
 import toggleBackDismiss from "./toggleBackDismiss.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
-import { toggleMouseDownTarget, togglePreventScroll } from "./index.js";
+import { addLightDismiss, togglePreventScroll } from "./index.js";
 import { isModal } from "../is/index.js";
 
 export const EVENT_SUFFIX_LIGHT_DISMISS = "." + OPTION_LIGHT_DISMISS;
@@ -61,25 +61,12 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   const promise = transition?.run(s, animated);
 
-  toggleMouseDownTarget(instance, target, s);
-
-  if (s && opts[OPTION_LIGHT_DISMISS]) {
-    const lightDismissEvents = [
-      EVENT_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
-      EVENT_KEYUP + EVENT_SUFFIX_LIGHT_DISMISS,
-      (opts[OPTION_LIGHT_DISMISS].contextMenuClick ?? true) &&
-        EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
-    ];
-    instance.on(doc, lightDismissEvents, (event) => {
-      if (!instance.isOpen) return;
-      if (!instance._mousedownTarget) {
-        !closest(event.target, [toggler ?? base, target]) &&
-          instance.hide({ event });
-      }
-      instance._mousedownTarget = null;
-    });
-  } else {
-    instance.off(doc, EVENT_SUFFIX_LIGHT_DISMISS);
+  if (opts[OPTION_LIGHT_DISMISS]) {
+    if (s) {
+      addLightDismiss(instance);
+    } else {
+      instance.off(doc, EVENT_SUFFIX_LIGHT_DISMISS);
+    }
   }
 
   toggleBackDismiss(s, instance);
