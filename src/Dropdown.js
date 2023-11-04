@@ -35,7 +35,6 @@ import {
   TOP_LAYER_OPTIONS_NAMES,
   body,
   AUTO,
-  OPTION_LIGHT_DISMISS,
   DISMISS,
 } from "./helpers/constants";
 
@@ -68,7 +67,6 @@ import {
   callShowInit,
   checkFloatings,
   togglePreventScroll,
-  addLightDismiss,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 import { isFunction } from "./helpers/is/index.js";

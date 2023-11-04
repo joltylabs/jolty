@@ -8,14 +8,11 @@ import {
   FLOATING,
   POPOVER_API_SUPPORTED,
   POPOVER_API_MODE_MANUAL,
-  EVENT_CONTEXT_MENU_CLICK,
-  EVENT_CLICK,
-  EVENT_KEYUP,
   OPTION_LIGHT_DISMISS,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
-import { closest, focus } from "../dom/index.js";
+import { focus } from "../dom/index.js";
 import toggleBackDismiss from "./toggleBackDismiss.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";

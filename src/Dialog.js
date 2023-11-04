@@ -10,7 +10,6 @@ import {
   EVENT_SHOW,
   EVENT_HIDE,
   EVENT_CLICK,
-  EVENT_CONTEXT_MENU_CLICK,
   EVENT_HIDE_PREVENTED,
   EVENT_BEFORE_INIT,
   EVENT_HIDDEN,
@@ -20,7 +19,6 @@ import {
   NAME,
   EVENT_BEFORE_HIDE,
   EVENT_BEFORE_SHOW,
-  CANCEL,
   CONFIRM,
   CLASS_ACTIVE,
   TOGGLER,
@@ -40,7 +38,6 @@ import {
   UI_PREFIX,
   TOP_LAYER_OPTIONS,
   TOP_LAYER_OPTIONS_NAMES,
-  FLOATING_DATA_ATTRIBUTE,
   AUTO,
   DISMISS,
 } from "./helpers/constants";
@@ -288,7 +285,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   async toggle(s, params) {
-    const { opts, isOpen, emit, isAnimating, main, backdrop } = this;
+    const { opts, isOpen, emit, isAnimating, backdrop } = this;
 
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);

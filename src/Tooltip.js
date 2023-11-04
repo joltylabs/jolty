@@ -55,7 +55,6 @@ import {
   toggleOnInterection,
   addDismiss,
   checkFloatings,
-  addLightDismiss,
 } from "./helpers/modules";
 import Teleport from "./helpers/Teleport.js";
 import {
