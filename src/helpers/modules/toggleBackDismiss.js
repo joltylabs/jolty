@@ -23,7 +23,7 @@ export default function (s, instance) {
       instance.hide({ event });
     };
   } else {
-    instance._closeWatcher.destroy();
+    instance._closeWatcher?.destroy();
     instance._closeWatcher = null;
   }
 }
