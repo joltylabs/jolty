@@ -23,6 +23,7 @@ import {
   REGION,
   CLASS_ACTIVE_SUFFIX,
   CLASS_ACTIVE,
+  DISMISS,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
 import { fragment, inDOM, toggleClass } from "./helpers/dom";
@@ -91,6 +92,17 @@ class Toast extends ToggleMixin(Base, TOAST) {
     }
     super(elem, opts);
   }
+  init() {
+    if (this.isInit) return;
+
+    this.base.id = this.id;
+
+    this._update();
+
+    this.opts[DISMISS] && addDismiss(this);
+
+    return callShowInit(this);
+  }
   _update() {
     const { opts, base, autohide, hide } = this;
 
@@ -122,23 +134,13 @@ class Toast extends ToggleMixin(Base, TOAST) {
       base[ROLE] = a11y[ROLE];
       base[ARIA_LIVE] = a11y[ARIA_LIVE];
     }
-
-    addDismiss(this);
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;
     baseDestroy(this, { remove: true, ...destroyOpts });
     return this;
   }
-  init() {
-    if (this.isInit) return;
 
-    this.base.id = this.id;
-
-    this._update();
-
-    return callShowInit(this);
-  }
   async toggle(s, params) {
     const {
       transition,

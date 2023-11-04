@@ -42,6 +42,7 @@ import {
   TOP_LAYER_OPTIONS_NAMES,
   FLOATING_DATA_ATTRIBUTE,
   AUTO,
+  DISMISS,
 } from "./helpers/constants";
 import {
   isString,
@@ -182,6 +183,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     opts[CONFIRM] && toggleConfirm(this);
+    opts[OPTION_HASH_NAVIGATION] && addHashNavigation(this);
+    opts[DISMISS] && addDismiss(this);
 
     return callShowInit(this);
   }
@@ -237,8 +240,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
 
     addPopoverAttribute(this);
-    addHashNavigation(this);
-    addDismiss(this);
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;

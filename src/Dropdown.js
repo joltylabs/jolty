@@ -35,6 +35,8 @@ import {
   TOP_LAYER_OPTIONS_NAMES,
   body,
   AUTO,
+  OPTION_LIGHT_DISMISS,
+  DISMISS,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -106,7 +108,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   init() {
     if (this.isInit) return;
 
-    const { base, show, on } = this;
+    const { base, show, on, opts } = this;
 
     base.id = this.id;
 
@@ -114,11 +116,9 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     this._update();
 
-    addLightDismiss(this);
-
     on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
     on(this.toggler, EVENT_KEYDOWN, async (event) => {
-      let arrowActivation = this.opts.arrowActivation;
+      let arrowActivation = opts.arrowActivation;
       const { keyCode } = event;
 
       if (DIRECTIONS[arrowActivation]) {
@@ -138,6 +138,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
           ?.focus();
       }
     });
+
+    opts[DISMISS] && addDismiss(this);
 
     return callShowInit(this);
   }
@@ -183,7 +185,6 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     addPopoverAttribute(this);
     toggleOnInterection(this);
-    addDismiss(this);
   }
   updateToggler() {
     const { opts, id } = this;

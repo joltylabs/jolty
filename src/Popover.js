@@ -21,6 +21,7 @@ import {
   TOP_LAYER_OPTIONS_NAMES,
   body,
   AUTO,
+  DISMISS,
 } from "./helpers/constants";
 
 import {
@@ -88,6 +89,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     this._update();
 
     opts[CONFIRM] && toggleConfirm(this);
+    opts[DISMISS] && addDismiss(this);
 
     return callShowInit(this);
   }
@@ -111,7 +113,6 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     this.updateToggler();
 
     addPopoverAttribute(this);
-    addDismiss(this);
     toggleOnInterection(this);
   }
   updateToggler() {

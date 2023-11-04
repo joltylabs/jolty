@@ -28,6 +28,7 @@ import {
   BEFORE,
   END,
   AFTER,
+  DISMISS,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -121,7 +122,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     this._update();
 
-    addLightDismiss(this);
+    opts[DISMISS] && addDismiss(this, target);
 
     return callShowInit(this, target);
   }
@@ -140,8 +141,6 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     teleport.opts.to = opts.moveToRoot ? body : base;
     teleport.opts.position = opts.moveToRoot ? BEFORE + END : AFTER + END;
-
-    addDismiss(this, tooltip);
 
     addPopoverAttribute(this, tooltip);
     toggleOnInterection(this, base, tooltip);

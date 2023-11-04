@@ -58,6 +58,7 @@ import {
   UNTIL_FOUND,
   MODE_HIDDEN_UNTIL_FOUND,
   TRANSITION,
+  DISMISS,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import {
@@ -500,7 +501,7 @@ class Tablist extends Base {
     );
     tabInstance.is = this.isTab.bind(this, tabInstance);
 
-    addDismiss(this, tabpanel, tabInstance.hide);
+    opts[DISMISS] && addDismiss(this, tabpanel, tabInstance.hide);
 
     if (opts[HIDE_MODE] === ACTION_REMOVE && tabpanel[HIDDEN]) {
       toggleHideModeState(false, this, tabpanel, tabInstance);

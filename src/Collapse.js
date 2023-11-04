@@ -24,6 +24,7 @@ import {
   OPTION_AUTODESTROY,
   UNTIL_FOUND,
   MODE_HIDDEN_UNTIL_FOUND,
+  DISMISS,
 } from "./helpers/constants";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -79,6 +80,9 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     this._update();
 
+    this.opts[OPTION_HASH_NAVIGATION] && addHashNavigation(this);
+    this.opts[DISMISS] && addDismiss(this);
+
     return callShowInit(this);
   }
   _update() {
@@ -113,9 +117,6 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     );
 
     this.updateTriggers();
-
-    addDismiss(this);
-    addHashNavigation(this);
   }
   destroy(destroyOpts) {
     // eslint-disable-next-line prefer-const
