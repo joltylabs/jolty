@@ -22,8 +22,7 @@ export default (instance, onHide) => {
   const events = [
     EVENT_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
     EVENT_KEYUP + EVENT_SUFFIX_LIGHT_DISMISS,
-    opts[OPTION_LIGHT_DISMISS] &&
-      (opts[OPTION_LIGHT_DISMISS]?.contextMenuClick ?? true) &&
+    (opts[OPTION_LIGHT_DISMISS]?.contextMenuClick ?? true) &&
       EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
   ];
 

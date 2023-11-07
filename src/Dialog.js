@@ -40,7 +40,8 @@ import {
   TOP_LAYER_OPTIONS_NAMES,
   AUTO,
   DISMISS,
-  OPTION_NON_MODAL,
+  MODAL,
+  OPTION_BACK_DISMISS,
 } from "./helpers/constants";
 import {
   isString,
@@ -111,7 +112,9 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   static Default = {
     ...DEFAULT_OPTIONS,
     ...TOP_LAYER_OPTIONS,
+    [MODAL]: true,
     [OPTION_LIGHT_DISMISS]: AUTO,
+    [OPTION_BACK_DISMISS]: AUTO,
     eventPrefix: getEventsPrefix(DIALOG),
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
@@ -159,7 +162,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     let isClosing;
     if (
       opts[OPTION_LIGHT_DISMISS] === AUTO
-        ? !opts[OPTION_NON_MODAL]
+        ? opts[MODAL]
         : opts[OPTION_LIGHT_DISMISS]
     ) {
       addLightDismiss(this, () => {

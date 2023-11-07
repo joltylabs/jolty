@@ -10,7 +10,7 @@ import {
   POPOVER_API_MODE_MANUAL,
   OPTION_LIGHT_DISMISS,
   AUTO,
-  OPTION_NON_MODAL,
+  MODAL,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
@@ -62,7 +62,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   if (
     opts[OPTION_LIGHT_DISMISS] === AUTO
-      ? !opts[OPTION_NON_MODAL]
+      ? opts[MODAL]
       : opts[OPTION_LIGHT_DISMISS]
   ) {
     if (s) {

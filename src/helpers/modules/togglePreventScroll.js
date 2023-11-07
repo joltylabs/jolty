@@ -1,7 +1,7 @@
 import {
   ACTION_PREVENT,
   AUTO,
-  OPTION_NON_MODAL,
+  MODAL,
   OPTION_PREVENT_SCROLL,
   PX,
   ROOT,
@@ -31,7 +31,7 @@ const checkPreventScroll = (instance) => {
   const preventScrollOption = instance.opts[OPTION_PREVENT_SCROLL];
   if (!instance.isOpen) return;
   return preventScrollOption === AUTO
-    ? !instance.opts[OPTION_NON_MODAL]
+    ? instance.opts[MODAL]
     : preventScrollOption;
 };
 
