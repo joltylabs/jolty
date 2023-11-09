@@ -2,6 +2,7 @@ import { ACTION_ON, ACTION_OFF, ACTION_EMIT, ACTION_ONCE } from "./constants";
 import { isString, isObject } from "./is";
 import { closest, each } from "./dom";
 import { strToArray, arrayFrom } from "./utils";
+import getElements from "./dom/getElements.js";
 
 const getOptsObj = (args, newOpts) => {
   args = arrayFrom(args);
@@ -110,8 +111,10 @@ class EventHandler {
     } else {
       if (elems === "*") {
         elems = arrayFrom(eventsSet).map((set) => set.elem);
+      } else {
+        elems = getElements(elems);
       }
-      return each(elems, (elem) => {
+      elems.forEach((elem) => {
         if (events) {
           strToArray(events).forEach((eventFullName) => {
             const { event, namespace } = this.getNamespaces(eventFullName);

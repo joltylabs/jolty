@@ -26,7 +26,7 @@ export default (instance, onHide) => {
       EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
   ];
 
-  instance.on(
+  on(
     (constructor.NAME === DIALOG && instance.content) || base,
     EVENT_MOUSEDOWN + EVENT_SUFFIX_LIGHT_DISMISS,
     (e) => {

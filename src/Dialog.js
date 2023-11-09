@@ -42,6 +42,7 @@ import {
   DISMISS,
   MODAL,
   OPTION_BACK_DISMISS,
+  EVENT_SUFFIX_LIGHT_DISMISS,
 } from "./helpers/constants";
 import {
   isString,
@@ -159,20 +160,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     this._update();
     this.updateAriaTargets();
 
-    let isClosing;
-    if (
-      opts[OPTION_LIGHT_DISMISS] === AUTO
-        ? opts[MODAL]
-        : opts[OPTION_LIGHT_DISMISS]
-    ) {
-      addLightDismiss(this, () => {
-        isClosing = true;
-        requestAnimationFrame(() => (isClosing = false));
-      });
-    }
-
     on(document, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
-      if (isClosing) return;
+      if (this._isClosing) return;
       const togglers = this._togglers;
       const trigger = isString(togglers)
         ? event.target.closest(togglers)
@@ -393,6 +382,21 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     toggleBackDismiss(s, this);
+
+    if (s) {
+      if (
+        opts[OPTION_LIGHT_DISMISS] === AUTO
+          ? opts[MODAL]
+          : opts[OPTION_LIGHT_DISMISS]
+      ) {
+        addLightDismiss(this, () => {
+          this._isClosing = true;
+          requestAnimationFrame(() => (this._isClosing = false));
+        });
+      }
+    } else {
+      this.off("*", EVENT_SUFFIX_LIGHT_DISMISS);
+    }
 
     awaitPromise(promise, () => {
       if (!s) {

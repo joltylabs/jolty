@@ -68,7 +68,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
     if (s) {
       addLightDismiss(instance);
     } else {
-      instance.off(doc, EVENT_SUFFIX_LIGHT_DISMISS);
+      instance.off("*", EVENT_SUFFIX_LIGHT_DISMISS);
     }
   }
 
