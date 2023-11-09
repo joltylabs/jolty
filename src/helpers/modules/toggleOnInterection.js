@@ -72,7 +72,7 @@ export default (
   if (triggerFocus) {
     events.push(EVENT_FOCUSIN + PREFIX, EVENT_FOCUSOUT + PREFIX);
 
-    triggerClick &&
+    (triggerClick || triggerFocus) &&
       on(toggler, EVENT_MOUSEDOWN, () => {
         isMouseDown = true;
         clearTimeout(hoverTimer);
@@ -83,7 +83,6 @@ export default (
   if (triggerHover || triggerFocus) {
     on([toggler, target], events, (event) => {
       const { type } = event;
-
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
       if (
         (type === EVENT_FOCUSIN && isMouseDown) ||

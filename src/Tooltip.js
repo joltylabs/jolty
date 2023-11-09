@@ -22,13 +22,13 @@ import {
   CLASS_ACTIVE,
   TRANSITION,
   TRIGGER,
-  HIDE_MODE,
   body,
   INERT,
   BEFORE,
   END,
   AFTER,
   DISMISS,
+  ARROW,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -47,6 +47,7 @@ import {
   getEventsPrefix,
   getClassActive,
   updateOptsByData,
+  kebabToCamel,
 } from "./helpers/utils";
 import {
   baseDestroy,
@@ -72,7 +73,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     eventPrefix: getEventsPrefix(TOOLTIP),
     placement: TOP,
     template: (content) =>
-      `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-arrow" data-${UI_TOOLTIP}-arrow></div><div class="${UI_TOOLTIP}-content">${content}</div></div>`,
+      `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-${ARROW}" data-${UI_TOOLTIP}-${ARROW}></div><div class="${UI_TOOLTIP}-${CONTENT}">${content}</div></div>`,
     interactive: false,
     removeTitle: true,
     tooltipClass: "",
@@ -128,7 +129,10 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   _update() {
     const { tooltip, base, opts, teleport } = this;
 
-    updateOptsByData(opts, base, [TRANSITION, HIDE_MODE, TRIGGER]);
+    updateOptsByData(opts, base, [
+      TRANSITION,
+      [TRIGGER, kebabToCamel(TOOLTIP + "-" + TRIGGER)],
+    ]);
 
     tooltip.toggleAttribute(INERT, !opts.interactive);
 
