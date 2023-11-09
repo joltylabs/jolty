@@ -75,7 +75,9 @@ export default (
     (triggerClick || triggerFocus) &&
       on(toggler, EVENT_MOUSEDOWN, () => {
         isMouseDown = true;
-        clearTimeout(hoverTimer);
+        if (instance.isOpen) {
+          clearTimeout(hoverTimer);
+        }
         requestAnimationFrame(() => (isMouseDown = false));
       });
   }
@@ -86,7 +88,12 @@ export default (
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
       if (
         (type === EVENT_FOCUSIN && isMouseDown) ||
-        (type === EVENT_FOCUSOUT && triggerHover && target.matches(":" + HOVER))
+        (type === EVENT_FOCUSOUT &&
+          triggerHover &&
+          toggler.matches(":" + HOVER)) ||
+        (type === EVENT_MOUSELEAVE &&
+          triggerFocus &&
+          toggler.matches(":" + FOCUS))
       ) {
         return;
       }
