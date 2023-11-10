@@ -28,6 +28,7 @@ export const toggleTopLayer = (instance, s, keepTopLayer) => {
   const targetIsModal = targetIsDialog && opts[MODAL];
   const targetIsPopover =
     opts.topLayer && POPOVER_API_SUPPORTED && target.popover;
+
   if (s) {
     if (targetIsDialog) {
       if (targetIsModal) {
@@ -36,6 +37,7 @@ export const toggleTopLayer = (instance, s, keepTopLayer) => {
         constructor.dispatchTopLayer(MODAL);
       } else {
         if (targetIsPopover) {
+          target.close?.();
           target.showPopover();
           constructor.dispatchTopLayer(POPOVER);
         } else {
