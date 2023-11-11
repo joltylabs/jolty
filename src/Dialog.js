@@ -235,6 +235,15 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
 
     addPopoverAttribute(this);
+
+    base.dataset.dialogCurrentOptions = [
+      opts[MODAL] && MODAL,
+      (opts[OPTION_PREVENT_SCROLL] === AUTO
+        ? opts[MODAL]
+        : opts[OPTION_PREVENT_SCROLL]) && camelToKebab(OPTION_PREVENT_SCROLL),
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;

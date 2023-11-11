@@ -47,9 +47,11 @@ export default class FocusGuards {
         focusFirst = true;
       }
 
-      arrayFrom(target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR))
-        .at(!focusFirst && isGuardBefore ? -1 : 0)
-        .focus();
+      (
+        arrayFrom(target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR)).at(
+          !focusFirst && isGuardBefore ? -1 : 0,
+        ) || target
+      )?.focus();
     };
 
     this.focusGuards = [BEFORE, AFTER].map((methodName) => {
