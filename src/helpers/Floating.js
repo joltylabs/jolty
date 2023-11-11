@@ -30,6 +30,8 @@ import {
   OPTION_MOVE_TO_ROOT,
   FLOATING,
   MODAL,
+  RIGHT,
+  BOTTOM,
 } from "./constants";
 import {
   getPosition,
@@ -120,6 +122,13 @@ export default class Floating {
         getPropertyValue(anchorStyles, PREFIX + variableName) ||
         getPropertyValue(targetStyles, PREFIX + variableName));
     });
+
+    const border = Object.fromEntries(
+      [TOP, RIGHT, BOTTOM, LEFT].map((side) => [
+        side,
+        parseFloat(getPropertyValue(targetStyles, `border-${side}-width`)),
+      ]),
+    );
 
     OPTIONS.forEach((name) => {
       if (name === FLIP) {
@@ -217,6 +226,7 @@ export default class Floating {
       offset,
       boundaryOffset,
       padding,
+      border,
       minHeight: parseFloat(targetStyles.minHeight) || 0,
       minWidth: parseFloat(targetStyles.minWidth) || 0,
       isRtl: isRtl(anchor),

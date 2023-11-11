@@ -32,6 +32,7 @@ export default function ({
   sticky = false,
   minWidth = 0,
   minHeight = 0,
+  border,
   isRtl = false,
 }) {
   boundaryOffset = createInset(boundaryOffset, false, isRtl);
@@ -250,9 +251,12 @@ export default function ({
       so += shift + max(0, -currentSize[mirrorSize] / 2);
 
       let mo = -arrow[mirrorSize] / 2 + (isMainDir ? -offset : offset);
+
       if (isMainDir) {
         mo += currentSize[size];
+        mo = mo - border[dir] - border[MIRROR[dir]];
       }
+
       arrowPosition = hor ? [mo, so] : [so, mo];
     }
 
