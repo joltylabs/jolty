@@ -280,7 +280,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     );
 
     if (a11y) {
-      wrapper[TABINDEX] = -1;
+      wrapper.setAttribute(TABINDEX, -1);
       wrapper[ROLE] = REGION;
     }
 

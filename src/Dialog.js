@@ -173,7 +173,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     });
 
     if (opts.a11y && !isDialog(base)) {
-      base[TABINDEX] = -1;
+      base.setAttribute(TABINDEX, -1);
       base[ROLE] = DIALOG;
     }
 

@@ -224,7 +224,7 @@ class Tablist extends Base {
         setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
         tab[ROLE] = a11y[OPTION_TAB_ROLE];
         if (!/BUTTON|A/.test(tab.nodeName) && !tab.hasAttribute(TABINDEX)) {
-          tab[TABINDEX] = 0;
+          tab.setAttribute(TABINDEX, 0);
         }
         tabpanel[ROLE] = a11y[OPTION_TABPANEL_ROLE];
         setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
