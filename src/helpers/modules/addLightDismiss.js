@@ -17,7 +17,7 @@ import { isClickOutsideElem } from "../utils/index.js";
 
 export default (instance, onHide) => {
   const { constructor, opts, on, emit } = instance;
-  const base = instance[constructor.NAME];
+  const base = instance.main || instance[constructor.NAME];
 
   const events = [
     EVENT_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
@@ -26,13 +26,9 @@ export default (instance, onHide) => {
       EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
   ];
 
-  on(
-    (constructor.NAME === DIALOG && instance.content) || base,
-    EVENT_MOUSEDOWN + EVENT_SUFFIX_LIGHT_DISMISS,
-    (e) => {
-      instance._mousedownEvent = e;
-    },
-  );
+  on(base, EVENT_MOUSEDOWN + EVENT_SUFFIX_LIGHT_DISMISS, (e) => {
+    instance._mousedownEvent = e;
+  });
 
   on(document, events, (event) => {
     if (
@@ -45,31 +41,26 @@ export default (instance, onHide) => {
 
     let isClickOutside;
 
-    if (constructor.NAME === DIALOG && instance.content) {
+    const targetInstance =
+      constructor.get(event.target) ||
+      parents(
+        event.target,
+        `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
+      ).find((parent) => {
+        return Base.get(parent);
+      });
+
+    if (!targetInstance || targetInstance === instance || instance.main) {
+      if (
+        instance.floating &&
+        (instance.floating.anchor === event.target ||
+          instance.floating.anchor.contains(event.target))
+      )
+        return;
+
       isClickOutside =
-        !instance.content.contains(event.target) && !_mousedownEvent;
-    } else {
-      const targetInstance =
-        constructor.get(event.target) ||
-        parents(
-          event.target,
-          `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
-        ).find((parent) => {
-          return Base.get(parent);
-        });
-
-      if (!targetInstance || targetInstance === instance) {
-        if (
-          instance.floating &&
-          (instance.floating.anchor === event.target ||
-            instance.floating.anchor.contains(event.target))
-        )
-          return;
-
-        isClickOutside =
-          (!_mousedownEvent && isClickOutsideElem(base, event)) ||
-          (_mousedownEvent && isClickOutsideElem(base, _mousedownEvent));
-      }
+        (!_mousedownEvent && isClickOutsideElem(base, event)) ||
+        (_mousedownEvent && isClickOutsideElem(base, _mousedownEvent));
     }
 
     if (isClickOutside) {
