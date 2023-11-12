@@ -3,7 +3,6 @@ import {
   CANCEL,
   MODAL,
   OPTION_BACK_DISMISS,
-  OPTION_LIGHT_DISMISS,
   UI_EVENT_PREFIX,
 } from "../constants";
 import { isDialog } from "../is/index.js";

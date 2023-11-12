@@ -6,11 +6,13 @@ import {
   EVENT_SHOWN,
   EVENT_HIDDEN,
   FLOATING,
-  POPOVER_API_SUPPORTED,
-  POPOVER_API_MODE_MANUAL,
   OPTION_LIGHT_DISMISS,
   AUTO,
   MODAL,
+  TOOLTIP,
+  EVENT_KEYDOWN,
+  OPTION_BACK_DISMISS,
+  KEY_ESC,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
@@ -19,7 +21,6 @@ import toggleBackDismiss from "./toggleBackDismiss.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
 import { addLightDismiss, togglePreventScroll } from "./index.js";
-import { isModal } from "../is/index.js";
 
 export const EVENT_SUFFIX_LIGHT_DISMISS = "." + OPTION_LIGHT_DISMISS;
 
@@ -62,7 +63,18 @@ export default (instance, { s, animated, silent, eventParams }) => {
     }
   }
 
-  toggleBackDismiss(s, instance);
+  if (name === TOOLTIP) {
+    if (s) {
+      instance.on(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS, (event) => {
+        if (!event.isTrusted || event.keyCode !== KEY_ESC) return;
+        instance.hide({ event });
+      });
+    } else {
+      instance.off(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS);
+    }
+  } else {
+    toggleBackDismiss(s, instance);
+  }
 
   if (s) {
     (opts.autofocus || opts.focusTrap) && callAutofocus(instance);
