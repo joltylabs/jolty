@@ -288,7 +288,7 @@ export default class Floating {
       updatePosition();
     });
 
-    updatePosition();
+    // updatePosition();
 
     toggleTopLayer(instance, true);
 
