@@ -62,14 +62,9 @@ export default (instance, onHide) => {
         parents(
           event.target,
           `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
-        ).find((parent) => {
-          return Base.get(parent);
-        });
+        ).find((parent) => Base.get(parent));
 
-      if (
-        (!targetInstance || (instance.floating && !targetInstance.floating)) &&
-        !_mousedownEvent
-      ) {
+      if ((!targetInstance || instance.floating) && !_mousedownEvent) {
         isClickOutside = true;
       }
 
