@@ -152,7 +152,7 @@ export default class Floating {
       this[name] = options[name];
     });
 
-    const { shrink, sticky, topLayer, moveToRoot, flip, placement } = this;
+    let { shrink, sticky, topLayer, moveToRoot, flip, placement } = this;
 
     const targetIsModal = opts[MODAL] && isDialog(target);
 
@@ -213,6 +213,12 @@ export default class Floating {
       };
       arrowData[PADDING] = arrowPadding ?? opts[ARROW]?.padding ?? 0;
       arrowData[OFFSET] = arrowOffset ?? opts[ARROW]?.offset ?? 0;
+    }
+
+    if (!inTopLayer) {
+      shrink = false;
+      flip = false;
+      sticky = false;
     }
 
     const params = {

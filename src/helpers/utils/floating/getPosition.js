@@ -23,7 +23,6 @@ export default function ({
   targetRect,
   arrow,
   placement,
-  inTopLayer,
   boundaryOffset = 0,
   offset = 0,
   padding = 0,
@@ -45,12 +44,6 @@ export default function ({
 
   if (sticky) {
     flip[1] = false;
-  }
-
-  if (!inTopLayer) {
-    shrink = false;
-    flip = false;
-    sticky = false;
   }
 
   let [baseM, baseS = CENTER] = placement.split("-");
