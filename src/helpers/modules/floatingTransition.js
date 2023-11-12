@@ -48,16 +48,6 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-  if (!s && isModal(target)) {
-    target.close();
-    if (POPOVER_API_SUPPORTED) {
-      target.popover = POPOVER_API_MODE_MANUAL;
-      target.showPopover();
-    } else {
-      animated = false;
-    }
-  }
-
   const promise = transition?.run(s, animated);
 
   if (

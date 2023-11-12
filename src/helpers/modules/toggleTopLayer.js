@@ -21,7 +21,7 @@ export const addPopoverAttribute = (instance, elem = instance.base) => {
       : null;
 };
 
-export const toggleTopLayer = (instance, s, keepTopLayer) => {
+export const toggleTopLayer = (instance, s) => {
   const { constructor, opts } = instance;
   const target = instance[constructor.NAME];
   const targetIsDialog = isDialog(target);
@@ -50,12 +50,6 @@ export const toggleTopLayer = (instance, s, keepTopLayer) => {
     }
   } else {
     target.close?.();
-    if (targetIsModal && POPOVER_API_SUPPORTED && keepTopLayer) {
-      target[POPOVER] = POPOVER_API_MODE_MANUAL;
-      target.showPopover();
-    }
-    if (!keepTopLayer) {
-      target[POPOVER] && target.hidePopover?.();
-    }
+    target[POPOVER] && target.hidePopover?.();
   }
 };
