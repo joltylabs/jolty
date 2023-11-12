@@ -43,6 +43,7 @@ import {
   collectCssVariables,
   arrayFrom,
   camelToKebab,
+  debounce,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import {
@@ -308,9 +309,15 @@ export default class Floating {
     on([anchorScrollParents, window], EVENT_SCROLL, updatePosition, {
       passive: true,
     });
-    on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
-      passive: true,
-    });
+    on(
+      visualViewport,
+      [EVENT_SCROLL, EVENT_RESIZE],
+      debounce(updatePosition, 50),
+      {
+        passive: true,
+      },
+    );
+
     this.updatePosition = updatePosition.bind(this);
 
     Floating.instances.add(this);
