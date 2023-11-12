@@ -85,7 +85,9 @@ export default (
   if (triggerHover || triggerFocus) {
     on([toggler, target], events, (event) => {
       const { type } = event;
+      if (pointerType === "touch") return;
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
+
       if (
         (type === EVENT_FOCUSIN && isMouseDown) ||
         (type === EVENT_FOCUSOUT &&
