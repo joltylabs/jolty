@@ -23,7 +23,11 @@ export default function (
         }"]`,
     (event) => {
       event.preventDefault();
-      event.stopPropagation();
+      if (
+        event.deligateTarget.hasAttribute(DATA_UI_PREFIX + DISMISS + "-stop")
+      ) {
+        event.stopPropagation();
+      }
       const eventParams = { event, trigger: event.deligateTarget };
       action(eventParams);
       if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
