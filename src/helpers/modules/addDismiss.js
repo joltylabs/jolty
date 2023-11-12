@@ -22,12 +22,9 @@ export default function (
           instance.constructor.NAME
         }"]`,
     (event) => {
+      if (event.__dismissTriggered) return;
       event.preventDefault();
-      if (
-        event.deligateTarget.hasAttribute(DATA_UI_PREFIX + DISMISS + "-stop")
-      ) {
-        event.stopPropagation();
-      }
+      event.__dismissTriggered = true;
       const eventParams = { event, trigger: event.deligateTarget };
       action(eventParams);
       if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
