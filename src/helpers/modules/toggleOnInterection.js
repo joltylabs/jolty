@@ -92,10 +92,7 @@ export default (
         (type === EVENT_FOCUSIN && isMouseDown) ||
         (type === EVENT_FOCUSOUT &&
           triggerHover &&
-          toggler.matches(":" + HOVER)) ||
-        (type === EVENT_MOUSELEAVE &&
-          triggerFocus &&
-          toggler.matches(":" + FOCUS))
+          toggler.matches(":" + HOVER))
       ) {
         return;
       }
