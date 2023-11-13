@@ -25,7 +25,7 @@ export const toggleTopLayer = (instance, s) => {
   const { constructor, opts } = instance;
   const target = instance[constructor.NAME];
   const targetIsDialog = isDialog(target);
-  const targetIsModal = targetIsDialog && opts[MODAL];
+  const targetIsModal = targetIsDialog && opts[MODAL] && opts.topLayer;
   const targetIsPopover =
     opts.topLayer && POPOVER_API_SUPPORTED && target.popover;
 

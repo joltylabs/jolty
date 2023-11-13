@@ -32,6 +32,7 @@ import {
   MODAL,
   RIGHT,
   BOTTOM,
+  body,
 } from "./constants";
 import {
   getPosition,
@@ -112,7 +113,7 @@ export default class Floating {
 
     target.setAttribute(DATA_UI_PREFIX + FLOATING, name);
 
-    const anchorScrollParents = parents(anchor, isOverflowElement);
+    const anchorScrollParents = parents(anchor, isOverflowElement, body);
     const anchorStyles = getComputedStyle(anchor);
     const targetStyles = getComputedStyle(target);
 
@@ -294,7 +295,7 @@ export default class Floating {
       updatePosition();
     });
 
-    // updatePosition();
+    updatePosition();
 
     toggleTopLayer(instance, true);
 
@@ -312,17 +313,18 @@ export default class Floating {
       });
     }
 
-    on([anchorScrollParents, window], EVENT_SCROLL, updatePosition, {
-      passive: true,
-    });
     on(
-      visualViewport,
-      [EVENT_SCROLL, EVENT_RESIZE],
-      debounce(updatePosition, 50),
+      [...anchorScrollParents, window, visualViewport],
+      EVENT_SCROLL,
+      updatePosition,
       {
         passive: true,
       },
     );
+
+    on(visualViewport, EVENT_RESIZE, updatePosition, {
+      passive: true,
+    });
 
     this.updatePosition = updatePosition.bind(this);
 

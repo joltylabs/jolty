@@ -54,7 +54,7 @@ export default (instance, onHide) => {
 
     if (
       !isClickOutside &&
-      !base.matches(":modal") &&
+      !instance.opts.modal &&
       !event.target.closest("#" + instance.id)
     ) {
       const targetInstance =
