@@ -179,6 +179,7 @@ export default class Floating {
 
     if (placement === DIALOG) {
       setAttribute(target, CURRENT_PLACEMENT_ATTRIBUTE, DIALOG);
+      toggleTopLayer(instance, true);
       return this;
     }
 
