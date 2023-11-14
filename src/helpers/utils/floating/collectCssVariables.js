@@ -30,7 +30,9 @@ export default (anchorStyles, targetStyles, target, PREFIX) => {
         getPropertyValue(anchorStyles, PREFIX + name) ||
         getPropertyValue(targetStyles, PREFIX + name);
       if (!value) return;
-      value = value.split(" ");
+
+      value = value.replace(/\n/g, "").split(" ").filter(Boolean);
+
       if (name === BOUNDARY_OFFSET) {
         value = createInset(value, true);
       } else {
