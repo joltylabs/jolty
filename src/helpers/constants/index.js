@@ -333,3 +333,8 @@ export const POPOVER_API_SUPPORTED =
 export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
 
 export const PRIVATE_OPTION_CANCEL_ON_HIDE = PRIVATE_PREFIX + "cancelOnHide";
+
+export const ARIA_SUFFIX = {
+  [ARIA_LABELLEDBY]: TITLE,
+  [ARIA_DESCRIBEDBY]: "description",
+};

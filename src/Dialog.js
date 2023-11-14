@@ -43,28 +43,21 @@ import {
   MODAL,
   OPTION_BACK_DISMISS,
   EVENT_SUFFIX_LIGHT_DISMISS,
+  ARIA_SUFFIX,
 } from "./helpers/constants";
-import {
-  isString,
-  isElement,
-  isFunction,
-  isDialog,
-  isModal,
-} from "./helpers/is";
+import { isString, isFunction, isDialog, isModal } from "./helpers/is";
 import {
   getElements,
   toggleClass,
   removeClass,
   focus,
   closest,
-  setAttribute,
   removeAttribute,
   animateClass,
 } from "./helpers/dom";
 import {
   arrayFrom,
   getDataSelector,
-  uuidGenerator,
   normalizeToggleParameters,
   getEventsPrefix,
   getDefaultToggleSelector,
@@ -87,6 +80,7 @@ import {
   togglePreventScroll,
   FocusGuards,
   addLightDismiss,
+  addAriaTargets,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -97,11 +91,6 @@ import {
   destroyTopLayer,
   toggleTopLayer,
 } from "./helpers/modules/toggleTopLayer.js";
-
-const ARIA_SUFFIX = {
-  [ARIA_LABELLEDBY]: TITLE,
-  [ARIA_DESCRIBEDBY]: "description",
-};
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
   static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
@@ -158,7 +147,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     emit(EVENT_BEFORE_INIT);
 
     this._update();
-    this.updateAriaTargets();
 
     on(document, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
       if (this._isClosing) return;
@@ -207,6 +195,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         opts[BACKDROP],
       );
     }
+
+    opts.a11y && addAriaTargets(this);
 
     this[BACKDROP] = backdrop;
 
@@ -272,27 +262,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     return this;
   }
 
-  updateAriaTargets() {
-    const { base, opts } = this;
-    for (const name of [ARIA_LABELLEDBY, ARIA_DESCRIBEDBY]) {
-      const suffix = ARIA_SUFFIX[name];
-      let elem = opts[suffix];
-      if (isString(elem)) {
-        elem = getOptionElem(this, elem, base);
-      }
-      if (!isElement(elem)) {
-        elem = null;
-      }
-      this[suffix] = elem;
-      if (!elem) return;
-      const id = elem ? (elem.id ||= uuidGenerator()) : elem;
-      setAttribute(base, name, id);
-    }
-    return this;
-  }
-
   async toggle(s, params) {
-    const { opts, isOpen, emit, isAnimating, backdrop } = this;
+    const { opts, isOpen, emit, isAnimating, backdrop, base } = this;
 
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
@@ -371,10 +342,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
-      this._toggleApi(true);
+      toggleTopLayer(this, true);
       togglePreventScroll(this, true);
+      if (opts.focusTrap && !isModal(base)) {
+        this.focusGuards = new FocusGuards(base);
+      }
     } else if (!optReturnFocusAwait) {
-      this._toggleApi(false, true);
       this.returnFocus();
     }
 
@@ -412,7 +385,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         if (optReturnFocusAwait) {
           this.returnFocus();
         }
-        this._toggleApi(false);
+        toggleTopLayer(this, false);
 
         toggleHideModeState(false, this);
         togglePreventScroll(this, false);
@@ -444,10 +417,10 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
     }
   }
-  _toggleApi(s, keepTopLayer) {
+  _toggleApi(s) {
     const { opts, base } = this;
 
-    toggleTopLayer(this, s, keepTopLayer);
+    toggleTopLayer(this, s);
 
     if (s && opts.focusTrap && !isModal(base)) {
       this.focusGuards = new FocusGuards(base);

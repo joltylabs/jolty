@@ -22,6 +22,10 @@ import {
   body,
   AUTO,
   DISMISS,
+  MODAL,
+  ARIA_LABELLEDBY,
+  ARIA_DESCRIBEDBY,
+  ARIA_SUFFIX,
 } from "./helpers/constants";
 
 import {
@@ -36,6 +40,8 @@ import {
   getOptionElem,
   getEventsPrefix,
   updateOptsByData,
+  camelToKebab,
+  getDataSelector,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -46,6 +52,7 @@ import {
   checkFloatings,
   togglePreventScroll,
   toggleConfirm,
+  addAriaTargets,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -71,6 +78,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
+    title: getDataSelector(POPOVER, ARIA_SUFFIX[ARIA_LABELLEDBY]),
+    description: getDataSelector(POPOVER, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
     [OPTION_PREVENT_SCROLL]: AUTO,
   };
 
@@ -111,9 +120,19 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     this.teleport.opts.to = opts.moveToRoot ? body : null;
 
     this.updateToggler();
+    opts.a11y && addAriaTargets(this);
 
     addPopoverAttribute(this);
     toggleOnInterection(this);
+
+    base.dataset.popoverCurrentOptions = [
+      opts[MODAL] && MODAL,
+      (opts[OPTION_PREVENT_SCROLL] === AUTO
+        ? opts[MODAL]
+        : opts[OPTION_PREVENT_SCROLL]) && camelToKebab(OPTION_PREVENT_SCROLL),
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
   updateToggler() {
     const { opts, id } = this;
@@ -129,7 +148,14 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     if (!this.isInit) return;
     const { opts, toggler, base } = this;
     this.emit(EVENT_BEFORE_DESTROY);
-    opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
+    opts.a11y &&
+      removeAttribute(
+        toggler,
+        ARIA_CONTROLS,
+        ARIA_EXPANDED,
+        ARIA_LABELLEDBY,
+        ARIA_DESCRIBEDBY,
+      );
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
     togglePreventScroll(this, false);
