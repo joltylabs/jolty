@@ -23,7 +23,6 @@ class Autoaction {
   static Default = {
     progressElem: getDataSelector(PROGRESS),
     duration: 5000,
-    decimal: 4,
     durationUpdate: null,
     pauseOnMouse: true,
     resetOnMouse: true,
@@ -96,7 +95,7 @@ class Autoaction {
     const current = performance.now();
     this.timeCurrent = Math.round(current - this.timeBegin);
     const time = opts.duration - this.timeCurrent;
-    const progress = +Math.max(time / opts.duration, 0).toFixed(opts.decimal);
+    const progress = +Math.max(time / opts.duration, 0).toFixed(3);
     this._prevProgress = progress;
     if (progress && progress === _prevProgress) {
       return requestAnimationFrame(this.checkTime);
