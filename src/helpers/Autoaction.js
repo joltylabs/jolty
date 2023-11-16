@@ -143,7 +143,7 @@ class Autoaction {
   static createOrUpdate(autoaction, elem, action, opts) {
     if (autoaction) {
       return autoaction.destroy();
-    } else if (opts !== false) {
+    } else if (opts) {
       return new Autoaction(elem, action, opts);
     }
   }
