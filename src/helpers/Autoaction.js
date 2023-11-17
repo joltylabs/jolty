@@ -1,7 +1,6 @@
 import {
   UI_PREFIX,
   PROGRESS,
-  EVENT_MOUSELEAVE,
   EVENT_MOUSEENTER,
   EVENT_FOCUSIN,
   EVENT_FOCUSOUT,
@@ -14,6 +13,12 @@ import {
   ACTION_TOGGLE,
   EVENT_VISIBILITY_CHANGE,
   doc,
+  AUTOHIDE,
+  EVENT_MOUSEOVER,
+  EVENT_MOUSEOUT,
+  EVENT_MOUSELEAVE,
+  SELECTOR_FOCUS_WITHIN,
+  SELECTOR_HOVER,
 } from "./constants";
 import { callOrReturn, getOption, mergeDeep, getDataSelector } from "./utils";
 import { EventHandler } from "./EventHandler";
@@ -21,21 +26,22 @@ import { isNumber } from "./is";
 
 class Autoaction {
   static Default = {
-    progressElem: getDataSelector(PROGRESS),
+    progress: getDataSelector(AUTOHIDE, PROGRESS),
+    safeArea: getDataSelector(AUTOHIDE, "safe-area"),
     duration: 5000,
     durationUpdate: null,
-    pauseOnMouse: true,
-    resetOnMouse: true,
-    pauseOnFocus: true,
-    resetOnFocus: true,
+    pauseOnMouseEnter: true,
+    resetOnMouseEnter: true,
+    pauseOnFocusEnter: true,
+    resetOnFocusEnter: true,
     visibilityControl: false,
-    cssVariable: UI_PREFIX + PROGRESS,
+    cssVariable: UI_PREFIX + AUTOHIDE + "-" + PROGRESS,
   };
-  constructor(elem, action, opts) {
+  constructor(elem, action, opts, defaultOpts) {
     const Default = this.constructor.Default;
     opts = isNumber(opts)
       ? { ...Default, duration: opts }
-      : mergeDeep(Default, opts);
+      : mergeDeep(Default, defaultOpts, opts);
     const { on, off, emit } = new EventHandler();
     Object.assign(this, { elem, action, on, off, emit, opts });
     [
@@ -46,41 +52,72 @@ class Autoaction {
       ACTION_TOGGLE,
     ].forEach((action) => (this[action] = this[action].bind(this)));
 
-    this.progressElem = getOption(false, opts.progressElem, elem);
+    this.progressElem = getOption(false, this, opts.progress, elem);
+    this.safeAreaElem = getOption(false, this, opts.safeArea, elem);
 
     if (opts.visibilityControl) {
       on(doc, EVENT_VISIBILITY_CHANGE, () => this.toggle(!doc.hidden));
     }
   }
   toggleInterections(s) {
-    const { opts, elem, on, off, resume, pause, reset } = this;
-    const { pauseOnMouse, resetOnMouse, pauseOnFocus, resetOnFocus } = opts;
+    const { opts, elem, on, off, resume, pause, reset, safeAreaElem } = this;
+    const {
+      pauseOnMouseEnter,
+      resetOnMouseEnter,
+      pauseOnFocusEnter,
+      resetOnFocusEnter,
+    } = opts;
 
-    if (!pauseOnMouse && !resetOnMouse && !pauseOnFocus && !resetOnFocus)
+    if (
+      !pauseOnMouseEnter &&
+      !resetOnMouseEnter &&
+      !pauseOnFocusEnter &&
+      !resetOnFocusEnter
+    ) {
+      reset();
       return;
+    }
+
+    const actionsElem = safeAreaElem || elem;
 
     if (s) {
       reset();
       let interactedMouse, interactedFocus;
-      if (pauseOnFocus || resetOnFocus) {
-        on(elem, [EVENT_FOCUSIN, EVENT_FOCUSOUT], ({ type }) => {
-          interactedFocus = type === EVENT_FOCUSIN;
+      if (pauseOnFocusEnter || resetOnFocusEnter) {
+        interactedFocus = actionsElem.matches(SELECTOR_FOCUS_WITHIN);
+
+        if (interactedFocus) pause();
+
+        on(actionsElem, [EVENT_FOCUSIN, EVENT_FOCUSOUT], ({ type }) => {
+          interactedFocus = safeAreaElem
+            ? actionsElem.matches(SELECTOR_FOCUS_WITHIN)
+            : type === EVENT_FOCUSIN;
+
           if (interactedFocus) {
-            resetOnFocus && reset();
-            pauseOnFocus && pause();
+            resetOnFocusEnter && reset();
+            pauseOnFocusEnter && pause();
           } else if (!interactedMouse) {
-            pauseOnFocus && resume();
+            pauseOnFocusEnter && resume();
           }
         });
       }
-      if (pauseOnMouse || resetOnMouse) {
-        on(elem, [EVENT_MOUSEENTER, EVENT_MOUSELEAVE], ({ type }) => {
-          interactedMouse = type === EVENT_MOUSEENTER;
+      if (pauseOnMouseEnter || resetOnMouseEnter) {
+        if (actionsElem.matches(SELECTOR_HOVER)) pause();
+
+        const events = safeAreaElem
+          ? [EVENT_MOUSEOVER, EVENT_MOUSEOUT]
+          : [EVENT_MOUSEENTER, EVENT_MOUSELEAVE];
+
+        on(actionsElem, events, ({ type }) => {
+          interactedMouse = safeAreaElem
+            ? actionsElem.matches(SELECTOR_HOVER)
+            : type === EVENT_MOUSEENTER;
+
           if (interactedMouse) {
-            resetOnMouse && reset();
-            pauseOnMouse && pause();
+            resetOnMouseEnter && reset();
+            pauseOnMouseEnter && pause();
           } else if (!interactedFocus) {
-            pauseOnMouse && resume();
+            pauseOnMouseEnter && resume();
           }
         });
       }
@@ -95,7 +132,7 @@ class Autoaction {
     const current = performance.now();
     this.timeCurrent = Math.round(current - this.timeBegin);
     const time = opts.duration - this.timeCurrent;
-    const progress = +Math.max(time / opts.duration, 0).toFixed(3);
+    const progress = +Math.max(time / opts.duration, 0).toFixed(4);
     this._prevProgress = progress;
     if (progress && progress === _prevProgress) {
       return requestAnimationFrame(this.checkTime);
@@ -139,11 +176,11 @@ class Autoaction {
     this.paused = true;
     this.off();
   }
-  static createOrUpdate(autoaction, elem, action, opts) {
+  static createOrUpdate(autoaction, elem, action, opts, defaultOpts) {
     if (autoaction) {
       return autoaction.destroy();
     } else if (opts) {
-      return new Autoaction(elem, action, opts);
+      return new Autoaction(elem, action, opts, defaultOpts);
     }
   }
 }

@@ -179,6 +179,8 @@ export const EVENT_MOUSELEAVE = MOUSE + LEAVE;
 export const EVENT_MOUSEMOVE = MOUSE + MOVE;
 export const EVENT_MOUSEDOWN = MOUSE + DOWN;
 export const EVENT_MOUSEUP = MOUSE + UP;
+export const EVENT_MOUSEOVER = MOUSE + "over";
+export const EVENT_MOUSEOUT = MOUSE + OUT;
 export const EVENT_CHANGE = "change";
 export const EVENT_BREAKPOINT = "breakpoint";
 export const EVENT_CLOSE = "close";
@@ -307,6 +309,8 @@ export const SELECTOR_DISABLED = `[${DISABLED}]`;
 export const SELECTOR_INERT = `[${INERT}]`;
 
 export const SELECTOR_ROOT = ":" + ROOT;
+export const SELECTOR_FOCUS_WITHIN = ":focus-within";
+export const SELECTOR_HOVER = ":" + HOVER;
 
 export const MIRROR = {
   [TOP]: BOTTOM,
@@ -338,3 +342,5 @@ export const ARIA_SUFFIX = {
   [ARIA_LABELLEDBY]: TITLE,
   [ARIA_DESCRIBEDBY]: "description",
 };
+
+export const AUTOHIDE = "autohide";
