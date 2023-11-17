@@ -132,7 +132,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [CONTENT + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [OPTION_AUTODESTROY]: false,
-    autohide: 5000,
+    autohide: false,
     autofocus: true,
     focusTrap: true,
     moveToRoot: true,
