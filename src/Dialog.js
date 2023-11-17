@@ -15,7 +15,6 @@ import {
   EVENT_HIDDEN,
   EVENT_SHOWN,
   OPTION_GROUP,
-  TITLE,
   NAME,
   EVENT_BEFORE_HIDE,
   EVENT_BEFORE_SHOW,
@@ -44,6 +43,8 @@ import {
   OPTION_BACK_DISMISS,
   EVENT_SUFFIX_LIGHT_DISMISS,
   ARIA_SUFFIX,
+  AUTOHIDE,
+  DURATION,
 } from "./helpers/constants";
 import { isString, isFunction, isDialog, isModal } from "./helpers/is";
 import {
@@ -91,6 +92,7 @@ import {
   destroyTopLayer,
   toggleTopLayer,
 } from "./helpers/modules/toggleTopLayer.js";
+import Autoaction from "./helpers/Autoaction.js";
 
 class Dialog extends ToggleMixin(Base, DIALOG) {
   static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
@@ -98,6 +100,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     name: "",
     awaitPrevious: true,
     hidePrevious: true,
+  };
+  static DefaultAutohide = {
+    pauseOnMouseEnter: false,
+    resetOnMouseEnter: false,
+    pauseOnFocusEnter: false,
+    resetOnFocusEnter: false,
   };
   static Default = {
     ...DEFAULT_OPTIONS,
@@ -124,6 +132,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [CONTENT + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     [OPTION_AUTODESTROY]: false,
+    autohide: 5000,
     autofocus: true,
     focusTrap: true,
     moveToRoot: true,
@@ -188,6 +197,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       [OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY, ...TOP_LAYER_OPTIONS_NAMES],
     );
     updateModule(this, OPTION_GROUP, NAME);
+    updateModule(this, AUTOHIDE, DURATION);
 
     let backdrop;
     if (isString(opts[BACKDROP])) {
@@ -219,6 +229,12 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       this.transition,
       this.main,
       opts.transition,
+    );
+    this.autohide = Autoaction.createOrUpdate(
+      this.autohide,
+      this.main,
+      this.hide,
+      opts.autohide,
     );
 
     this._togglers =
@@ -263,7 +279,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   async toggle(s, params) {
-    const { opts, isOpen, emit, isAnimating, backdrop, base } = this;
+    const { opts, isOpen, emit, isAnimating, backdrop, base, autohide } = this;
 
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
@@ -365,6 +381,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     toggleBackDismiss(s, this);
 
+    s && autohide && autohide.toggleInterections(true);
+
     if (s) {
       if (
         opts[OPTION_LIGHT_DISMISS] === AUTO
@@ -386,9 +404,9 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           this.returnFocus();
         }
         toggleTopLayer(this, false);
-
         toggleHideModeState(false, this);
         togglePreventScroll(this, false);
+        autohide && autohide.toggleInterections(false);
       }
 
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
