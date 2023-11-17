@@ -435,18 +435,6 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
     }
   }
-  _toggleApi(s) {
-    const { opts, base } = this;
-
-    toggleTopLayer(this, s);
-
-    if (s && opts.focusTrap && !isModal(base)) {
-      this.focusGuards = new FocusGuards(base);
-    } else if (!s && this.focusGuards) {
-      this.focusGuards?.destroy();
-      this.focusGuards = null;
-    }
-  }
   returnFocus() {
     if (this.opts.returnFocus) {
       focus(this.returnFocusElem);
