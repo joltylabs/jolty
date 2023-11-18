@@ -134,7 +134,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     [OPTION_AUTODESTROY]: false,
     autohide: false,
     autofocus: true,
-    focusTrap: true,
+    focusTrap: AUTO,
     moveToRoot: true,
   };
 
@@ -354,13 +354,15 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     !animated && this._toggleClasses(s, backdropIsOpen);
 
+    const focusTrap = opts.focusTrap === AUTO ? opts[MODAL] : opts.focusTrap;
+
     if (s) {
       if (opts.returnFocus) {
         this.returnFocusElem ||= doc.activeElement;
       }
       toggleTopLayer(this, true);
       togglePreventScroll(this, true);
-      if (opts.focusTrap && !isModal(base)) {
+      if (focusTrap && !isModal(base)) {
         this.focusGuards = new FocusGuards(base);
       }
     } else if (!optReturnFocusAwait) {
@@ -374,7 +376,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     }
 
     if (s) {
-      (opts.autofocus || opts.focusTrap) && callAutofocus(this);
+      (opts.autofocus || focusTrap) && callAutofocus(this);
     } else {
       this.returnFocusElem = null;
     }
@@ -407,6 +409,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         toggleHideModeState(false, this);
         togglePreventScroll(this, false);
         autohide && autohide.toggleInterections(false);
+        this.focusGuards?.destroy();
+        this.focusGuards = null;
       }
 
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
