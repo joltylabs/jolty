@@ -243,6 +243,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     addPopoverAttribute(this);
 
     base.dataset.dialogCurrentOptions = [
+      this[BACKDROP] && BACKDROP,
       opts[MODAL] && MODAL,
       (opts[OPTION_PREVENT_SCROLL] === AUTO
         ? opts[MODAL]
