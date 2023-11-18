@@ -44,6 +44,7 @@ export default (instance, onHide) => {
 
     if (
       (!_mousedownEvent && event.target === instance.backdrop) ||
+      (!_mousedownEvent && !base.contains(event.target)) ||
       (event.target === base &&
         (!_mousedownEvent
           ? isClickOutsideElem(contentElem, event)
