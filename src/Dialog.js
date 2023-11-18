@@ -55,6 +55,7 @@ import {
   closest,
   removeAttribute,
   animateClass,
+  getElement,
 } from "./helpers/dom";
 import {
   arrayFrom,
@@ -82,6 +83,7 @@ import {
   FocusGuards,
   addLightDismiss,
   addAriaTargets,
+  addFrameState,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -319,6 +321,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       return emit(EVENT_HIDE_PREVENTED, eventParams);
     }
 
+    addFrameState(this, s);
+
     this.isOpen = s;
 
     const backdropIsOpen = arrayFrom(this.instances.values()).find(
@@ -392,10 +396,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           ? opts[MODAL]
           : opts[OPTION_LIGHT_DISMISS]
       ) {
-        addLightDismiss(this, () => {
-          this._isClosing = true;
-          requestAnimationFrame(() => (this._isClosing = false));
-        });
+        addLightDismiss(this);
       }
     } else {
       this.off("*", EVENT_SUFFIX_LIGHT_DISMISS);

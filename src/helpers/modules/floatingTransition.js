@@ -20,7 +20,11 @@ import { focus } from "../dom/index.js";
 import toggleBackDismiss from "./toggleBackDismiss.js";
 import callAutofocus from "./callAutofocus.js";
 import toggleHideModeState from "./toggleHideModeState.js";
-import { addLightDismiss, togglePreventScroll } from "./index.js";
+import {
+  addFrameState,
+  addLightDismiss,
+  togglePreventScroll,
+} from "./index.js";
 
 export const EVENT_SUFFIX_LIGHT_DISMISS = "." + OPTION_LIGHT_DISMISS;
 
@@ -46,6 +50,8 @@ export default (instance, { s, animated, silent, eventParams }) => {
     }).init();
     togglePreventScroll(instance, true);
   }
+
+  addFrameState(instance, s);
 
   !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 

@@ -16,3 +16,4 @@ export { default as togglePreventScroll } from "./togglePreventScroll.js";
 export { default as toggleInitClass } from "./toggleInitClass.js";
 export { default as addLightDismiss } from "./addLightDismiss.js";
 export { default as addAriaTargets } from "./addAriaTargets.js";
+export { default as addFrameState } from "./addFrameState.js";

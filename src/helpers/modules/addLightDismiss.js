@@ -15,7 +15,7 @@ import { parents } from "../dom/index.js";
 import Base from "../Base.js";
 import { isClickOutsideElem } from "../utils/index.js";
 
-export default (instance, onHide) => {
+export default (instance) => {
   const { constructor, opts, on, emit } = instance;
   const base = instance[constructor.NAME];
   const contentElem = instance.main || base;
@@ -32,8 +32,10 @@ export default (instance, onHide) => {
   });
 
   on(document, events, (event) => {
+    const target = event.target;
     if (
       !instance.isOpen ||
+      instance._isOpening ||
       (opts.awaitAnimation && instance.transition?.isAnimating)
     )
       return;
@@ -43,9 +45,17 @@ export default (instance, onHide) => {
     let isClickOutside;
 
     if (
-      (!_mousedownEvent && event.target === instance.backdrop) ||
-      (!_mousedownEvent && !base.contains(event.target)) ||
-      (event.target === base &&
+      !_mousedownEvent &&
+      (target === instance.toggler || target === instance.anchor)
+    ) {
+      instance._mousedownEvent = null;
+      return;
+    }
+
+    if (
+      (!_mousedownEvent && target === instance.backdrop) ||
+      (!_mousedownEvent && !base.contains(target)) ||
+      (target === base &&
         (!_mousedownEvent
           ? isClickOutsideElem(contentElem, event)
           : isClickOutsideElem(contentElem, _mousedownEvent)))
@@ -56,12 +66,12 @@ export default (instance, onHide) => {
     if (
       !isClickOutside &&
       !instance.opts.modal &&
-      !event.target.closest("#" + instance.id)
+      !target.closest("#" + instance.id)
     ) {
       const targetInstance =
-        constructor.get(event.target) ||
+        constructor.get(target) ||
         parents(
-          event.target,
+          target,
           `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
         ).find((parent) => Base.get(parent));
 
@@ -71,8 +81,8 @@ export default (instance, onHide) => {
 
       if (
         instance.floating &&
-        (instance.floating.anchor === event.target ||
-          instance.floating.anchor.contains(event.target))
+        (instance.floating.anchor === target ||
+          instance.floating.anchor.contains(target))
       ) {
         return;
       }
@@ -86,6 +96,5 @@ export default (instance, onHide) => {
     }
 
     instance._mousedownEvent = null;
-    onHide?.();
   });
 };
