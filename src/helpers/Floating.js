@@ -305,7 +305,6 @@ export default class Floating {
         focusAfterAnchor: !opts.focusTrap,
         anchor,
         topLayer,
-        strategy: ABSOLUTE,
         onFocusOut:
           isDialog(target) &&
           (() => {

@@ -58,9 +58,7 @@ export default class FocusGuards {
       const focusGuard = createElement("span", {
         [TABINDEX]: 0,
         [DATA_UI_PREFIX + FOCUS_GUARD]: methodName,
-        style: `outline:none;opacity:0;position:${
-          opts.strategy ?? FIXED
-        };pointer-events:none;`,
+        style: `outline:none;opacity:0;position:fixed;pointer-events:none;`,
       });
       target[methodName](focusGuard);
       focusGuard.addEventListener(FOCUS, this.onFocus);
