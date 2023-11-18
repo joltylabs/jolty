@@ -81,6 +81,8 @@ class Base {
         elem = doc.querySelector(elem);
       }
 
+      if (!elem) return;
+
       const [datasetValue, isDataObject] = getDatasetValue(elem, NAME);
 
       dataName ||= !isDataObject && datasetValue;
