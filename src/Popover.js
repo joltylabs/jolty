@@ -26,12 +26,12 @@ import {
   ARIA_LABELLEDBY,
   ARIA_DESCRIBEDBY,
   ARIA_SUFFIX,
-  OPTION_LIGHT_DISMISS,
   OPTION_BACK_DISMISS,
   PREVENT,
   EVENT_CLOSE,
   UI_PREFIX,
   EVENT_BACK_DISMISS_PREVENT,
+  INERT,
 } from "./helpers/constants";
 
 import {
@@ -118,6 +118,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       [TRANSITION, HIDE_MODE, TRIGGER, ...TOP_LAYER_OPTIONS_NAMES],
       TOP_LAYER_OPTIONS_NAMES,
     );
+
+    base.toggleAttribute(INERT, !opts.interactive);
 
     this.transition = Transition.createOrUpdate(
       this.transition,
