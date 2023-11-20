@@ -26,6 +26,12 @@ import {
   ARIA_LABELLEDBY,
   ARIA_DESCRIBEDBY,
   ARIA_SUFFIX,
+  OPTION_LIGHT_DISMISS,
+  OPTION_BACK_DISMISS,
+  PREVENT,
+  EVENT_CLOSE,
+  UI_PREFIX,
+  EVENT_BACK_DISMISS_PREVENT,
 } from "./helpers/constants";
 
 import {
@@ -33,6 +39,7 @@ import {
   removeClass,
   setAttribute,
   removeAttribute,
+  animateClass,
 } from "./helpers/dom";
 import {
   normalizeToggleParameters,
@@ -53,6 +60,7 @@ import {
   togglePreventScroll,
   toggleConfirm,
   addAriaTargets,
+  toggleBackDismiss,
 } from "./helpers/modules";
 import Base from "./helpers/Base.js";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -170,6 +178,18 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       normalizeToggleParameters(params);
 
     s ??= !isOpen;
+
+    if (!s) {
+      if (opts[OPTION_BACK_DISMISS] === PREVENT && event.type === EVENT_CLOSE) {
+        animateClass(
+          base,
+          camelToKebab(UI_PREFIX + EVENT_BACK_DISMISS_PREVENT),
+        );
+        emit(EVENT_BACK_DISMISS_PREVENT, { event });
+        toggleBackDismiss(true, this);
+        return;
+      }
+    }
 
     if ((awaitAnimation && isAnimating) || s === isOpen) return;
 

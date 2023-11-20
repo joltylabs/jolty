@@ -45,6 +45,9 @@ import {
   ARIA_SUFFIX,
   AUTOHIDE,
   DURATION,
+  PREVENT,
+  EVENT_BACK_DISMISS_PREVENT,
+  EVENT_CLOSE,
 } from "./helpers/constants";
 import { isString, isFunction, isDialog, isModal } from "./helpers/is";
 import {
@@ -55,7 +58,6 @@ import {
   closest,
   removeAttribute,
   animateClass,
-  getElement,
 } from "./helpers/dom";
 import {
   arrayFrom,
@@ -113,8 +115,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     ...DEFAULT_OPTIONS,
     ...TOP_LAYER_OPTIONS,
     [MODAL]: true,
-    [OPTION_LIGHT_DISMISS]: AUTO,
-    [OPTION_BACK_DISMISS]: AUTO,
+    [OPTION_LIGHT_DISMISS]: true,
+    [OPTION_BACK_DISMISS]: true,
     eventPrefix: getEventsPrefix(DIALOG),
     [OPTION_HASH_NAVIGATION]: false,
     returnFocus: true,
@@ -291,6 +293,18 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       normalizeToggleParameters(params);
 
     s = !!(s ?? !isOpen);
+
+    if (!s) {
+      if (opts[OPTION_BACK_DISMISS] === PREVENT && event.type === EVENT_CLOSE) {
+        animateClass(
+          this.main,
+          camelToKebab(UI_PREFIX + EVENT_BACK_DISMISS_PREVENT),
+        );
+        emit(EVENT_BACK_DISMISS_PREVENT, { event });
+        toggleBackDismiss(true, this);
+        return;
+      }
+    }
 
     if ((opts.awaitAnimation && isAnimating) || s === isOpen) return;
 

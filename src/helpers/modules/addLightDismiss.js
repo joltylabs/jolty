@@ -4,16 +4,19 @@ import {
   EVENT_CLICK,
   EVENT_CONTEXT_MENU_CLICK,
   EVENT_KEYUP,
+  EVENT_LIGHT_DISMISS_PREVENT,
   EVENT_MOUSEDOWN,
   EVENT_SUFFIX_LIGHT_DISMISS,
   FLOATING_DATA_ATTRIBUTE,
   OPTION_LIGHT_DISMISS,
+  PREVENT,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   UI_PREFIX,
 } from "../constants/index.js";
-import { parents } from "../dom/index.js";
+import { animateClass, parents } from "../dom/index.js";
 import Base from "../Base.js";
-import { isClickOutsideElem } from "../utils/index.js";
+import { camelToKebab, isClickOutsideElem } from "../utils/index.js";
+import { isModal } from "../is/index.js";
 
 export default (instance) => {
   const { constructor, opts, on, emit } = instance;
@@ -41,6 +44,7 @@ export default (instance) => {
       return;
 
     const _mousedownEvent = instance._mousedownEvent;
+    const isBaseModal = isModal(base);
 
     let isClickOutside;
 
@@ -52,10 +56,16 @@ export default (instance) => {
       return;
     }
 
+    const backdrop = instance.backdrop;
+    const isBackdropClick = !_mousedownEvent && target === backdrop;
+    const isTargetNotInside =
+      !backdrop && !_mousedownEvent && !base.contains(target);
+    const targetIsBase = !backdrop && target === base;
+
     if (
-      (!_mousedownEvent && target === instance.backdrop) ||
-      (!_mousedownEvent && !base.contains(target)) ||
-      (target === base &&
+      isBackdropClick ||
+      isTargetNotInside ||
+      (targetIsBase &&
         (!_mousedownEvent
           ? isClickOutsideElem(contentElem, event)
           : isClickOutsideElem(contentElem, _mousedownEvent)))
@@ -63,11 +73,19 @@ export default (instance) => {
       isClickOutside = true;
     }
 
-    if (
-      !isClickOutside &&
-      !instance.opts.modal &&
-      !target.closest("#" + instance.id)
-    ) {
+    if (isClickOutside && (target === backdrop || isBaseModal)) {
+      if (opts[OPTION_LIGHT_DISMISS] === PREVENT) {
+        instance._mousedownEvent = null;
+        animateClass(
+          contentElem,
+          camelToKebab(UI_PREFIX + EVENT_LIGHT_DISMISS_PREVENT),
+        );
+        emit(EVENT_LIGHT_DISMISS_PREVENT, { event });
+        return;
+      }
+    }
+
+    if (!isClickOutside && !opts.modal && !target.closest("#" + instance.id)) {
       const targetInstance =
         constructor.get(target) ||
         parents(

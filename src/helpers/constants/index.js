@@ -228,7 +228,9 @@ export const KEY_ARROW_DOWN = 40;
 export const A11Y = "a11y";
 export const OPTION_GROUP = "group";
 
-export const OPTION_PREVENT_SCROLL = "preventScroll";
+export const PREVENT = "prevent";
+
+export const OPTION_PREVENT_SCROLL = PREVENT + "Scroll";
 export const OPTION_HASH_NAVIGATION = "hashNavigation";
 export const POSITION = "position";
 export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
@@ -236,6 +238,8 @@ export const OPTION_TOP_LAYER = "topLayer";
 export const OPTION_MOVE_TO_ROOT = "moveToRoot";
 export const OPTION_LIGHT_DISMISS = "lightDismiss";
 export const OPTION_BACK_DISMISS = "backDismiss";
+export const EVENT_LIGHT_DISMISS_PREVENT = "lightDismissPrevent";
+export const EVENT_BACK_DISMISS_PREVENT = "backDismissPrevent";
 
 export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
