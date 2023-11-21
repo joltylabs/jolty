@@ -23,6 +23,7 @@ import toggleHideModeState from "./toggleHideModeState.js";
 import {
   addFrameState,
   addLightDismiss,
+  toggleLightDismiss,
   togglePreventScroll,
 } from "./index.js";
 
@@ -57,17 +58,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   const promise = transition?.run(s, animated);
 
-  if (
-    opts[OPTION_LIGHT_DISMISS] === AUTO
-      ? opts[MODAL]
-      : opts[OPTION_LIGHT_DISMISS]
-  ) {
-    if (s) {
-      addLightDismiss(instance);
-    } else {
-      instance.off("*", EVENT_SUFFIX_LIGHT_DISMISS);
-    }
-  }
+  toggleLightDismiss(instance, s);
 
   if (name === TOOLTIP) {
     if (s) {

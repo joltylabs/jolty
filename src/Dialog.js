@@ -86,6 +86,7 @@ import {
   addLightDismiss,
   addAriaTargets,
   addFrameState,
+  toggleLightDismiss,
 } from "./helpers/modules";
 import Base from "./helpers/Base";
 import ToggleMixin from "./helpers/ToggleMixin.js";
@@ -404,17 +405,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     s && autohide && autohide.toggleInterections(true);
 
-    if (s) {
-      if (
-        opts[OPTION_LIGHT_DISMISS] === AUTO
-          ? opts[MODAL]
-          : opts[OPTION_LIGHT_DISMISS]
-      ) {
-        addLightDismiss(this);
-      }
-    } else {
-      this.off("*", EVENT_SUFFIX_LIGHT_DISMISS);
-    }
+    toggleLightDismiss(this, s);
 
     awaitPromise(promise, () => {
       if (!s) {

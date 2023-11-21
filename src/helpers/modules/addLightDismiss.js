@@ -59,7 +59,9 @@ export default (instance) => {
     const backdrop = instance.backdrop;
     const isBackdropClick = !_mousedownEvent && target === backdrop;
     const isTargetNotInside =
-      !backdrop && !_mousedownEvent && !base.contains(target);
+      (!backdrop || !base.contains(backdrop)) &&
+      !_mousedownEvent &&
+      !base.contains(target);
     const targetIsBase = !backdrop && target === base;
 
     if (
