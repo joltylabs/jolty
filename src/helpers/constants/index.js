@@ -271,8 +271,8 @@ export const TOP_LAYER_OPTIONS = {
   [OPTION_TOP_LAYER]: true,
   [OPTION_MOVE_TO_ROOT]: false,
   [MODAL]: false,
-  [OPTION_LIGHT_DISMISS]: true,
-  [OPTION_BACK_DISMISS]: true,
+  [OPTION_LIGHT_DISMISS]: AUTO,
+  [OPTION_BACK_DISMISS]: AUTO,
 };
 
 export const DEFAULT_OPTIONS = {
