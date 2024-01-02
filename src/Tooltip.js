@@ -9,7 +9,6 @@ import {
   TOP,
   ANCHOR,
   TARGET,
-  UI_PREFIX,
   ARIA_DESCRIBEDBY,
   DATA_UI_PREFIX,
   DEFAULT_FLOATING_OPTIONS,
@@ -28,7 +27,6 @@ import {
   END,
   AFTER,
   DISMISS,
-  ARROW,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -63,8 +61,6 @@ import {
   destroyTopLayer,
 } from "./helpers/modules/toggleTopLayer.js";
 
-const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
-
 class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   static Default = {
     ...DEFAULT_OPTIONS,
@@ -73,7 +69,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     eventPrefix: getEventsPrefix(TOOLTIP),
     placement: TOP,
     template: (content) =>
-      `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-${ARROW}" data-${UI_TOOLTIP}-${ARROW}></div><div class="${UI_TOOLTIP}-${CONTENT}">${content}</div></div>`,
+      `<div class="${TOOLTIP}"><div class="${TOOLTIP}-${CONTENT}">${content}</div></div>`,
     interactive: false,
     removeTitle: true,
     tooltipClass: "",
