@@ -9,14 +9,14 @@ import {
 } from "../constants/index.js";
 import { inDOM } from "../dom/index.js";
 
-export default (elem, hideMode) => {
-  return hideMode === ACTION_REMOVE
+export default (elem, stateMode) => {
+  return stateMode === ACTION_REMOVE
     ? inDOM(elem)
-    : hideMode === CLASS_HIDDEN_MODE
+    : stateMode === CLASS_HIDDEN_MODE
     ? !elem.classList.contains(HIDDEN_CLASS)
-    : hideMode === CLASS_SHOWN_MODE
+    : stateMode === CLASS_SHOWN_MODE
     ? elem.classList.contains(SHOWN_CLASS)
     : !elem.hasAttribute(
-        hideMode === MODE_HIDDEN_UNTIL_FOUND ? HIDDEN : hideMode,
+        stateMode === MODE_HIDDEN_UNTIL_FOUND ? HIDDEN : stateMode,
       );
 };

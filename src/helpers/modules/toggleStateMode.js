@@ -7,7 +7,7 @@ import {
   FLOATING_DATA_ATTRIBUTE,
   HIDDEN,
   HIDDEN_CLASS,
-  HIDE_MODE,
+  STATE_MODE,
   MODE_HIDDEN_UNTIL_FOUND,
   PLACEHOLDER,
   SHOWN_CLASS,
@@ -22,7 +22,8 @@ export default (
   subInstance = instance,
 ) => {
   const opts = instance.opts;
-  const mode = opts[HIDE_MODE];
+  const mode = opts[STATE_MODE];
+
   if (mode === ACTION_REMOVE) {
     if (s) {
       if (opts.keepPlace) {

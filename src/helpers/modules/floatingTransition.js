@@ -19,7 +19,7 @@ import Floating from "../Floating.js";
 import { focus } from "../dom/index.js";
 import toggleBackDismiss from "./toggleBackDismiss.js";
 import callAutofocus from "./callAutofocus.js";
-import toggleHideModeState from "./toggleHideModeState.js";
+import toggleStateMode from "./toggleStateMode.js";
 import {
   addFrameState,
   addLightDismiss,
@@ -36,7 +36,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
   const target = instance[name];
   const anchor = toggler ?? base;
 
-  s && toggleHideModeState(true, instance, target);
+  s && toggleStateMode(true, instance, target);
 
   if (s) {
     teleport.move(instance);
@@ -90,7 +90,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
       teleport.reset();
       instance[FLOATING]?.destroy();
       instance[FLOATING] = null;
-      toggleHideModeState(false, instance, target);
+      toggleStateMode(false, instance, target);
       togglePreventScroll(instance, false);
     }
     emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);

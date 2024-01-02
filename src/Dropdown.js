@@ -23,7 +23,7 @@ import {
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   doc,
-  HIDE_MODE,
+  STATE_MODE,
   TRANSITION,
   TRIGGER,
   ITEM,
@@ -149,7 +149,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     updateOptsByData(
       opts,
       base,
-      [TRANSITION, HIDE_MODE, TRIGGER, ...TOP_LAYER_OPTIONS_NAMES],
+      [TRANSITION, STATE_MODE, TRIGGER, ...TOP_LAYER_OPTIONS_NAMES],
       TOP_LAYER_OPTIONS_NAMES,
     );
 

@@ -5,7 +5,7 @@ import {
   getBooleanDataAttrValue,
   isShown,
 } from "../utils";
-import toggleHideModeState from "./toggleHideModeState.js";
+import toggleStateMode from "./toggleStateMode.js";
 import { toggleInitClass } from "./index.js";
 
 export default (instance, target = instance.base, stateElem = target) => {
@@ -20,7 +20,7 @@ export default (instance, target = instance.base, stateElem = target) => {
     callOrReturn(
       (opts.hashNavigation && checkHash(id)) || opts.shown,
       instance,
-    ) ?? isShown(stateElem, opts.hideMode);
+    ) ?? isShown(stateElem, opts.stateMode);
 
   if (shown) {
     show({
@@ -32,7 +32,7 @@ export default (instance, target = instance.base, stateElem = target) => {
       __initial: true,
     });
   } else {
-    toggleHideModeState(false, instance, stateElem);
+    toggleStateMode(false, instance, stateElem);
   }
 
   return instance;

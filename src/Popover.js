@@ -14,7 +14,7 @@ import {
   DATA_UI_PREFIX,
   CONFIRM,
   TRIGGER,
-  HIDE_MODE,
+  STATE_MODE,
   TRANSITION,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_PREVENT_SCROLL,
@@ -117,7 +117,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     updateOptsByData(
       opts,
       base,
-      [TRANSITION, HIDE_MODE, TRIGGER, ...TOP_LAYER_OPTIONS_NAMES],
+      [TRANSITION, STATE_MODE, TRIGGER, ...TOP_LAYER_OPTIONS_NAMES],
       TOP_LAYER_OPTIONS_NAMES,
     );
 

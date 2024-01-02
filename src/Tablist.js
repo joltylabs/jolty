@@ -45,7 +45,7 @@ import {
   ROLE_SUFFIX,
   doc,
   UI_PREFIX,
-  HIDE_MODE,
+  STATE_MODE,
   ACTION_REMOVE,
   APPEAR,
   OPTION_HASH_NAVIGATION,
@@ -97,7 +97,7 @@ import {
 import {
   addDismiss,
   destroyInstance,
-  toggleHideModeState,
+  toggleStateMode,
   toggleInitClass,
   updateModule,
 } from "./helpers/modules";
@@ -194,7 +194,7 @@ class Tablist extends Base {
       base,
       [
         TRANSITION,
-        HIDE_MODE,
+        STATE_MODE,
         OPTION_HASH_NAVIGATION,
         OPTION_ALWAYS_EXPANDED,
         OPTION_MULTI_EXPAND,
@@ -245,7 +245,7 @@ class Tablist extends Base {
       } else if (shown !== null) {
         isOpenTabpanel = tabpanel.id === shown || i === shown;
       } else {
-        isOpenTabpanel = isShown(tabpanel, opts.hideMode);
+        isOpenTabpanel = isShown(tabpanel, opts.stateMode);
       }
 
       return [isOpenTabpanel, tabObj];
@@ -369,8 +369,8 @@ class Tablist extends Base {
 
     if (!tabpanel) return;
 
-    if (opts[HIDE_MODE] === HIDDEN && tabpanel[HIDDEN] === UNTIL_FOUND) {
-      opts[HIDE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
+    if (opts[STATE_MODE] === HIDDEN && tabpanel[HIDDEN] === UNTIL_FOUND) {
+      opts[STATE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
     }
 
     const uuid = uuidGenerator();
@@ -503,8 +503,8 @@ class Tablist extends Base {
 
     opts[DISMISS] && addDismiss(this, tabpanel, tabInstance.hide);
 
-    if (opts[HIDE_MODE] === ACTION_REMOVE && tabpanel[HIDDEN]) {
-      toggleHideModeState(false, this, tabpanel, tabInstance);
+    if (opts[STATE_MODE] === ACTION_REMOVE && tabpanel[HIDDEN]) {
+      toggleStateMode(false, this, tabpanel, tabInstance);
     }
 
     tabs.push(tabInstance);
@@ -672,7 +672,7 @@ class Tablist extends Base {
       if (s !== tabInstance.isOpen) return;
     }
 
-    s && toggleHideModeState(true, this, tabpanel, tabInstance);
+    s && toggleStateMode(true, this, tabpanel, tabInstance);
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams);
 
@@ -697,7 +697,7 @@ class Tablist extends Base {
     }
 
     awaitPromise(promise, () => {
-      !s && toggleHideModeState(false, this, tabpanel, tabInstance);
+      !s && toggleStateMode(false, this, tabpanel, tabInstance);
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams);
     });
 

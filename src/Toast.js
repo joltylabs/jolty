@@ -7,7 +7,7 @@ import {
   EVENT_HIDDEN,
   body,
   DEFAULT_OPTIONS,
-  HIDE_MODE,
+  STATE_MODE,
   POPOVER_API_SUPPORTED,
   POPOVER_API_MODE_MANUAL,
   POPOVER,
@@ -39,7 +39,7 @@ import {
 } from "./helpers/utils";
 import {
   addDismiss,
-  toggleHideModeState,
+  toggleStateMode,
   baseDestroy,
   callShowInit,
   updateModule,
@@ -115,8 +115,8 @@ class Toast extends ToggleMixin(Base, TOAST) {
     } else {
       this.root = opts.root ? getOptionElem(this, opts.root) : body;
     }
-    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-      toggleHideModeState(false, this);
+    if (opts[STATE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleStateMode(false, this);
     }
 
     this.transition = Transition.createOrUpdate(
@@ -157,12 +157,12 @@ class Toast extends ToggleMixin(Base, TOAST) {
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
 
-    const { limit, position, container, topLayer, keepTopLayer, hideMode } =
+    const { limit, position, container, topLayer, keepTopLayer, stateMode } =
       opts;
 
     if (animated && transition?.isAnimating) return;
 
-    s ??= !isShown(base, hideMode);
+    s ??= !isShown(base, stateMode);
 
     let preventAnimation;
 
@@ -217,7 +217,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     autohide && autohide.toggleInterections(s);
 
-    s && toggleHideModeState(true, this);
+    s && toggleStateMode(true, this);
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
@@ -226,7 +226,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     toggleClass(base, opts[TOAST + CLASS_ACTIVE_SUFFIX], s);
 
     awaitPromise(promise, () => {
-      !s && toggleHideModeState(false, this);
+      !s && toggleStateMode(false, this);
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
       !s && this.destroy({ remove: true });
     });

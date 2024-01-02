@@ -127,7 +127,7 @@ export const LEAVE_ACTIVE = LEAVE + upperFirst(ACTIVE);
 export const LEAVE_FROM = LEAVE + "From";
 export const LEAVE_TO = LEAVE + "To";
 export const AFTER_LEAVE = AFTER + upperFirst(LEAVE);
-export const HIDE_MODE = HIDE + upperFirst(MODE);
+export const STATE_MODE = "stateMode";
 export const DURATION = "duration";
 export const DURATION_ENTER = DURATION + upperFirst(ENTER);
 export const DURATION_LEAVE = DURATION + upperFirst(LEAVE);
@@ -253,7 +253,7 @@ export const HIDDEN_CLASS = UI_PREFIX + HIDDEN;
 export const SHOWN_CLASS = UI_PREFIX + SHOWN;
 export const CLASS_SHOWN_MODE = CLASS + "-" + SHOWN;
 export const CLASS_HIDDEN_MODE = CLASS + "-" + HIDDEN;
-export const TRANSITION_REMOVE_MODE = { [HIDE_MODE]: ACTION_REMOVE };
+export const TRANSITION_REMOVE_MODE = { [STATE_MODE]: ACTION_REMOVE };
 
 export const EVENT_SUFFIX_LIGHT_DISMISS = "." + OPTION_LIGHT_DISMISS;
 
@@ -283,7 +283,7 @@ export const DEFAULT_OPTIONS = {
   eventBubble: true,
   shown: null,
   a11y: true,
-  hideMode: HIDDEN,
+  stateMode: HIDDEN,
   keepPlace: true,
   transition: true,
   awaitAnimation: false,

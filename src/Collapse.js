@@ -16,7 +16,7 @@ import {
   CLASS_ACTIVE,
   CLASS_ACTIVE_SUFFIX,
   TOGGLER,
-  HIDE_MODE,
+  STATE_MODE,
   ACTION_REMOVE,
   HIDDEN,
   TRANSITION,
@@ -52,7 +52,7 @@ import {
   baseDestroy,
   callShowInit,
   addHashNavigation,
-  toggleHideModeState,
+  toggleStateMode,
 } from "./helpers/modules";
 
 const COLLAPSE = "collapse";
@@ -88,14 +88,14 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
   _update() {
     const { base, opts } = this;
 
-    if (opts[HIDE_MODE] === HIDDEN && base[HIDDEN] === UNTIL_FOUND) {
-      opts[HIDE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
+    if (opts[STATE_MODE] === HIDDEN && base[HIDDEN] === UNTIL_FOUND) {
+      opts[STATE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
     }
 
     updateOptsByData(
       opts,
       base,
-      [TRANSITION, HIDE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
+      [TRANSITION, STATE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
       [OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
     );
 
@@ -105,8 +105,8 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
       opts.teleport,
     )?.move(this);
 
-    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-      toggleHideModeState(false, this);
+    if (opts[STATE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleStateMode(false, this);
     }
 
     this.transition = Transition.createOrUpdate(
@@ -199,7 +199,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-    s && toggleHideModeState(true, this);
+    s && toggleStateMode(true, this);
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
@@ -210,7 +210,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
     awaitPromise(promise, () => {
-      !s && toggleHideModeState(false, this);
+      !s && toggleStateMode(false, this);
       !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
       if (!s && opts[OPTION_AUTODESTROY]) {
         opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });

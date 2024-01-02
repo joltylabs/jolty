@@ -6,7 +6,7 @@ import {
   ARIA_LABELLEDBY,
   ARIA_DESCRIBEDBY,
   TABINDEX,
-  HIDE_MODE,
+  STATE_MODE,
   EVENT_SHOW,
   EVENT_HIDE,
   EVENT_CLICK,
@@ -82,7 +82,7 @@ import {
   callShowInit,
   toggleConfirm,
   addHashNavigation,
-  toggleHideModeState,
+  toggleStateMode,
   updateModule,
   togglePreventScroll,
   FocusGuards,
@@ -195,7 +195,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       base,
       [
         TRANSITION,
-        HIDE_MODE,
+        STATE_MODE,
         BACKDROP,
         OPTION_GROUP,
         OPTION_AUTODESTROY,
@@ -229,8 +229,8 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       },
     )?.move(this);
 
-    if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-      toggleHideModeState(false, this);
+    if (opts[STATE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+      toggleStateMode(false, this);
     }
 
     this.transition = Transition.createOrUpdate(
@@ -366,7 +366,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       optReturnFocusAwait = false;
     }
 
-    s && toggleHideModeState(true, this);
+    s && toggleStateMode(true, this);
 
     !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
@@ -413,7 +413,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           this.returnFocus();
         }
         toggleTopLayer(this, false);
-        toggleHideModeState(false, this);
+        toggleStateMode(false, this);
         togglePreventScroll(this, false);
         autohide && autohide.toggleInterections(false);
         this.focusGuards?.destroy();
