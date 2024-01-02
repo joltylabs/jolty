@@ -48,6 +48,8 @@ import {
   PREVENT,
   EVENT_BACK_DISMISS_PREVENT,
   EVENT_CLOSE,
+  OPTION_TOP_LAYER,
+  OPTION_MOVE_TO_ROOT,
 } from "./helpers/constants";
 import { isString, isFunction, isDialog, isModal } from "./helpers/is";
 import {
@@ -70,6 +72,7 @@ import {
   awaitPromise,
   resetTransition,
   camelToKebab,
+  addStatusClasses,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -246,16 +249,13 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
 
     addPopoverAttribute(this);
-
-    base.dataset.dialogCurrentOptions = [
-      this[BACKDROP] && BACKDROP,
-      opts[MODAL] && MODAL,
-      (opts[OPTION_PREVENT_SCROLL] === AUTO
-        ? opts[MODAL]
-        : opts[OPTION_PREVENT_SCROLL]) && camelToKebab(OPTION_PREVENT_SCROLL),
-    ]
-      .filter(Boolean)
-      .join(" ");
+    addStatusClasses(
+      this,
+      BACKDROP,
+      MODAL,
+      OPTION_TOP_LAYER,
+      OPTION_PREVENT_SCROLL,
+    );
   }
   destroy(destroyOpts) {
     if (!this.isInit) return;

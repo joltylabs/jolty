@@ -27,6 +27,7 @@ import {
   END,
   AFTER,
   DISMISS,
+  OPTION_TOP_LAYER,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -46,6 +47,7 @@ import {
   getClassActive,
   updateOptsByData,
   kebabToCamel,
+  addStatusClasses,
 } from "./helpers/utils";
 import {
   baseDestroy,
@@ -143,6 +145,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     addPopoverAttribute(this, tooltip);
     toggleOnInterection(this, base, tooltip);
+
+    addStatusClasses(this, OPTION_TOP_LAYER);
 
     opts.a11y && setAttribute(tooltip, TOOLTIP);
   }

@@ -36,6 +36,8 @@ import {
   body,
   AUTO,
   DISMISS,
+  MODAL,
+  OPTION_TOP_LAYER,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -58,6 +60,7 @@ import {
   getOptionElem,
   getEventsPrefix,
   updateOptsByData,
+  addStatusClasses,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -183,6 +186,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     addPopoverAttribute(this);
     toggleOnInterection(this);
+
+    addStatusClasses(this, MODAL, OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL);
   }
   updateToggler() {
     const { opts, id } = this;

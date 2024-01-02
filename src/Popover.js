@@ -32,6 +32,7 @@ import {
   UI_PREFIX,
   EVENT_BACK_DISMISS_PREVENT,
   INERT,
+  OPTION_TOP_LAYER,
 } from "./helpers/constants";
 
 import {
@@ -49,6 +50,7 @@ import {
   updateOptsByData,
   camelToKebab,
   getDataSelector,
+  addStatusClasses,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -135,14 +137,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
     addPopoverAttribute(this);
     toggleOnInterection(this);
 
-    base.dataset.popoverCurrentOptions = [
-      opts[MODAL] && MODAL,
-      (opts[OPTION_PREVENT_SCROLL] === AUTO
-        ? opts[MODAL]
-        : opts[OPTION_PREVENT_SCROLL]) && camelToKebab(OPTION_PREVENT_SCROLL),
-    ]
-      .filter(Boolean)
-      .join(" ");
+    addStatusClasses(this, MODAL, OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL);
   }
   updateToggler() {
     const { opts, id } = this;
