@@ -12,7 +12,6 @@ import {
   EVENT_RESIZE,
   DATA_UI_PREFIX,
   DIALOG,
-  ABSOLUTE,
   FLIP,
   SHRINK,
   STICKY,
@@ -44,7 +43,6 @@ import {
   collectCssVariables,
   arrayFrom,
   camelToKebab,
-  debounce,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import {
