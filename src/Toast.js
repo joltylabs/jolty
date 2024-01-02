@@ -24,6 +24,7 @@ import {
   CLASS_ACTIVE_SUFFIX,
   CLASS_ACTIVE,
   DISMISS,
+  TOP,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
 import { fragment, inDOM, toggleClass } from "./helpers/dom";
@@ -79,10 +80,11 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limit: false,
     limitAnimateEnter: true,
     limitAnimateLeave: true,
-    autohide: false,
+    autohide: 5000,
     topLayer: true,
     keepTopLayer: true,
     a11y: STATUS,
+    position: "top-end",
     [TOAST + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
   };
   constructor(elem, opts) {
