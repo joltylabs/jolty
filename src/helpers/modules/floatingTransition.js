@@ -7,8 +7,6 @@ import {
   EVENT_HIDDEN,
   FLOATING,
   OPTION_LIGHT_DISMISS,
-  AUTO,
-  MODAL,
   TOOLTIP,
   EVENT_KEYDOWN,
   OPTION_BACK_DISMISS,
@@ -22,7 +20,6 @@ import callAutofocus from "./callAutofocus.js";
 import toggleStateMode from "./toggleStateMode.js";
 import {
   addFrameState,
-  addLightDismiss,
   toggleLightDismiss,
   togglePreventScroll,
 } from "./index.js";

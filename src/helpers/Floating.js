@@ -25,7 +25,6 @@ import {
   EVENT_KEYDOWN,
   FOCUSABLE_ELEMENTS_SELECTOR,
   KEY_TAB,
-  FALSE,
   OPTION_MOVE_TO_ROOT,
   FLOATING,
   MODAL,
@@ -133,7 +132,7 @@ export default class Floating {
     OPTIONS.forEach((name) => {
       if (name === FLIP) {
         options[FLIP] = options[FLIP]
-          ? options[FLIP].split(" ").map((v) => v === TRUE)
+          ? options[FLIP].split(" ").map((v) => v === "1")
           : returnArray(opts[FLIP]);
       } else if (name === PLACEMENT) {
         options[name] =
@@ -142,9 +141,9 @@ export default class Floating {
           opts[name];
       } else {
         options[name] =
-          options[name] === TRUE
+          options[name] === "1"
             ? true
-            : options[name] === FALSE
+            : options[name] === "0"
             ? false
             : opts[name];
       }
