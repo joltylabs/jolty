@@ -31,6 +31,7 @@ import {
   RIGHT,
   BOTTOM,
   body,
+  AUTO,
 } from "./constants";
 import {
   getPosition,
@@ -159,8 +160,10 @@ export default class Floating {
     const inTopLayer =
       (topLayer && POPOVER_API_SUPPORTED) || targetIsModal || moveToRoot;
 
+    const focusTrap = opts.focusTrap === AUTO ? opts[MODAL] : opts.focusTrap;
+
     const useFocusGuards =
-      (opts.focusTrap && !targetIsModal) || (usePopoverApi && moveToRoot);
+      (focusTrap && !targetIsModal) || (usePopoverApi && moveToRoot);
 
     if (moveToRoot && !targetIsModal && !opts.focusTrap) {
       on(anchor, EVENT_KEYDOWN, (e) => {

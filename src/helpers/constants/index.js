@@ -300,7 +300,7 @@ export const DEFAULT_FLOATING_OPTIONS = {
   shrink: false,
   flip: true,
   sticky: true,
-  focusTrap: false,
+  focusTrap: "auto",
   shown: false,
   arrow: null,
   [OPTION_LIGHT_DISMISS]: true,
