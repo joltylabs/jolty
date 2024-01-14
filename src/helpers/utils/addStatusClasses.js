@@ -9,7 +9,8 @@ import {
 } from "../constants/index.js";
 
 export default (instance, ...statuses) => {
-  const { base, opts } = instance;
+  const { opts } = instance;
+  const base = instance[instance.constructor.NAME];
   statuses.forEach((status) => {
     let s, className;
     if (status === BACKDROP) {
@@ -19,14 +20,14 @@ export default (instance, ...statuses) => {
       s = opts[MODAL];
       className = MODAL;
     } else if (status === OPTION_PREVENT_SCROLL) {
-      s = opts[OPTION_TOP_LAYER] || opts[OPTION_MOVE_TO_ROOT];
-      className = "root-relative";
-    } else if (status === OPTION_TOP_LAYER) {
       s =
         opts[OPTION_PREVENT_SCROLL] === AUTO
           ? opts[MODAL]
           : opts[OPTION_PREVENT_SCROLL];
       className = "prevents-scroll";
+    } else if (status === OPTION_TOP_LAYER) {
+      s = opts[OPTION_TOP_LAYER] || opts[OPTION_MOVE_TO_ROOT];
+      className = "root-relative";
     }
     base.classList.toggle(UI_PREFIX + className, s);
   });
