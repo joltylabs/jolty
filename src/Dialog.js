@@ -86,7 +86,6 @@ import {
   updateModule,
   togglePreventScroll,
   FocusGuards,
-  addLightDismiss,
   addAriaTargets,
   addFrameState,
   toggleLightDismiss,
