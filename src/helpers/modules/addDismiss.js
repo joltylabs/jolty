@@ -13,7 +13,7 @@ export default function (
   elem = instance.base,
   action = instance.hide,
 ) {
-  instance.on(
+  instance._on(
     elem,
     eventName,
     isString(instance.opts[DISMISS])
@@ -28,7 +28,7 @@ export default function (
       const eventParams = { event, trigger: event.deligateTarget };
       action(eventParams);
       if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
-        instance.emit(CANCEL, eventParams);
+        instance._emit(CANCEL, eventParams);
       }
     },
   );

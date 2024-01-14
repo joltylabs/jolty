@@ -16,7 +16,7 @@ export default (instance, s) => {
       addLightDismiss(instance);
     }
   } else {
-    instance.off("*", EVENT_SUFFIX_LIGHT_DISMISS);
+    instance._off("*", EVENT_SUFFIX_LIGHT_DISMISS);
     instance._mousedownEvent = null;
   }
 };

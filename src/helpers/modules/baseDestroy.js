@@ -16,7 +16,7 @@ export default (
   instance,
   { remove = false, keepInstance = false, keepState = false } = {},
 ) => {
-  const { base, off, emit, constructor } = instance;
+  const { base, _off, _emit, constructor } = instance;
 
   const stateElem = instance[constructor.NAME];
 
@@ -29,7 +29,7 @@ export default (
     }
   });
 
-  off();
+  _off();
 
   if (!keepInstance) {
     destroyInstance(instance);
@@ -45,7 +45,7 @@ export default (
 
   toggleInitClass(instance, false);
 
-  emit(EVENT_DESTROY);
+  _emit(EVENT_DESTROY);
 
   return instance;
 };

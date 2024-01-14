@@ -14,7 +14,7 @@ export default (instance, target = instance.base, stateElem = target) => {
   instance.instances.set(id, instance);
   instance.isInit = true;
   toggleInitClass(instance, true);
-  instance.emit(EVENT_INIT);
+  instance._emit(EVENT_INIT);
 
   const shown =
     callOrReturn(

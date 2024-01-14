@@ -6,11 +6,11 @@ import {
   EVENT_SHOWN,
   EVENT_HIDDEN,
   FLOATING,
-  OPTION_LIGHT_DISMISS,
   TOOLTIP,
   EVENT_KEYDOWN,
   OPTION_BACK_DISMISS,
   KEY_ESC,
+  EVENT_MOUSEENTER,
 } from "../constants";
 import { getDataSelector } from "../utils";
 import Floating from "../Floating.js";
@@ -24,10 +24,8 @@ import {
   togglePreventScroll,
 } from "./index.js";
 
-export const EVENT_SUFFIX_LIGHT_DISMISS = "." + OPTION_LIGHT_DISMISS;
-
 export default (instance, { s, animated, silent, eventParams }) => {
-  const { transition, base, opts, toggler, emit, constructor, teleport } =
+  const { transition, base, opts, toggler, _emit, constructor, teleport } =
     instance;
   const name = constructor.NAME;
   const target = instance[name];
@@ -51,7 +49,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   addFrameState(instance, s);
 
-  !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+  !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
   const promise = transition?.run(s, animated);
 
@@ -59,19 +57,21 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   if (name === TOOLTIP) {
     if (s) {
-      instance.on(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS, (event) => {
+      instance._on(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS, (event) => {
         if (!event.isTrusted || event.keyCode !== KEY_ESC) return;
         instance.hide({ event });
       });
     } else {
-      instance.off(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS);
+      instance._off(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS);
     }
   } else {
     toggleBackDismiss(s, instance);
   }
 
   if (s) {
-    (opts.autofocus || opts.focusTrap) && callAutofocus(instance);
+    (opts.autofocus || opts.focusTrap) &&
+      eventParams?.event?.type !== EVENT_MOUSEENTER &&
+      callAutofocus(instance);
   } else {
     !s && target.contains(doc.activeElement) && focus(toggler);
   }
@@ -90,7 +90,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
       toggleStateMode(false, instance, target);
       togglePreventScroll(instance, false);
     }
-    emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+    _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
   })();
 
   return promise;

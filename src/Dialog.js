@@ -154,17 +154,17 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   init() {
-    const { opts, isInit, on, emit, base, toggle } = this;
+    const { opts, isInit, _on, _emit, base, toggle } = this;
 
     if (isInit) return;
 
     base.id = this.id;
 
-    emit(EVENT_BEFORE_INIT);
+    _emit(EVENT_BEFORE_INIT);
 
     this._update();
 
-    on(document, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+    _on(document, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
       if (this._isClosing) return;
       const togglers = this._togglers;
       const trigger = isString(togglers)
@@ -284,7 +284,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
   }
 
   async toggle(s, params) {
-    const { opts, isOpen, emit, isAnimating, backdrop, base, autohide } = this;
+    const { opts, isOpen, _emit, isAnimating, backdrop, base, autohide } = this;
 
     let optReturnFocusAwait =
       opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
@@ -300,7 +300,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
           this.main,
           camelToKebab(UI_PREFIX + EVENT_BACK_DISMISS_PREVENT),
         );
-        emit(EVENT_BACK_DISMISS_PREVENT, { event });
+        _emit(EVENT_BACK_DISMISS_PREVENT, { event });
         toggleBackDismiss(true, this);
         return;
       }
@@ -321,7 +321,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     const eventParams = { trigger, event };
 
-    !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     if (
       !s &&
@@ -332,7 +332,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
     ) {
       this.groupClosing = false;
       animateClass(this.main, camelToKebab(UI_PREFIX + EVENT_HIDE_PREVENTED));
-      return emit(EVENT_HIDE_PREVENTED, eventParams);
+      return _emit(EVENT_HIDE_PREVENTED, eventParams);
     }
 
     addFrameState(this, s);
@@ -367,7 +367,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     s && toggleStateMode(true, this);
 
-    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
     const promise = this.transition?.run(s, animated);
 
@@ -419,7 +419,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
         this.focusGuards = null;
       }
 
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      !silent && _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
       if (!s) {
         opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });

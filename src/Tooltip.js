@@ -88,13 +88,13 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     super(elem, opts);
   }
   init() {
-    const { opts, anchor, id, isInit, emit } = this;
+    const { opts, anchor, id, isInit, _emit } = this;
 
     if (isInit) return;
 
     anchor.id = id;
 
-    emit(EVENT_BEFORE_INIT);
+    _emit(EVENT_BEFORE_INIT);
 
     this._cache = { [TITLE]: anchor[TITLE] };
 
@@ -152,8 +152,8 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   }
   destroy(destroyOpts) {
     if (this.isInit) return;
-    const { anchor, tooltip, id, _cache, emit, opts } = this;
-    emit(EVENT_BEFORE_DESTROY);
+    const { anchor, tooltip, id, _cache, _emit, opts } = this;
+    _emit(EVENT_BEFORE_DESTROY);
     if (opts.a11y) {
       removeAttribute(tooltip, TOOLTIP);
       setAttribute(anchor, ARIA_DESCRIBEDBY, (val) =>
@@ -169,7 +169,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
   }
 
   async toggle(s, params) {
-    const { anchor, tooltip, id, opts, emit, _cache, isOpen, isAnimating } =
+    const { anchor, tooltip, id, opts, _emit, _cache, isOpen, isAnimating } =
       this;
     const awaitAnimation = opts.awaitAnimation;
     const { animated, trigger, silent, event } =
@@ -194,7 +194,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     const eventParams = { event, trigger };
 
-    !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     const promise = floatingTransition(this, {
       s,

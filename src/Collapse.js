@@ -76,7 +76,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     this.base.id = this.id;
 
-    this.emit(EVENT_BEFORE_INIT);
+    this._emit(EVENT_BEFORE_INIT);
 
     this._update();
 
@@ -124,7 +124,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     if (!this.isInit) return;
 
-    this.emit(EVENT_BEFORE_DESTROY);
+    this._emit(EVENT_BEFORE_DESTROY);
 
     if (opts.a11y) {
       const otherTogglers = arrayFrom(this.instances.values())
@@ -170,7 +170,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
             opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
             !!this.isOpen,
           );
-          this.on(toggler, EVENT_CLICK, (event) => {
+          this._on(toggler, EVENT_CLICK, (event) => {
             event.preventDefault();
             this.toggle(null, { trigger: toggler, event });
           });
@@ -180,7 +180,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
     ));
   }
   async toggle(s, params) {
-    const { base, togglers, opts, emit, isOpen, isAnimating } = this;
+    const { base, togglers, opts, _emit, isOpen, isAnimating } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event } =
       normalizeToggleParameters(params);
@@ -197,11 +197,11 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     const eventParams = { trigger, event };
 
-    !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     s && toggleStateMode(true, this);
 
-    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
     const promise = this.transition?.run(s, animated);
 
@@ -211,7 +211,7 @@ class Collapse extends ToggleMixin(Base, COLLAPSE) {
 
     awaitPromise(promise, () => {
       !s && toggleStateMode(false, this);
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      !silent && _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
       if (!s && opts[OPTION_AUTODESTROY]) {
         opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });
       }

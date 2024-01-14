@@ -269,7 +269,7 @@ class Tablist extends Base {
     });
   }
   init() {
-    const { isInit, emit } = this;
+    const { isInit, _emit } = this;
     if (isInit) return;
 
     this.base.id = this.id;
@@ -278,7 +278,7 @@ class Tablist extends Base {
       (name) => (this[name] = this[name].bind(this)),
     );
 
-    emit(EVENT_BEFORE_INIT);
+    _emit(EVENT_BEFORE_INIT);
 
     this.tabs = [];
     this.initTabs();
@@ -290,7 +290,7 @@ class Tablist extends Base {
     this.instances.set(this.id, this);
     this.isInit = true;
     toggleInitClass(this, true);
-    return emit(EVENT_INIT);
+    return _emit(EVENT_INIT);
   }
 
   destroy({ keepInstance = false, keepState = false } = {}) {
@@ -300,12 +300,12 @@ class Tablist extends Base {
       opts: { a11y },
       isInit,
       off,
-      emit,
+      _emit,
     } = this;
 
     if (!isInit) return;
 
-    emit(EVENT_BEFORE_DESTROY);
+    _emit(EVENT_BEFORE_DESTROY);
 
     off(tabs);
 
@@ -327,7 +327,7 @@ class Tablist extends Base {
 
     this.isInit = false;
 
-    emit(EVENT_DESTROY);
+    _emit(EVENT_DESTROY);
 
     return this;
   }
@@ -345,7 +345,7 @@ class Tablist extends Base {
   initTab(tab) {
     if (this.getTab(tab)) return;
 
-    const { tabs, tablist, opts, shownTabs, on, off, emit } = this;
+    const { tabs, tablist, opts, shownTabs, _on, _off, _emit } = this;
     const index = tabs.length;
 
     const item = isString(opts[ITEM])
@@ -386,15 +386,15 @@ class Tablist extends Base {
     }
 
     let isMouseDown;
-    on(tab, EVENT_FOCUS, (e) => {
+    _on(tab, EVENT_FOCUS, (e) => {
       !isMouseDown && this._onTabFocus(e);
     });
-    on(tab, EVENT_KEYDOWN, (e) => this._onTabKeydown(e));
-    on(tab, EVENT_MOUSEDOWN, () => {
+    _on(tab, EVENT_KEYDOWN, (e) => this._onTabKeydown(e));
+    _on(tab, EVENT_MOUSEDOWN, () => {
       isMouseDown = true;
       requestAnimationFrame(() => (isMouseDown = false));
     });
-    on(tab, EVENT_CLICK, (event) => {
+    _on(tab, EVENT_CLICK, (event) => {
       event.preventDefault();
       this.toggle(tab, null, { event, trigger: tab });
     });
@@ -427,7 +427,7 @@ class Tablist extends Base {
         removeAttribute(item, ROLE);
       }
 
-      off(elems);
+      _off(elems);
       this.tabs = without(this.tabs, tabInstance);
       if (cleanStyles) {
         ELEMS.forEach((name) =>
@@ -448,7 +448,7 @@ class Tablist extends Base {
         }
       });
 
-      emit(ACTION_DESTROY_TAB, tabInstance);
+      _emit(ACTION_DESTROY_TAB, tabInstance);
     };
 
     const toggleDisabled = (s = null) => {
@@ -509,7 +509,7 @@ class Tablist extends Base {
 
     tabs.push(tabInstance);
 
-    emit(ACTION_INIT_TAB, tabInstance);
+    _emit(ACTION_INIT_TAB, tabInstance);
 
     return tabInstance;
   }
@@ -623,7 +623,7 @@ class Tablist extends Base {
 
     if (!tabInstance) return;
 
-    const { opts, shownTabs, emit } = this;
+    const { opts, shownTabs, _emit } = this;
     const { a11y, awaitAnimation } = opts;
     const { tab, isOpen, transition, index, tabpanel } = tabInstance;
 
@@ -649,7 +649,11 @@ class Tablist extends Base {
     const eventParams = { event, trigger };
 
     !silent &&
-      emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, tabInstance, eventParams);
+      _emit(
+        s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE,
+        tabInstance,
+        eventParams,
+      );
 
     tabInstance.isOpen = s;
 
@@ -674,7 +678,7 @@ class Tablist extends Base {
 
     s && toggleStateMode(true, this, tabpanel, tabInstance);
 
-    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams);
+    !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams);
 
     const promise = transition?.run(s, animated);
 
@@ -698,7 +702,8 @@ class Tablist extends Base {
 
     awaitPromise(promise, () => {
       !s && toggleStateMode(false, this, tabpanel, tabInstance);
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams);
+      !silent &&
+        _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams);
     });
 
     animated && opts.awaitAnimation && (await promise);

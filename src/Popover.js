@@ -152,7 +152,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   destroy(destroyOpts) {
     if (!this.isInit) return;
     const { opts, toggler, base } = this;
-    this.emit(EVENT_BEFORE_DESTROY);
+    this._emit(EVENT_BEFORE_DESTROY);
     opts.a11y &&
       removeAttribute(
         toggler,
@@ -169,7 +169,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
   }
 
   async toggle(s, params) {
-    const { isOpen, isAnimating, toggler, base, opts, emit } = this;
+    const { isOpen, isAnimating, toggler, base, opts, _emit } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event } =
       normalizeToggleParameters(params);
@@ -182,7 +182,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
           base,
           camelToKebab(UI_PREFIX + EVENT_BACK_DISMISS_PREVENT),
         );
-        emit(EVENT_BACK_DISMISS_PREVENT, { event });
+        _emit(EVENT_BACK_DISMISS_PREVENT, { event });
         toggleBackDismiss(true, this);
         return;
       }
@@ -200,7 +200,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     const eventParams = { event, trigger };
 
-    !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     a11y && (toggler[ARIA_EXPANDED] = !!s);
 

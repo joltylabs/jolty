@@ -109,7 +109,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   init() {
     if (this.isInit) return;
 
-    const { base, show, on, opts } = this;
+    const { base, show, _on, opts } = this;
 
     base.id = this.id;
 
@@ -117,8 +117,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     this._update();
 
-    on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
-    on(this.toggler, EVENT_KEYDOWN, async (event) => {
+    _on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
+    _on(this.toggler, EVENT_KEYDOWN, async (event) => {
       let arrowActivation = opts.arrowActivation;
       const { keyCode } = event;
 
@@ -145,7 +145,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     return callShowInit(this);
   }
   _update() {
-    const { base, opts, on, off, hide } = this;
+    const { base, opts, _on, _off, hide } = this;
     updateOptsByData(
       opts,
       base,
@@ -164,7 +164,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     this.updateToggler();
 
     if (opts.itemClickHide) {
-      on(base, EVENT_CLICK, async (event) => {
+      _on(base, EVENT_CLICK, async (event) => {
         const trigger = closest(event.target, this.focusableElems);
         if (
           !trigger ||
@@ -181,7 +181,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
         hide({ event, trigger });
       });
     } else {
-      off(base, EVENT_CLICK);
+      _off(base, EVENT_CLICK);
     }
 
     addPopoverAttribute(this);
@@ -276,7 +276,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   }
 
   async toggle(s, params) {
-    const { isOpen, isAnimating, toggler, base, opts, emit } = this;
+    const { isOpen, isAnimating, toggler, base, opts, _emit } = this;
     const { awaitAnimation, a11y } = opts;
     const { animated, silent, trigger, event } =
       normalizeToggleParameters(params);
@@ -295,7 +295,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
 
     const eventParams = { event, trigger };
 
-    !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     a11y && (toggler[ARIA_EXPANDED] = !!s);
 

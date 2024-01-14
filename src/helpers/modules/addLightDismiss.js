@@ -19,7 +19,7 @@ import { camelToKebab, isClickOutsideElem } from "../utils/index.js";
 import { isModal } from "../is/index.js";
 
 export default (instance) => {
-  const { constructor, opts, on, emit } = instance;
+  const { constructor, opts, _on, _emit } = instance;
   const base = instance[constructor.NAME];
   const contentElem = instance.main || base;
 
@@ -30,11 +30,11 @@ export default (instance) => {
       EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
   ];
 
-  on(contentElem, EVENT_MOUSEDOWN + EVENT_SUFFIX_LIGHT_DISMISS, (e) => {
+  _on(contentElem, EVENT_MOUSEDOWN + EVENT_SUFFIX_LIGHT_DISMISS, (e) => {
     instance._mousedownEvent = e;
   });
 
-  on(document, events, (event) => {
+  _on(document, events, (event) => {
     const target = event.target;
     if (
       !instance.isOpen ||
@@ -82,7 +82,7 @@ export default (instance) => {
           contentElem,
           camelToKebab(UI_PREFIX + EVENT_LIGHT_DISMISS_PREVENT),
         );
-        emit(EVENT_LIGHT_DISMISS_PREVENT, { event });
+        _emit(EVENT_LIGHT_DISMISS_PREVENT, { event });
         return;
       }
     }
@@ -111,7 +111,7 @@ export default (instance) => {
     if (isClickOutside) {
       instance.hide({ event });
       if (constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
-        emit(CANCEL, { event });
+        _emit(CANCEL, { event });
       }
     }
 

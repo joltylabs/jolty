@@ -9,15 +9,15 @@ import { isDialog } from "../is/index.js";
 import CloseWatcher from "../CloseWatcher.js";
 
 export default function (s, instance) {
-  const { base, on, off, opts } = instance;
+  const { base, _on, _off, opts } = instance;
 
   if (isDialog(base)) {
     if (s) {
-      on(base, CANCEL + UI_EVENT_PREFIX, (event) => {
+      _on(base, CANCEL + UI_EVENT_PREFIX, (event) => {
         event.preventDefault();
       });
     } else {
-      off(base, CANCEL + UI_EVENT_PREFIX);
+      _off(base, CANCEL + UI_EVENT_PREFIX);
     }
   }
   if (s) {

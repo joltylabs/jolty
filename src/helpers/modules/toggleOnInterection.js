@@ -26,7 +26,7 @@ export default (
   let {
     opts: { trigger, delay, mode },
     toggle,
-    on,
+    _on,
   } = instance;
 
   if (instance[PRIVATE_PREFIX + TRIGGER]) {
@@ -47,12 +47,12 @@ export default (
   }
 
   let pointerType;
-  on(toggler, "pointerdown" + PREFIX, (event) => {
+  _on(toggler, "pointerdown" + PREFIX, (event) => {
     pointerType = event.pointerType;
   });
 
   if (triggerClick) {
-    on(toggler, EVENT_CLICK + PREFIX, (event) => {
+    _on(toggler, EVENT_CLICK + PREFIX, (event) => {
       if (
         (pointerType === MOUSE && triggerHover) ||
         (instance.isOpen &&
@@ -73,7 +73,7 @@ export default (
     events.push(EVENT_FOCUSIN + PREFIX, EVENT_FOCUSOUT + PREFIX);
 
     (triggerClick || triggerFocus) &&
-      on(toggler, EVENT_MOUSEDOWN, () => {
+      _on(toggler, EVENT_MOUSEDOWN, () => {
         isMouseDown = true;
         if (instance.isOpen) {
           clearTimeout(hoverTimer);
@@ -83,7 +83,7 @@ export default (
   }
 
   if (triggerHover || triggerFocus) {
-    on([toggler, target], events, (event) => {
+    _on([toggler, target], events, (event) => {
       const { type } = event;
       if (pointerType === "touch") return;
       const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
@@ -108,7 +108,7 @@ export default (
           toggle(entered, { trigger: toggler, event });
         }, d);
       } else {
-        toggle(entered, { event, trigger: event.target });
+        toggle(entered, { trigger: event.target, event });
       }
     });
   }

@@ -58,7 +58,7 @@ export default (
         instance.off(target, EVENT_BEFORE_MATCH);
       } else {
         target.setAttribute(HIDDEN, UNTIL_FOUND);
-        instance.on(target, EVENT_BEFORE_MATCH, (event) => {
+        instance._on(target, EVENT_BEFORE_MATCH, (event) => {
           instance.show(target, { animated: false, event });
         });
       }

@@ -24,7 +24,6 @@ import {
   CLASS_ACTIVE_SUFFIX,
   CLASS_ACTIVE,
   DISMISS,
-  TOP,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
 import { fragment, inDOM, toggleClass } from "./helpers/dom";
@@ -152,7 +151,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
       root,
       instances,
       constructor,
-      emit,
+      _emit,
     } = this;
     const { animated, silent, event, trigger } =
       normalizeToggleParameters(params);
@@ -213,13 +212,13 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     const eventParams = { event, trigger };
 
-    !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
     autohide && autohide.toggleInterections(s);
 
     s && toggleStateMode(true, this);
 
-    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+    !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
     const promise = transition?.run(s, animated && !preventAnimation);
 
@@ -227,7 +226,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
     awaitPromise(promise, () => {
       !s && toggleStateMode(false, this);
-      !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      !silent && _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
       !s && this.destroy({ remove: true });
     });
 

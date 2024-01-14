@@ -102,6 +102,8 @@ class Base {
 
     this[baseElemName] = elem;
 
+    this._events = {};
+
     this.baseOpts = this.opts = opts;
 
     this.uuid = uuidGenerator();
@@ -110,7 +112,7 @@ class Base {
 
     const eventHandler = new EventHandler();
     [ACTION_ON, ACTION_OFF, ACTION_ONCE].forEach((name) => {
-      this[name] = (...params) => {
+      this[`_${name}`] = (...params) => {
         eventHandler[name](...params);
         return this;
       };
@@ -123,7 +125,9 @@ class Base {
       ACTION_INIT,
       ACTION_DESTROY,
       ACTION_UPDATE,
-      ACTION_EMIT,
+      ACTION_ON,
+      ACTION_OFF,
+      "_" + ACTION_EMIT,
     ].forEach((action) => (this[action] = this[action]?.bind(this)));
 
     allInstances.add(this);
@@ -141,7 +145,7 @@ class Base {
       { 0: this.baseOpts, ...this.baseOpts.breakpoints },
       {
         onUpdate: (breakpoint, opts) => {
-          this.emit(EVENT_BREAKPOINT, breakpoint, this.breakpoint);
+          this._emit(EVENT_BREAKPOINT, breakpoint, this.breakpoint);
           if (breakpoint[0].data) {
             const dataValue = getDataValue(
               this.constructor._data,
@@ -179,12 +183,13 @@ class Base {
       },
     );
   }
-  emit(eventName, ...detail) {
+  _emit(eventName, ...detail) {
     const { opts, base } = this;
     const { on, eventDispatch, eventBubble, eventPrefix } = opts;
     detail = [this, ...detail];
     if (on) {
       on[eventName] && on[eventName](...detail);
+      this._events[eventName]?.(...detail);
       on.any && on.any(eventName, ...detail);
     }
 
@@ -197,6 +202,18 @@ class Base {
       base.dispatchEvent(
         new CustomEvent(eventPrefix + eventName, { detail, bubbles }),
       );
+    }
+    return this;
+  }
+  on(name, handler) {
+    this._events[name] = handler;
+    return this;
+  }
+  off(name) {
+    if (name) {
+      delete this._events[name];
+    } else {
+      this._events = {};
     }
     return this;
   }
