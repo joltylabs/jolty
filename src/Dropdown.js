@@ -170,9 +170,8 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
           !trigger ||
           (opts.itemClickHide !== true &&
             (isFunction(opts.itemClickHide)
-              ? await !opts.itemClickHide({
+              ? await !opts.itemClickHide(this, {
                   trigger,
-                  dropdown: this,
                   event,
                 })
               : !is(trigger, opts.itemClickHide)))
