@@ -1,8 +1,4 @@
 import {
-  ARROW_HEIGHT,
-  ARROW_OFFSET,
-  ARROW_PADDING,
-  ARROW_WIDTH,
   BOUNDARY_OFFSET,
   doc,
   DROPDOWN,
@@ -25,29 +21,19 @@ export default () => {
   let css = "";
   [TOOLTIP, DROPDOWN, POPOVER].forEach((name) => {
     const PREFIX = VAR_UI_PREFIX + name + "-";
-    [
-      STICKY,
-      FLIP,
-      SHRINK,
-      PLACEMENT,
-      PADDING,
-      OFFSET,
-      BOUNDARY_OFFSET,
-      ARROW_OFFSET,
-      ARROW_PADDING,
-      ARROW_WIDTH,
-      ARROW_HEIGHT,
-    ].forEach((prop) => {
-      if (registerProperty) {
-        registerProperty({
-          name: PREFIX + prop,
-          syntax: "*",
-          inherits: false,
-        });
-      } else {
-        css += PREFIX + prop + ":;";
-      }
-    });
+    [STICKY, FLIP, SHRINK, PLACEMENT, PADDING, OFFSET, BOUNDARY_OFFSET].forEach(
+      (prop) => {
+        if (registerProperty) {
+          registerProperty({
+            name: PREFIX + prop,
+            syntax: "*",
+            inherits: false,
+          });
+        } else {
+          css += PREFIX + prop + ":;";
+        }
+      },
+    );
   });
 
   if (!registerProperty) {
