@@ -3,12 +3,14 @@ import {
   DIALOG,
   EVENT_CLICK,
   EVENT_CONTEXT_MENU_CLICK,
+  EVENT_DISMISS_PREVENT,
   EVENT_KEYUP,
   EVENT_LIGHT_DISMISS_PREVENT,
   EVENT_MOUSEDOWN,
   EVENT_SUFFIX_LIGHT_DISMISS,
   FLOATING_DATA_ATTRIBUTE,
   OPTION_LIGHT_DISMISS,
+  OPTION_PREVENT_DISMISS,
   PREVENT,
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   UI_PREFIX,
@@ -76,13 +78,13 @@ export default (instance) => {
     }
 
     if (isClickOutside && (target === backdrop || isBaseModal)) {
-      if (opts[OPTION_LIGHT_DISMISS] === PREVENT) {
+      if (opts[OPTION_PREVENT_DISMISS]) {
         instance._mousedownEvent = null;
         animateClass(
           contentElem,
-          camelToKebab(UI_PREFIX + EVENT_LIGHT_DISMISS_PREVENT),
+          camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENT),
         );
-        _emit(EVENT_LIGHT_DISMISS_PREVENT, { event });
+        _emit(EVENT_DISMISS_PREVENT, { event });
         return;
       }
     }

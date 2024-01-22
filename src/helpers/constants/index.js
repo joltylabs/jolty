@@ -241,6 +241,9 @@ export const OPTION_BACK_DISMISS = "backDismiss";
 export const EVENT_LIGHT_DISMISS_PREVENT = "lightDismissPrevent";
 export const EVENT_BACK_DISMISS_PREVENT = "backDismissPrevent";
 
+export const OPTION_PREVENT_DISMISS = "preventDismiss";
+export const EVENT_DISMISS_PREVENT = "dismissPrevent";
+
 export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";
 export const ROLE_SUFFIX = "Role";
@@ -263,6 +266,7 @@ export const TOP_LAYER_OPTIONS_NAMES = [
   OPTION_MOVE_TO_ROOT,
   OPTION_LIGHT_DISMISS,
   OPTION_BACK_DISMISS,
+  OPTION_PREVENT_DISMISS,
   MODAL,
 ];
 
