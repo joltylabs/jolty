@@ -17,13 +17,20 @@ import {
   DURATION,
   TRANSITION,
   NAME,
+  AUTO,
 } from "./constants";
 
 import { isString, isFunction, isObject } from "./is";
-import { camelToKebab, resetTransition, updateOptsByData } from "./utils";
+import {
+  callOrReturn,
+  camelToKebab,
+  resetTransition,
+  updateOptsByData,
+} from "./utils";
 
 export default class Transition {
   static Default = {
+    enabled: AUTO,
     name: UI,
     css: true,
     cssVariables: false,
@@ -182,7 +189,12 @@ export default class Transition {
     const { elem, opts } = this;
     if (!elem) return;
 
-    if (animated) {
+    const isEnabled =
+      opts.enabled === AUTO
+        ? window.matchMedia("(prefers-reduced-motion:no-preference)").matches
+        : callOrReturn(opts.enabled);
+
+    if (isEnabled && animated) {
       if (opts.css) {
         opts.cssVariables && this.toggleVariables(true);
         this.toggleAnimationClasses(s);
