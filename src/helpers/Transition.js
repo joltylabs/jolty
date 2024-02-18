@@ -189,10 +189,12 @@ export default class Transition {
     const { elem, opts } = this;
     if (!elem) return;
 
-    const isEnabled =
-      opts.enabled === AUTO
-        ? window.matchMedia("(prefers-reduced-motion:no-preference)").matches
-        : callOrReturn(opts.enabled);
+    let isEnabled = callOrReturn(opts.enabled, elem);
+    if (opts.enabled === AUTO) {
+      isEnabled = window.matchMedia(
+        "(prefers-reduced-motion:no-preference)",
+      ).matches;
+    }
 
     if (isEnabled && animated) {
       if (opts.css) {
