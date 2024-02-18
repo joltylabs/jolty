@@ -176,6 +176,19 @@ export default class Floating {
       });
     }
 
+    if (useFocusGuards) {
+      this.focusGuards = new FocusGuards(target, {
+        focusAfterAnchor: !opts.focusTrap,
+        anchor,
+        topLayer,
+        onFocusOut:
+          isDialog(target) &&
+          (() => {
+            instance.hide?.();
+          }),
+      });
+    }
+
     if (placement === DIALOG) {
       setAttribute(target, CURRENT_PLACEMENT_ATTRIBUTE, DIALOG);
       toggleTopLayer(instance, true);
@@ -298,19 +311,6 @@ export default class Floating {
     updatePosition();
 
     toggleTopLayer(instance, true);
-
-    if (useFocusGuards) {
-      this.focusGuards = new FocusGuards(target, {
-        focusAfterAnchor: !opts.focusTrap,
-        anchor,
-        topLayer,
-        onFocusOut:
-          isDialog(target) &&
-          (() => {
-            instance.hide?.();
-          }),
-      });
-    }
 
     on(
       [...anchorScrollParents, window, visualViewport],
