@@ -187,9 +187,10 @@ class Base {
     const { opts, base } = this;
     const { on, eventDispatch, eventBubble, eventPrefix } = opts;
     detail = [this, ...detail];
+
+    this._events[eventName]?.(...detail);
     if (on) {
       on[eventName] && on[eventName](...detail);
-      this._events[eventName]?.(...detail);
       on.any && on.any(eventName, ...detail);
     }
 
