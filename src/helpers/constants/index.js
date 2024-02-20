@@ -238,11 +238,11 @@ export const OPTION_TOP_LAYER = "topLayer";
 export const OPTION_MOVE_TO_ROOT = "moveToRoot";
 export const OPTION_LIGHT_DISMISS = "lightDismiss";
 export const OPTION_BACK_DISMISS = "backDismiss";
-export const EVENT_LIGHT_DISMISS_PREVENT = "lightDismissPrevent";
-export const EVENT_BACK_DISMISS_PREVENT = "backDismissPrevent";
+export const EVENT_LIGHT_DISMISS_PREVENTED = "lightDismissPrevented";
+export const EVENT_BACK_DISMISS_PREVENTED = "backDismissPrevented";
 
 export const OPTION_PREVENT_DISMISS = "preventDismiss";
-export const EVENT_DISMISS_PREVENT = "dismissPrevent";
+export const EVENT_DISMISS_PREVENTED = "dismissPrevented";
 
 export const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
 export const CLASS_ACTIVE_SUFFIX = "ClassActive";

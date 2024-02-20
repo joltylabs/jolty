@@ -78,7 +78,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     appear: true,
     limit: false,
     limitAnimateEnter: true,
-    limitAnimateLeave: true,
+    limitAnimateLeave: false,
     autohide: 5000,
     topLayer: true,
     keepTopLayer: true,
@@ -159,8 +159,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
     const { limit, position, container, topLayer, keepTopLayer, stateMode } =
       opts;
 
-    if (animated && transition?.isAnimating) return;
-
     s ??= !isShown(base, stateMode);
 
     let preventAnimation;
@@ -175,6 +173,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
         );
         for (let i = 0; i < nots.length; i++) {
           if (i >= limit - 1) {
+            console.log(nots, i - (limit - 1));
             nots[i - (limit - 1)]?.hide(opts.limitAnimateLeave);
             if (!opts.limitAnimateEnter) {
               preventAnimation = true;

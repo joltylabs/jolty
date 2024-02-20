@@ -30,11 +30,11 @@ import {
   PREVENT,
   EVENT_CLOSE,
   UI_PREFIX,
-  EVENT_BACK_DISMISS_PREVENT,
+  EVENT_BACK_DISMISS_PREVENTED,
   INERT,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_DISMISS,
-  EVENT_DISMISS_PREVENT,
+  EVENT_DISMISS_PREVENTED,
 } from "./helpers/constants";
 
 import {
@@ -180,8 +180,8 @@ class Popover extends ToggleMixin(Base, POPOVER) {
 
     if (!s) {
       if (opts[OPTION_PREVENT_DISMISS] && event.type === EVENT_CLOSE) {
-        animateClass(base, camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENT));
-        _emit(EVENT_DISMISS_PREVENT, { event });
+        animateClass(base, camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENTED));
+        _emit(EVENT_DISMISS_PREVENTED, { event });
         toggleBackDismiss(true, this);
         return;
       }

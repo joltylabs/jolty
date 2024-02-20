@@ -112,8 +112,7 @@ export default function ({
 
     let availableSizesOffset;
     if (sticky) {
-      availableSizesOffset =
-        viewRect[mirrorSize] - sumPadding - sumBoundaryOffsetS;
+      availableSizesOffset = viewRect[mirrorSize] - sumBoundaryOffsetS;
     } else {
       availableSizesOffset = viewRect[mirrorSize] - anchorRect[mirrorSize] / 2;
       if (isStart) {
@@ -247,7 +246,7 @@ export default function ({
 
       if (isMainDir) {
         mo += currentSize[size];
-        mo = mo - border[dir] - border[MIRROR[dir]];
+        mo = mo - border[dir] - border[MIRROR[dir]] - 0.1;
       }
 
       arrowPosition = hor ? [mo, so] : [so, mo];

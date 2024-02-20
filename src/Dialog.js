@@ -44,12 +44,10 @@ import {
   ARIA_SUFFIX,
   AUTOHIDE,
   DURATION,
-  PREVENT,
-  EVENT_BACK_DISMISS_PREVENT,
   EVENT_CLOSE,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_DISMISS,
-  EVENT_DISMISS_PREVENT,
+  EVENT_DISMISS_PREVENTED,
 } from "./helpers/constants";
 import { isString, isFunction, isDialog, isModal } from "./helpers/is";
 import {
@@ -299,9 +297,9 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
       if (opts[OPTION_PREVENT_DISMISS] && event.type === EVENT_CLOSE) {
         animateClass(
           this.main,
-          camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENT),
+          camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENTED),
         );
-        _emit(EVENT_DISMISS_PREVENT, { event });
+        _emit(EVENT_DISMISS_PREVENTED, { event });
         toggleBackDismiss(true, this);
         return;
       }
