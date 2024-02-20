@@ -3,9 +3,9 @@ import {
   DIALOG,
   EVENT_CLICK,
   EVENT_CONTEXT_MENU_CLICK,
-  EVENT_DISMISS_PREVENT,
+  EVENT_DISMISS_PREVENTED,
   EVENT_KEYUP,
-  EVENT_LIGHT_DISMISS_PREVENT,
+  EVENT_LIGHT_DISMISS_PREVENTED,
   EVENT_MOUSEDOWN,
   EVENT_SUFFIX_LIGHT_DISMISS,
   FLOATING_DATA_ATTRIBUTE,
@@ -82,9 +82,9 @@ export default (instance) => {
         instance._mousedownEvent = null;
         animateClass(
           contentElem,
-          camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENT),
+          camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENTED),
         );
-        _emit(EVENT_DISMISS_PREVENT, { event });
+        _emit(EVENT_DISMISS_PREVENTED, { event });
         return;
       }
     }
