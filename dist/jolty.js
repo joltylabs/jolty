@@ -25,7 +25,6 @@
 
   const DEFAULT = "default";
   const NAME = "name";
-  const MODE = "mode";
 
   const PX = "px";
   const NONE = "none";
@@ -47,8 +46,6 @@
 
   const HORIZONTAL = "horizontal";
   const VERTICAL = "vertical";
-  const ABSOLUTE = "absolute";
-  const FIXED = "fixed";
   const TRANSITION = "transition";
   const TELEPORT = "teleport";
 
@@ -81,7 +78,7 @@
   const APPEAR = "appear";
 
   const TARGET = "target";
-  const AVAILABLE = "awailable";
+  const AVAILABLE = "available";
   const AVAILABLE_WIDTH = AVAILABLE + "-" + WIDTH;
   const AVAILABLE_HEIGHT = AVAILABLE + "-" + HEIGHT;
   const ANCHOR = "anchor";
@@ -134,7 +131,7 @@
   const LEAVE_FROM = LEAVE + "From";
   const LEAVE_TO = LEAVE + "To";
   AFTER + upperFirst(LEAVE);
-  const HIDE_MODE = HIDE + upperFirst(MODE);
+  const STATE_MODE = "stateMode";
   const DURATION = "duration";
   DURATION + upperFirst(ENTER);
   DURATION + upperFirst(LEAVE);
@@ -182,18 +179,21 @@
   const EVENT_MOUSEENTER = MOUSE + ENTER;
   const EVENT_MOUSELEAVE = MOUSE + LEAVE;
   const EVENT_MOUSEDOWN = MOUSE + DOWN;
+  const EVENT_MOUSEOVER = MOUSE + "over";
+  const EVENT_MOUSEOUT = MOUSE + OUT;
   const EVENT_CHANGE = "change";
   const EVENT_BREAKPOINT = "breakpoint";
+  const EVENT_CLOSE = "close";
   const EVENT_CLICK = CLICK;
   const EVENT_KEYDOWN = KEY + DOWN;
   const EVENT_KEYUP = KEY + UP;
   const EVENT_FOCUS = FOCUS;
   const EVENT_FOCUSIN = FOCUS + IN;
   const EVENT_FOCUSOUT = FOCUS + OUT;
-  const EVENT_RIGHT_CLICK = "contextmenu";
+  const EVENT_CONTEXT_MENU_CLICK = "contextmenu";
   const EVENT_VISIBILITY_CHANGE = "visibilitychange";
+
   const EVENT_HIDE_PREVENTED = "hidePrevented";
-  const EVENT_ACTION_OUTSIDE = `${EVENT_CLICK}.outside ${EVENT_KEYUP}.outside`;
   const EVENT_SCROLL = SCROLL;
   const EVENT_RESIZE = "resize";
   const EVENT_BEFORE_MATCH = BEFORE + "match";
@@ -203,14 +203,14 @@
 
   const ARIA = "aria";
   const ARIA_CONTROLS = ARIA + "-controls";
-  const ARIA_EXPANDED = ARIA + "-expanded";
-  const ARIA_SELECTED = ARIA + "-selected";
-  const ARIA_HIDDEN = ARIA + "-" + HIDDEN;
+  const ARIA_EXPANDED = ARIA + "Expanded";
+  const ARIA_SELECTED = ARIA + "Selected";
+  const ARIA_HIDDEN = ARIA + "Hidden";
   const ARIA_LABELLEDBY = ARIA + "-labelledby";
   const ARIA_DESCRIBEDBY = ARIA + "-describedby";
-  const ARIA_ORIENTATION = ARIA + "-orientation";
-  const ARIA_LIVE = ARIA + "-live";
-  const ARIA_ATOMIC = ARIA + "-atomic";
+  const ARIA_ORIENTATION = ARIA + "Orientation";
+  const ARIA_LIVE = ARIA + "Live";
+  const ARIA_ATOMIC = ARIA + "Atomic";
 
   const KEY_ENTER = 13;
   const KEY_ESC = 27;
@@ -226,24 +226,23 @@
   const A11Y = "a11y";
   const OPTION_GROUP = "group";
 
-  const OPTION_PREVENT_SCROLL = "preventScroll";
+  const PREVENT = "prevent";
+
+  const OPTION_PREVENT_SCROLL = PREVENT + "Scroll";
   const OPTION_HASH_NAVIGATION = "hashNavigation";
   const POSITION = "position";
-  kebabToCamel(ARIA_LABELLEDBY);
   const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
-  kebabToCamel(ARIA_EXPANDED);
-  kebabToCamel(ARIA_SELECTED);
-  kebabToCamel(ARIA_CONTROLS);
-  const OPTION_ARIA_HIDDEN = kebabToCamel(ARIA_HIDDEN);
-  const OPTION_ARIA_LIVE = kebabToCamel(ARIA_LIVE);
-  kebabToCamel(ARIA_ATOMIC);
   const OPTION_TOP_LAYER = "topLayer";
   const OPTION_MOVE_TO_ROOT = "moveToRoot";
+  const OPTION_LIGHT_DISMISS = "lightDismiss";
+  const OPTION_BACK_DISMISS = "backDismiss";
 
-  const OPTION_FLOATING_CLASS = FLOATING + "Class";
+  const OPTION_PREVENT_DISMISS = "preventDismiss";
+  const EVENT_DISMISS_PREVENTED = "dismissPrevented";
+
   const OPTION_AUTODESTROY = AUTO + ACTION_DESTROY;
   const CLASS_ACTIVE_SUFFIX = "ClassActive";
-  const ROLE_SUFFIX = upperFirst(ROLE);
+  const ROLE_SUFFIX = "Role";
 
   const STATUS = "status";
   const ALERT = "alert";
@@ -253,6 +252,26 @@
   const SHOWN_CLASS = UI_PREFIX + SHOWN;
   const CLASS_SHOWN_MODE = CLASS + "-" + SHOWN;
   const CLASS_HIDDEN_MODE = CLASS + "-" + HIDDEN;
+
+  const EVENT_SUFFIX_LIGHT_DISMISS = "." + OPTION_LIGHT_DISMISS;
+
+  const TOP_LAYER_OPTIONS_NAMES = [
+    OPTION_PREVENT_SCROLL,
+    OPTION_TOP_LAYER,
+    OPTION_MOVE_TO_ROOT,
+    OPTION_LIGHT_DISMISS,
+    OPTION_BACK_DISMISS,
+    OPTION_PREVENT_DISMISS,
+    MODAL,
+  ];
+
+  const TOP_LAYER_OPTIONS = {
+    root: BODY,
+    [OPTION_TOP_LAYER]: true,
+    [OPTION_MOVE_TO_ROOT]: false,
+    [MODAL]: false,
+  };
+
   const DEFAULT_OPTIONS = {
     init: true,
     destroy: false,
@@ -263,10 +282,11 @@
     eventBubble: true,
     shown: null,
     a11y: true,
-    hideMode: HIDDEN,
+    stateMode: HIDDEN,
     keepPlace: true,
     transition: true,
     awaitAnimation: false,
+    dismiss: true,
   };
 
   const DEFAULT_FLOATING_OPTIONS = {
@@ -279,19 +299,17 @@
     shrink: false,
     flip: true,
     sticky: true,
-    escapeHide: true,
-    outsideHide: true,
-    focusTrap: false,
-    topLayer: true,
-    root: BODY,
-    moveToRoot: false,
-    mode: false,
-    [OPTION_FLOATING_CLASS]: "",
+    focusTrap: "auto",
     shown: false,
     arrow: null,
+    [OPTION_LIGHT_DISMISS]: true,
+    [OPTION_BACK_DISMISS]: true,
+    ...TOP_LAYER_OPTIONS,
   };
   const SELECTOR_DISABLED = `[${DISABLED}]`;
   const SELECTOR_INERT = `[${INERT}]`;
+  const SELECTOR_FOCUS_WITHIN = ":focus-within";
+  const SELECTOR_HOVER = ":" + HOVER;
 
   const MIRROR = {
     [TOP]: BOTTOM,
@@ -302,6 +320,7 @@
     [END]: START,
     [WIDTH]: HEIGHT,
     [HEIGHT]: WIDTH,
+    [CENTER]: CENTER,
     x: "y",
     y: "x",
   };
@@ -311,11 +330,19 @@
     : WEBKIT_PREFIX + CLIP_PATH;
 
   const POPOVER_API_SUPPORTED =
+    // eslint-disable-next-line no-prototype-builtins
     HTMLElement.prototype.hasOwnProperty(POPOVER);
 
   const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
 
   const PRIVATE_OPTION_CANCEL_ON_HIDE = PRIVATE_PREFIX + "cancelOnHide";
+
+  const ARIA_SUFFIX = {
+    [ARIA_LABELLEDBY]: TITLE,
+    [ARIA_DESCRIBEDBY]: "description",
+  };
+
+  const AUTOHIDE = "autohide";
 
   var isArray = Array.isArray;
 
@@ -334,6 +361,8 @@
   var isObject = (value) => value && value.constructor === Object;
 
   var isDialog = (elem) => elem?.tagName === "DIALOG";
+
+  var isModal = (elem) => elem && elem.matches(":" + MODAL);
 
   var strToArray = (str = "", separator = " ") =>
     str ? (isArray(str) ? str : str.split(separator)).filter(Boolean) : [];
@@ -491,10 +520,10 @@
   var removeAttribute = (elem, ...names) => {
     if (isArray(elem)) {
       elem.forEach((elem) =>
-        names.forEach((name) => elem && elem.removeAttribute(name)),
+        names.forEach((name) => elem && elem.removeAttribute(camelToKebab(name))),
       );
     } else {
-      names.forEach((name) => elem && elem.removeAttribute(name));
+      names.forEach((name) => elem && elem.removeAttribute(camelToKebab(name)));
     }
   };
 
@@ -502,11 +531,12 @@
 
   function setAttribute(elem, name, value) {
     if (!elem) return;
+    name = camelToKebab(name);
     if (isArray(elem)) {
       return elem.forEach((elem) => setAttribute(elem, name, value));
     }
     if (isFunction(value)) {
-      value = value(elem.getAttribute(name));
+      value = value(elem.name);
     }
     if (value === null) {
       elem.removeAttribute(name);
@@ -518,9 +548,25 @@
   var without = (source, ...values) =>
     returnArray(source).filter((elem) => !values.includes(elem));
 
+  var animateClass = (elem, className) => {
+    elem.classList.remove(className);
+    elem.offsetWidth;
+    elem.classList.add(className);
+    const animations = elem.getAnimations();
+    Promise.allSettled(animations.map(({ finished }) => finished)).then(() => {
+      elem.classList.remove(className);
+    });
+  };
+
   var getBoundingClientRect = (elem) => elem.getBoundingClientRect().toJSON();
 
   var getPropertyValue = (style, name) => style.getPropertyValue(name).trim();
+
+  const supportsDir = CSS.supports("selector(:dir(rtl))");
+  var isRtl = (elem) =>
+    supportsDir
+      ? elem.matches(":dir(rtl)")
+      : elem.closest("[dir]")?.dir === "rtl";
 
   var callOrReturn = (value, ...data) => (isFunction(value) ? value(...data) : value);
 
@@ -550,7 +596,7 @@
     return elem;
   };
 
-  var createInset = (input, returnArray) => {
+  var createInset = (input, returnArray, isRtl) => {
     let top = 0,
       right = 0,
       bottom = 0,
@@ -564,26 +610,22 @@
         top = bottom = input[0];
         right = left = input[1];
       } else if (input.length === 3) {
-        top = input[0];
-        right = left = input[1];
-        bottom = input[2];
+        [top, right, bottom] = input;
+        left = right;
       } else {
-        top = input[0];
-        right = input[1];
-        bottom = input[2];
-        left = input[3];
+        [top, right, bottom, left] = input;
       }
     } else if (isObject(input)) {
-      top = input.top || 0;
-      right = input.right || 0;
-      bottom = input.bottom || 0;
-      left = input.left || 0;
+      ({ top = 0, right = 0, bottom = 0, left = 0 } = input);
     }
-    if (returnArray) {
-      return [top, right, bottom, left];
-    } else {
-      return { top, right, bottom, left };
+
+    if (isRtl) {
+      [right, left] = [left, right];
     }
+
+    return returnArray
+      ? [top, right, bottom, left]
+      : { top, right, bottom, left };
   };
 
   var getDataSelector = (...values) => `[${DATA_UI_PREFIX + values.join("-")}]`;
@@ -602,13 +644,13 @@
   var getOptionElems = (...params) => getOption(true, ...params);
 
   const { min, max } = Math;
+  const viewRect = visualViewport;
 
   function getPosition ({
     anchorRect,
     targetRect,
     arrow,
     placement,
-    inTopLayer,
     boundaryOffset = 0,
     offset = 0,
     padding = 0,
@@ -617,8 +659,10 @@
     sticky = false,
     minWidth = 0,
     minHeight = 0,
+    border,
+    isRtl = false,
   }) {
-    boundaryOffset = createInset(boundaryOffset);
+    boundaryOffset = createInset(boundaryOffset, false, isRtl);
 
     flip = isArray(flip) ? flip : [flip];
     flip[1] ??= flip[0];
@@ -626,14 +670,23 @@
     padding = isArray(padding) ? padding : [padding];
     padding[1] ??= padding[0];
 
-    if (!inTopLayer) {
-      shrink = false;
-      flip = false;
-      sticky = false;
+    if (sticky) {
+      flip[1] = false;
     }
 
-    const [baseM, baseS = CENTER] = placement.split("-");
+    let [baseM, baseS = CENTER] = placement.split("-");
+
+    if (baseM === START) {
+      baseM = isRtl ? RIGHT : LEFT;
+    } else if (baseM === END) {
+      baseM = isRtl ? LEFT : RIGHT;
+    }
+
     const hor = baseM === LEFT || baseM === RIGHT;
+
+    if (isRtl && !hor) {
+      baseS = MIRROR[baseS];
+    }
 
     const size = hor ? WIDTH : HEIGHT;
     const dir = hor ? LEFT : TOP;
@@ -643,8 +696,6 @@
 
     let useFlipM = null;
     let useFlipS = null;
-
-    const viewRect = visualViewport;
 
     const hasScale =
       viewRect.scale !== 1 && Math.abs(window.innerWidth - viewRect.width) > 2;
@@ -684,31 +735,40 @@
       anchorSpace[m] -= offset + boundaryOffset[m];
       anchorSpace[MIRROR[m]] -= boundaryOffset[dirS] + boundaryOffset[mirrorDirS];
 
-      let awailableSizesOffset;
+      const sumBoundaryOffsetS =
+        boundaryOffset[mirrorDirS] + boundaryOffset[dirS];
+
+      let availableSizesOffset;
       if (sticky) {
-        awailableSizesOffset = viewRect[mirrorSize] - sumPadding;
+        availableSizesOffset = viewRect[mirrorSize] - sumBoundaryOffsetS;
       } else {
-        awailableSizesOffset = viewRect[mirrorSize] - anchorRect[mirrorSize] / 2;
+        availableSizesOffset = viewRect[mirrorSize] - anchorRect[mirrorSize] / 2;
         if (isStart) {
-          awailableSizesOffset =
-            anchorSpace[mirrorDirS] + anchorRect[mirrorSize] - sumPadding;
+          availableSizesOffset =
+            anchorSpace[mirrorDirS] +
+            anchorRect[mirrorSize] -
+            sumPadding -
+            boundaryOffset[mirrorDirS];
         } else if (isEnd) {
-          awailableSizesOffset =
-            anchorSpace[dirS] + anchorRect[mirrorSize] - sumPadding;
+          availableSizesOffset =
+            anchorSpace[dirS] +
+            anchorRect[mirrorSize] -
+            sumPadding -
+            boundaryOffset[dirS];
         }
       }
 
-      const awailableSizes = {
+      const availableSizes = {
         [size]: max(minRect[size], anchorSpace[m]),
-        [mirrorSize]: max(minRect[mirrorSize], awailableSizesOffset),
+        [mirrorSize]: max(minRect[mirrorSize], availableSizesOffset),
       };
 
       const currentSize = {
         [size]: shrink
-          ? min(targetRect[size], awailableSizes[size])
+          ? min(targetRect[size], availableSizes[size])
           : targetRect[size],
         [mirrorSize]: shrink
-          ? min(targetRect[mirrorSize], awailableSizes[mirrorSize])
+          ? min(targetRect[mirrorSize], availableSizes[mirrorSize])
           : targetRect[mirrorSize],
       };
 
@@ -720,16 +780,18 @@
         ) {
           useFlipM = true;
         }
-        if (
-          flip[1] &&
-          anchorSpace[mirrorDirS] <
-            targetRect[mirrorSize] -
-              anchorRect[mirrorSize] +
-              padding[0] +
-              boundaryOffset[mirrorDirS]
-        ) {
+
+        const targetOffset =
+          anchorSpace[isStart ? mirrorDirS : dirS] +
+          anchorRect[mirrorSize] -
+          targetRect[mirrorSize] -
+          padding[isStart ? 0 : 1] -
+          boundaryOffset[isStart ? mirrorDirS : dirS];
+
+        if (flip[1] && targetOffset < 0) {
           useFlipS = true;
         }
+
         if (useFlipM || useFlipS) {
           return calculate();
         }
@@ -748,9 +810,9 @@
       } else if (isCenter) {
         so =
           anchorRect[dirS] -
-          (currentSize[mirrorSize] - anchorRect[mirrorSize]) / 2;
+          (targetRect[mirrorSize] - anchorRect[mirrorSize]) / 2;
       } else {
-        so = anchorRect[mirrorDirS] - currentSize[mirrorSize] - padding[1];
+        so = anchorRect[mirrorDirS] - targetRect[mirrorSize] - padding[1];
       }
 
       const staticSo = so;
@@ -809,9 +871,12 @@
         so += shift + max(0, -currentSize[mirrorSize] / 2);
 
         let mo = -arrow[mirrorSize] / 2 + (isMainDir ? -offset : offset);
+
         if (isMainDir) {
           mo += currentSize[size];
+          mo = mo - border[dir] - border[MIRROR[dir]] - 0.1;
         }
+
         arrowPosition = hor ? [mo, so] : [so, mo];
       }
 
@@ -831,8 +896,8 @@
       return {
         [dir]: mo,
         [dirS]: so,
-        [AVAILABLE_WIDTH]: awailableSizes[WIDTH],
-        [AVAILABLE_HEIGHT]: awailableSizes[HEIGHT],
+        [AVAILABLE_WIDTH]: availableSizes[WIDTH],
+        [AVAILABLE_HEIGHT]: availableSizes[HEIGHT],
         arrow: arrowPosition,
         placement: useFlipM ? MIRROR[placement] : placement,
         transformOrigin,
@@ -903,12 +968,17 @@
       const hasAttribute = value !== undefined;
       if (hasAttribute) {
         if (booleanOptions?.includes(optionName)) {
-          value =
-            value === "" || value === TRUE
-              ? true
-              : value === FALSE
-              ? false
-              : undefined;
+          const isTrue = value === "" || value === TRUE;
+          const isFalse = value === FALSE;
+          const isAuto = value === AUTO;
+          const isPrevent = value === PREVENT;
+          value = isTrue
+            ? true
+            : isFalse
+            ? false
+            : isAuto || isPrevent
+            ? value
+            : undefined;
         } else if (value && value[0] === "{") {
           value = JSON.parse(value);
         }
@@ -936,29 +1006,19 @@
     let css = "";
     [TOOLTIP, DROPDOWN, POPOVER].forEach((name) => {
       const PREFIX = VAR_UI_PREFIX + name + "-";
-      [
-        STICKY,
-        FLIP,
-        SHRINK,
-        PLACEMENT,
-        PADDING,
-        OFFSET,
-        BOUNDARY_OFFSET,
-        ARROW_OFFSET,
-        ARROW_PADDING,
-        ARROW_WIDTH,
-        ARROW_HEIGHT,
-      ].forEach((prop) => {
-        if (registerProperty) {
-          registerProperty({
-            name: PREFIX + prop,
-            syntax: "*",
-            inherits: false,
-          });
-        } else {
-          css += PREFIX + prop + ":;";
-        }
-      });
+      [STICKY, FLIP, SHRINK, PLACEMENT, PADDING, OFFSET, BOUNDARY_OFFSET].forEach(
+        (prop) => {
+          if (registerProperty) {
+            registerProperty({
+              name: PREFIX + prop,
+              syntax: "*",
+              inherits: false,
+            });
+          } else {
+            css += PREFIX + prop + ":;";
+          }
+        },
+      );
     });
 
     if (!registerProperty) {
@@ -968,7 +1028,7 @@
 
   var valuesToArray = ({ value }) => value.trim().split(" ").map(parseFloat);
 
-  var collectCssVariables = (anchorStyles, targetStyles, wrapper, PREFIX) => {
+  var collectCssVariables = (anchorStyles, targetStyles, target, PREFIX) => {
     const valuesNames = [
       PADDING,
       OFFSET,
@@ -984,7 +1044,9 @@
           getPropertyValue(anchorStyles, PREFIX + name) ||
           getPropertyValue(targetStyles, PREFIX + name);
         if (!value) return;
-        value = value.split(" ");
+
+        value = value.replace(/\n/g, "").split(" ").filter(Boolean);
+
         if (name === BOUNDARY_OFFSET) {
           value = createInset(value, true);
         } else {
@@ -1005,15 +1067,15 @@
       })
       .join(",");
 
-    wrapper.style.setProperty(CLIP_PATH_PROPERTY, `polygon(${polygonValues})`);
+    target.style.setProperty(CLIP_PATH_PROPERTY, `polygon(${polygonValues})`);
 
-    const wrapperComputedStyle = getComputedStyle(wrapper);
+    const targetComputedStyle = getComputedStyle(target);
 
-    const computedValues = wrapperComputedStyle[CLIP_PATH_PROPERTY].slice(8, -1)
+    const computedValues = targetComputedStyle[CLIP_PATH_PROPERTY].slice(8, -1)
       .split(",")
       .values();
 
-    const result = { wrapperComputedStyle };
+    const result = { targetComputedStyle };
 
     if (values.length) {
       values.forEach(({ name }) => {
@@ -1028,21 +1090,21 @@
     }
 
     if (values.length) {
-      wrapper.style.removeProperty(CLIP_PATH_PROPERTY);
+      target.style.removeProperty(CLIP_PATH_PROPERTY);
     }
 
     return result;
   };
 
-  var isShown = (elem, hideMode) => {
-    return hideMode === ACTION_REMOVE
+  var isShown = (elem, stateMode) => {
+    return stateMode === ACTION_REMOVE
       ? inDOM(elem)
-      : hideMode === CLASS_HIDDEN_MODE
+      : stateMode === CLASS_HIDDEN_MODE
       ? !elem.classList.contains(HIDDEN_CLASS)
-      : hideMode === CLASS_SHOWN_MODE
+      : stateMode === CLASS_SHOWN_MODE
       ? elem.classList.contains(SHOWN_CLASS)
       : !elem.hasAttribute(
-          hideMode === MODE_HIDDEN_UNTIL_FOUND ? HIDDEN : hideMode,
+          stateMode === MODE_HIDDEN_UNTIL_FOUND ? HIDDEN : stateMode,
         );
   };
 
@@ -1067,6 +1129,50 @@
   var awaitPromise = async (promise, callback) => {
     await promise;
     callback();
+  };
+
+  var isClickOutsideElem = (elem, { clientX, clientY }) => {
+    if (!clientX && !clientY) return false;
+    const rect = getBoundingClientRect(elem);
+    return (
+      clientX < rect.left ||
+      clientX > rect.right ||
+      clientY < rect.top ||
+      clientY > rect.bottom
+    );
+  };
+
+  var resetTransition = (elem, after) => {
+    const cache = elem.style.transition;
+    elem.style.transition = NONE;
+    after?.();
+    elem.offsetWidth;
+    elem.style.transition = cache;
+  };
+
+  var addStatusClasses = (instance, ...statuses) => {
+    const { opts } = instance;
+    const base = instance[instance.constructor.NAME];
+    statuses.forEach((status) => {
+      let s, className;
+      if (status === BACKDROP) {
+        s = !!instance[BACKDROP];
+        className = "has-" + BACKDROP;
+      } else if (status === MODAL) {
+        s = opts[MODAL];
+        className = MODAL;
+      } else if (status === OPTION_PREVENT_SCROLL) {
+        s =
+          opts[OPTION_PREVENT_SCROLL] === AUTO
+            ? opts[MODAL]
+            : opts[OPTION_PREVENT_SCROLL];
+        className = "prevents-scroll";
+      } else if (status === OPTION_TOP_LAYER) {
+        s = opts[OPTION_TOP_LAYER] || opts[OPTION_MOVE_TO_ROOT];
+        className = "root-relative";
+      }
+      base.classList.toggle(UI_PREFIX + className, s);
+    });
   };
 
   const getOptsObj = (args, newOpts) => {
@@ -1176,8 +1282,10 @@
       } else {
         if (elems === "*") {
           elems = arrayFrom(eventsSet).map((set) => set.elem);
+        } else {
+          elems = getElements(elems);
         }
-        return each(elems, (elem) => {
+        elems.forEach((elem) => {
           if (events) {
             strToArray(events).forEach((eventFullName) => {
               const { event, namespace } = this.getNamespaces(eventFullName);
@@ -1318,6 +1426,8 @@
           elem = doc.querySelector(elem);
         }
 
+        if (!elem) return;
+
         const [datasetValue, isDataObject] = getDatasetValue(elem, NAME);
 
         dataName ||= !isDataObject && datasetValue;
@@ -1337,6 +1447,8 @@
 
       this[baseElemName] = elem;
 
+      this._events = {};
+
       this.baseOpts = this.opts = opts;
 
       this.uuid = uuidGenerator();
@@ -1345,7 +1457,7 @@
 
       const eventHandler = new EventHandler();
       [ACTION_ON, ACTION_OFF, ACTION_ONCE].forEach((name) => {
-        this[name] = (...params) => {
+        this[`_${name}`] = (...params) => {
           eventHandler[name](...params);
           return this;
         };
@@ -1358,7 +1470,9 @@
         ACTION_INIT,
         ACTION_DESTROY,
         ACTION_UPDATE,
-        ACTION_EMIT,
+        ACTION_ON,
+        ACTION_OFF,
+        "_" + ACTION_EMIT,
       ].forEach((action) => (this[action] = this[action]?.bind(this)));
 
       allInstances.add(this);
@@ -1376,7 +1490,7 @@
         { 0: this.baseOpts, ...this.baseOpts.breakpoints },
         {
           onUpdate: (breakpoint, opts) => {
-            this.emit(EVENT_BREAKPOINT, breakpoint, this.breakpoint);
+            this._emit(EVENT_BREAKPOINT, breakpoint, this.breakpoint);
             if (breakpoint[0].data) {
               const dataValue = getDataValue(
                 this.constructor._data,
@@ -1414,10 +1528,12 @@
         },
       );
     }
-    emit(eventName, ...detail) {
+    _emit(eventName, ...detail) {
       const { opts, base } = this;
       const { on, eventDispatch, eventBubble, eventPrefix } = opts;
       detail = [this, ...detail];
+
+      this._events[eventName]?.(...detail);
       if (on) {
         on[eventName] && on[eventName](...detail);
         on.any && on.any(eventName, ...detail);
@@ -1432,6 +1548,18 @@
         base.dispatchEvent(
           new CustomEvent(eventPrefix + eventName, { detail, bubbles }),
         );
+      }
+      return this;
+    }
+    on(name, handler) {
+      this._events[name] = handler;
+      return this;
+    }
+    off(name) {
+      if (name) {
+        delete this._events[name];
+      } else {
+        this._events = {};
       }
       return this;
     }
@@ -1458,8 +1586,13 @@
       return this.constructor.Default;
     }
     static get(elem) {
-      if (elem === undefined) return [...this.instances.values()];
-      for (const [id, instance] of this.instances) {
+      const instances = this === Base ? Base.allInstances : this.instances;
+      if (elem === undefined) return [...instances.values()];
+      const entries =
+        this === Base
+          ? [...instances].map((instance) => [instance.id, instance])
+          : instances.entries();
+      for (const [id, instance] of entries) {
         if ([id, instance.base].includes(elem)) {
           return instance;
         }
@@ -1529,6 +1662,7 @@
 
   class Transition {
     static Default = {
+      enabled: AUTO,
       name: UI,
       css: true,
       cssVariables: false,
@@ -1585,10 +1719,9 @@
     }
 
     toggleAnimationClasses(s) {
-      this.elem.style.transition = NONE;
-      this.setClasses([s ? ENTER_FROM : LEAVE_FROM]);
-      this.elem.offsetWidth;
-      this.elem.style.transition = "";
+      resetTransition(this.elem, () =>
+        this.setClasses([s ? ENTER_FROM : LEAVE_FROM]),
+      );
       this.setClasses([s ? ENTER_ACTIVE : LEAVE_ACTIVE, s ? ENTER_TO : LEAVE_TO]);
       return this;
     }
@@ -1688,7 +1821,14 @@
       const { elem, opts } = this;
       if (!elem) return;
 
-      if (animated) {
+      let isEnabled = callOrReturn(opts.enabled, elem);
+      if (opts.enabled === AUTO) {
+        isEnabled = window.matchMedia(
+          "(prefers-reduced-motion:no-preference)",
+        ).matches;
+      }
+
+      if (isEnabled && animated) {
         if (opts.css) {
           opts.cssVariables && this.toggleVariables(true);
           this.toggleAnimationClasses(s);
@@ -1761,6 +1901,7 @@
         elem.before(this.placeholder);
       }
       to.insertAdjacentElement(position, elem);
+
       return this;
     }
     destroy() {
@@ -1782,54 +1923,116 @@
     }
   }
 
-  const eventName$1 = EVENT_CLICK + UI_EVENT_PREFIX + "-" + DISMISS;
+  const eventName = EVENT_CLICK + UI_EVENT_PREFIX + "-" + DISMISS;
   function addDismiss (
     instance,
     elem = instance.base,
     action = instance.hide,
   ) {
-    if (instance[PRIVATE_PREFIX + DISMISS]) {
-      instance.off(elem, eventName$1);
-      instance[PRIVATE_PREFIX + DISMISS] = false;
-    }
-    if (instance.opts[DISMISS]) {
-      instance.on(
-        elem,
-        eventName$1,
-        isString(instance.opts[DISMISS])
-          ? instance.opts[DISMISS]
-          : `[${DATA_UI_PREFIX + DISMISS}=""],[${DATA_UI_PREFIX + DISMISS}="${
-            instance.constructor.NAME
-          }"]`,
-        (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          const eventParams = { event, trigger: event.deligateTarget };
-          action(eventParams);
-          if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
-            instance.emit(CANCEL, eventParams);
-          }
-        },
-      );
-      instance[PRIVATE_PREFIX + DISMISS] = true;
-    }
+    instance._on(
+      elem,
+      eventName,
+      isString(instance.opts[DISMISS])
+        ? instance.opts[DISMISS]
+        : `[${DATA_UI_PREFIX + DISMISS}=""],[${DATA_UI_PREFIX + DISMISS}="${
+          instance.constructor.NAME
+        }"]`,
+      (event) => {
+        if (event.__dismissTriggered) return;
+        event.preventDefault();
+        event.__dismissTriggered = true;
+        const eventParams = { event, trigger: event.deligateTarget };
+        action(eventParams);
+        if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
+          instance._emit(CANCEL, eventParams);
+        }
+      },
+    );
   }
 
-  const eventName = EVENT_KEYDOWN + ".escapeHide";
+  const stack = [];
 
-  function addEscapeHide (instance, s, elem) {
-    if (s) {
-      instance.on(elem, eventName, (event) => {
-        if (event.keyCode === KEY_ESC) {
-          (instance.opts.escapeHide.stop ?? true) && event.stopPropagation();
-          instance.hide({ event });
-          if (instance.constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
-            instance.emit(CANCEL, { event });
-          }
+  const CloseWatcher =
+    window.CloseWatcher ||
+    class CloseWatcher extends EventTarget {
+      isActive = true;
+      oncloseHandler = null;
+      constructor() {
+        super();
+        stack.push(this);
+      }
+
+      destroy() {
+        this.deactivate();
+      }
+
+      close() {
+        if (!this.isActive || !document.defaultView) return;
+
+        this.dispatchEvent(new Event(EVENT_CLOSE));
+        this.deactivate();
+      }
+
+      deactivate() {
+        this.isActive = false;
+        const index = stack.indexOf(this);
+        if (index !== -1) {
+          stack.splice(index, 1);
         }
-      });
+      }
+
+      set onclose(handler) {
+        if (this.oncloseHandler && handler === null) {
+          this.removeEventListener(EVENT_CLOSE, this.oncloseHandler);
+          this.oncloseHandler = null;
+        } else {
+          this.oncloseHandler = handler;
+          this.addEventListener(EVENT_CLOSE, this.oncloseHandler);
+        }
+      }
+    };
+
+  if (!window.CloseWatcher) {
+    doc.addEventListener(EVENT_KEYDOWN, (event) => {
+      if (!event.isTrusted || event.keyCode !== KEY_ESC) return;
+
+      const closeWatcher = stack.at(-1);
+
+      if (!closeWatcher) return;
+
+      setTimeout(() => {
+        if (event.defaultPrevented) return;
+        closeWatcher.close();
+      }, 0);
+    });
+  }
+
+  function toggleBackDismiss (s, instance) {
+    const { base, _on, _off, opts } = instance;
+
+    if (isDialog(base)) {
+      if (s) {
+        _on(base, CANCEL + UI_EVENT_PREFIX, (event) => {
+          event.preventDefault();
+        });
+      } else {
+        _off(base, CANCEL + UI_EVENT_PREFIX);
+      }
+    }
+    if (s) {
+      if (
+        opts[OPTION_BACK_DISMISS] === AUTO
+          ? opts[MODAL]
+          : opts[OPTION_BACK_DISMISS]
+      ) {
+        instance._closeWatcher = new CloseWatcher();
+        instance._closeWatcher.onclose = (event) => {
+          instance.hide({ event });
+        };
+      }
     } else {
-      instance.off(elem, eventName);
+      instance._closeWatcher?.destroy();
+      instance._closeWatcher = null;
     }
   }
 
@@ -1858,7 +2061,7 @@
     instance,
     { remove = false, keepInstance = false, keepState = false } = {},
   ) => {
-    const { base, off, emit, constructor } = instance;
+    const { base, _off, _emit, constructor } = instance;
 
     const stateElem = instance[constructor.NAME];
 
@@ -1871,7 +2074,7 @@
       }
     });
 
-    off();
+    _off();
 
     if (!keepInstance) {
       destroyInstance(instance);
@@ -1885,7 +2088,9 @@
 
     instance.isInit = false;
 
-    emit(EVENT_DESTROY);
+    toggleInitClass(instance, false);
+
+    _emit(EVENT_DESTROY);
 
     return instance;
   };
@@ -1900,7 +2105,7 @@
     let {
       opts: { trigger, delay, mode },
       toggle,
-      on,
+      _on,
     } = instance;
 
     if (instance[PRIVATE_PREFIX + TRIGGER]) {
@@ -1921,12 +2126,12 @@
     }
 
     let pointerType;
-    on(toggler, "pointerdown" + PREFIX, (event) => {
+    _on(toggler, "pointerdown" + PREFIX, (event) => {
       pointerType = event.pointerType;
     });
 
     if (triggerClick) {
-      on(toggler, EVENT_CLICK + PREFIX, (event) => {
+      _on(toggler, EVENT_CLICK + PREFIX, (event) => {
         if (
           (pointerType === MOUSE && triggerHover) ||
           (instance.isOpen &&
@@ -1936,6 +2141,7 @@
           pointerType = null;
           return;
         }
+
         toggle(null, { event, trigger: toggler });
       });
     }
@@ -1945,22 +2151,27 @@
     if (triggerFocus) {
       events.push(EVENT_FOCUSIN + PREFIX, EVENT_FOCUSOUT + PREFIX);
 
-      triggerClick &&
-        on(toggler, EVENT_MOUSEDOWN, () => {
+      (triggerClick || triggerFocus) &&
+        _on(toggler, EVENT_MOUSEDOWN, () => {
           isMouseDown = true;
-          clearTimeout(hoverTimer);
+          if (instance.isOpen) {
+            clearTimeout(hoverTimer);
+          }
           requestAnimationFrame(() => (isMouseDown = false));
         });
     }
 
     if (triggerHover || triggerFocus) {
-      on([toggler, target], events, (event) => {
+      _on([toggler, target], events, (event) => {
         const { type } = event;
-
+        if (pointerType === "touch") return;
         const isFocus = type === EVENT_FOCUSIN || type === EVENT_FOCUSOUT;
+
         if (
           (type === EVENT_FOCUSIN && isMouseDown) ||
-          (type === EVENT_FOCUSOUT && triggerHover && target.matches(":" + HOVER))
+          (type === EVENT_FOCUSOUT &&
+            triggerHover &&
+            toggler.matches(":" + HOVER))
         ) {
           return;
         }
@@ -1976,7 +2187,7 @@
             toggle(entered, { trigger: toggler, event });
           }, d);
         } else {
-          toggle(entered, { event, trigger: event.target });
+          toggle(entered, { trigger: event.target, event });
         }
       });
     }
@@ -2011,7 +2222,7 @@
                 globalReturnElems.findIndex((el) => el === returnElem) + 1
               ];
           }
-          opts.onFocusOut?.();
+          opts.onFocusOut && opts.onFocusOut();
           return focus(returnElem);
         }
 
@@ -2019,18 +2230,18 @@
           focusFirst = true;
         }
 
-        arrayFrom(target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR))
-          .at(!focusFirst && isGuardBefore ? -1 : 0)
-          .focus();
+        (
+          arrayFrom(target.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR)).at(
+            !focusFirst && isGuardBefore ? -1 : 0,
+          ) || target
+        )?.focus();
       };
 
       this.focusGuards = [BEFORE, AFTER].map((methodName) => {
         const focusGuard = createElement("span", {
           [TABINDEX]: 0,
           [DATA_UI_PREFIX + FOCUS_GUARD]: methodName,
-          style: `outline:none;opacity:0;position:${
-          opts.strategy ?? FIXED
-        };pointer-events:none;`,
+          style: `outline:none;opacity:0;position:fixed;pointer-events:none;`,
         });
         target[methodName](focusGuard);
         focusGuard.addEventListener(FOCUS, this.onFocus);
@@ -2045,6 +2256,54 @@
     }
   }
 
+  const destroyTopLayer = (elem) => {
+    elem.popover && elem.hidePopover?.();
+    elem.close?.();
+    elem.popover = null;
+  };
+
+  const addPopoverAttribute = (instance, elem = instance.base) => {
+    elem.popover =
+      instance.opts.topLayer &&
+      (!instance.opts[MODAL] || !isDialog(elem)) &&
+      POPOVER_API_SUPPORTED
+        ? POPOVER_API_MODE_MANUAL
+        : null;
+  };
+
+  const toggleTopLayer = (instance, s) => {
+    const { constructor, opts } = instance;
+    const target = instance[constructor.NAME];
+    const targetIsDialog = isDialog(target);
+    const targetIsModal = targetIsDialog && opts[MODAL] && opts.topLayer;
+    const targetIsPopover =
+      opts.topLayer && POPOVER_API_SUPPORTED && target.popover;
+
+    if (s) {
+      if (targetIsDialog) {
+        if (targetIsModal) {
+          if (target.open) target.close();
+          target.showModal();
+          constructor.dispatchTopLayer(MODAL);
+        } else {
+          if (targetIsPopover) {
+            target.close?.();
+            target.showPopover();
+            constructor.dispatchTopLayer(POPOVER);
+          } else {
+            target.show();
+          }
+        }
+      } else if (targetIsPopover) {
+        target.showPopover();
+        constructor.dispatchTopLayer(POPOVER);
+      }
+    } else {
+      target.close?.();
+      target[POPOVER] && target.hidePopover?.();
+    }
+  };
+
   ResetFloatingCssVariables();
 
   const OPTIONS = [
@@ -2056,18 +2315,25 @@
     OPTION_MOVE_TO_ROOT,
   ];
 
+  const CURRENT_PLACEMENT_ATTRIBUTE = DATA_UI_PREFIX + "current-" + PLACEMENT;
+  const TRANSFORM_ORIGIN = "transform-origin";
+  const CSS_VARIABLES = [
+    LEFT,
+    TOP,
+    AVAILABLE_WIDTH,
+    AVAILABLE_HEIGHT,
+    WIDTH,
+    HEIGHT,
+    ARROW + "-" + LEFT,
+    ARROW + "-" + TOP,
+    ANCHOR + "-" + WIDTH,
+    ANCHOR + "-" + HEIGHT,
+    TRANSFORM_ORIGIN,
+  ].map((name) => VAR_UI_PREFIX + FLOATING + "-" + name);
+
   class Floating {
     static instances = new Set();
-    constructor({
-      target,
-      anchor,
-      arrow,
-      opts,
-      name = "",
-      base,
-      teleport,
-      instance,
-    }) {
+    constructor({ target, anchor, arrow, opts, name = "", base, instance }) {
       const { on, off } = new EventHandler();
 
       Object.assign(this, {
@@ -2079,66 +2345,72 @@
         on,
         off,
         base,
-        teleport,
         instance,
         floatings: new Set(),
       });
     }
     init() {
-      const { target, anchor, arrow, opts, name, base, on } = this;
+      const { target, anchor, arrow, opts, base, name, on, instance } = this;
       const PREFIX = VAR_UI_PREFIX + name + "-";
+      const FLOATING_PREFIX = VAR_UI_PREFIX + FLOATING + "-";
 
-      const anchorScrollParents = parents(anchor, isOverflowElement);
+      target.setAttribute(DATA_UI_PREFIX + FLOATING, name);
+
+      const anchorScrollParents = parents(anchor, isOverflowElement, body);
       const anchorStyles = getComputedStyle(anchor);
       const targetStyles = getComputedStyle(target);
 
       const options = {};
-      OPTIONS.map((name) => {
+      OPTIONS.forEach((name) => {
         const variableName = camelToKebab(name);
         return (options[name] =
           getPropertyValue(anchorStyles, PREFIX + variableName) ||
           getPropertyValue(targetStyles, PREFIX + variableName));
       });
 
-      [...OPTIONS, MODE, OPTION_FLOATING_CLASS].forEach((name) => {
+      const border = Object.fromEntries(
+        [TOP, RIGHT, BOTTOM, LEFT].map((side) => [
+          side,
+          parseFloat(getPropertyValue(targetStyles, `border-${side}-width`)),
+        ]),
+      );
+
+      OPTIONS.forEach((name) => {
         if (name === FLIP) {
           options[FLIP] = options[FLIP]
-            ? options[FLIP].split(" ").map((v) => v === TRUE)
+            ? options[FLIP].split(" ").map((v) => v === "1")
             : returnArray(opts[FLIP]);
-        } else if (
-          name === PLACEMENT ||
-          name === MODE ||
-          name === OPTION_FLOATING_CLASS
-        ) {
+        } else if (name === PLACEMENT) {
           options[name] =
             base.getAttribute(DATA_UI_PREFIX + camelToKebab(name)) ||
             options[name] ||
-            opts[PLACEMENT];
+            opts[name];
         } else {
           options[name] =
-            options[name] === TRUE
+            options[name] === "1"
               ? true
-              : options[name] === FALSE
+              : options[name] === "0"
               ? false
               : opts[name];
         }
         this[name] = options[name];
       });
 
-      const { shrink, sticky, topLayer, moveToRoot, flip, placement, mode } =
-        this;
+      let { shrink, sticky, topLayer, moveToRoot, flip, placement } = this;
 
-      const usePopoverApi = topLayer && mode !== MODAL && POPOVER_API_SUPPORTED;
+      const targetIsModal = opts[MODAL] && isDialog(target);
+
+      const usePopoverApi = topLayer && !targetIsModal && POPOVER_API_SUPPORTED;
 
       const inTopLayer =
-        (topLayer && POPOVER_API_SUPPORTED) || mode === MODAL || moveToRoot;
+        (topLayer && POPOVER_API_SUPPORTED) || targetIsModal || moveToRoot;
+
+      const focusTrap = opts.focusTrap === AUTO ? opts[MODAL] : opts.focusTrap;
 
       const useFocusGuards =
-        (opts.focusTrap && mode !== MODAL) || (usePopoverApi && moveToRoot);
+        (focusTrap && !targetIsModal) || (usePopoverApi && moveToRoot);
 
-      const wrapper = this.createWrapper(usePopoverApi);
-
-      if (moveToRoot && mode !== MODAL && !opts.focusTrap) {
+      if (moveToRoot && !targetIsModal && !opts.focusTrap) {
         on(anchor, EVENT_KEYDOWN, (e) => {
           if (e.keyCode === KEY_TAB && !e.shiftKey) {
             const focusElem = target.querySelector(FOCUSABLE_ELEMENTS_SELECTOR);
@@ -2150,9 +2422,24 @@
         });
       }
 
-      if (placement === DIALOG) return this;
+      if (useFocusGuards) {
+        this.focusGuards = new FocusGuards(target, {
+          focusAfterAnchor: !opts.focusTrap,
+          anchor,
+          topLayer,
+          onFocusOut:
+            isDialog(target) &&
+            (() => {
+              instance.hide?.();
+            }),
+        });
+      }
 
-      const wrapperStyle = wrapper.style;
+      if (placement === DIALOG) {
+        setAttribute(target, CURRENT_PLACEMENT_ATTRIBUTE, DIALOG);
+        toggleTopLayer(instance, true);
+        return this;
+      }
 
       const {
         padding,
@@ -2162,17 +2449,18 @@
         arrowPadding,
         arrowWidth,
         arrowHeight,
-        wrapperComputedStyle,
-      } = collectCssVariables(anchorStyles, targetStyles, wrapper, PREFIX);
+      } = collectCssVariables(anchorStyles, targetStyles, target, PREFIX);
 
       let anchorRect = getBoundingClientRect(anchor);
 
-      const targetRect = {};
+      const targetRect = {
+        [WIDTH]: target.offsetWidth,
+        [HEIGHT]: target.offsetHeight,
+      };
       [WIDTH, HEIGHT].forEach((size) => {
-        targetRect[size] = parseFloat(wrapperComputedStyle[size]);
-        wrapperStyle.setProperty(PREFIX + size, targetRect[size] + PX);
-        wrapperStyle.setProperty(
-          PREFIX + ANCHOR + "-" + size,
+        target.style.setProperty(FLOATING_PREFIX + size, targetRect[size] + PX);
+        target.style.setProperty(
+          FLOATING_PREFIX + ANCHOR + "-" + size,
           anchorRect[size] + PX,
         );
       });
@@ -2187,6 +2475,12 @@
         arrowData[OFFSET] = arrowOffset ?? opts[ARROW]?.offset ?? 0;
       }
 
+      if (!inTopLayer) {
+        shrink = false;
+        flip = false;
+        sticky = false;
+      }
+
       const params = {
         anchorRect,
         targetRect,
@@ -2199,16 +2493,14 @@
         offset,
         boundaryOffset,
         padding,
+        border,
         minHeight: parseFloat(targetStyles.minHeight) || 0,
         minWidth: parseFloat(targetStyles.minWidth) || 0,
+        isRtl: isRtl(anchor),
       };
 
       let prevTop = 0;
-      let pendingUpdate = false;
       const updatePosition = () => {
-        if (pendingUpdate) return;
-        pendingUpdate = true;
-
         anchorRect = getBoundingClientRect(anchor);
 
         if (!inTopLayer) {
@@ -2227,43 +2519,33 @@
 
         if (prevTop && Math.abs(prevTop - position.top) > 50) {
           prevTop = position.top;
-          requestAnimationFrame(() => {
-            pendingUpdate = false;
-          });
+
           return updatePosition();
         }
         prevTop = position.top;
 
-        setAttribute(
-          wrapper,
-          DATA_UI_PREFIX + "current-" + PLACEMENT,
-          position[PLACEMENT],
-        );
+        setAttribute(target, CURRENT_PLACEMENT_ATTRIBUTE, position[PLACEMENT]);
 
         if (shrink) {
           [AVAILABLE_WIDTH, AVAILABLE_HEIGHT].forEach((name) =>
-            wrapperStyle.setProperty(PREFIX + name, position[name] + PX),
+            target.style.setProperty(FLOATING_PREFIX + name, position[name] + PX),
           );
         }
 
-        if (arrowData) {
-          [LEFT, TOP].forEach((dir, i) =>
-            wrapperStyle.setProperty(
-              PREFIX + ARROW + "-" + dir,
+        [LEFT, TOP].forEach((dir, i) => {
+          target.style.setProperty(FLOATING_PREFIX + dir, position[dir] + PX);
+          if (arrowData) {
+            target.style.setProperty(
+              FLOATING_PREFIX + ARROW + "-" + dir,
               position.arrow[i] + PX,
-            ),
-          );
-        }
-        wrapperStyle.setProperty(
-          PREFIX + "transform-origin",
+            );
+          }
+        });
+
+        target.style.setProperty(
+          FLOATING_PREFIX + TRANSFORM_ORIGIN,
           `${position.transformOrigin[0]}px ${position.transformOrigin[1]}px`,
         );
-
-        wrapperStyle.translate = `${position.left}px ${position.top}px 0`;
-
-        requestAnimationFrame(() => {
-          pendingUpdate = false;
-        });
       };
 
       observeResize(target, (width, height) => {
@@ -2274,17 +2556,21 @@
 
       updatePosition();
 
-      this._toggleApi(useFocusGuards);
+      toggleTopLayer(instance, true);
 
-      on(anchorScrollParents, EVENT_SCROLL, updatePosition, {
+      on(
+        [...anchorScrollParents, window, visualViewport],
+        EVENT_SCROLL,
+        updatePosition,
+        {
+          passive: true,
+        },
+      );
+
+      on(visualViewport, EVENT_RESIZE, updatePosition, {
         passive: true,
       });
-      on(visualViewport, [EVENT_SCROLL, EVENT_RESIZE], updatePosition, {
-        passive: true,
-      });
-      on(window, EVENT_SCROLL, updatePosition, {
-        passive: true,
-      });
+
       this.updatePosition = updatePosition.bind(this);
 
       Floating.instances.add(this);
@@ -2297,141 +2583,37 @@
       return this;
     }
 
-    _toggleApi(useFocusGuards) {
-      const { wrapper, opts, mode, topLayer, anchor, target, instance } = this;
-      const wrapperIsDialog = isDialog(wrapper);
-      const isModal = mode === MODAL;
-      const isPopover = topLayer && POPOVER_API_SUPPORTED && wrapper.popover;
-
-      const onTopLayer = (type) => instance.constructor.dispatchTopLayer(type);
-
-      if (wrapperIsDialog) {
-        if (isModal) {
-          if (wrapper.open) wrapper.close();
-          wrapper.showModal();
-          onTopLayer?.(MODAL);
-        } else {
-          if (isPopover) {
-            wrapper.showPopover();
-            wrapper.open = true;
-            onTopLayer?.(POPOVER);
-          } else {
-            wrapper.show();
-          }
-        }
-        this.on(wrapper, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-      } else if (isPopover) {
-        wrapper.showPopover();
-        onTopLayer?.(POPOVER);
-      }
-
-      if (useFocusGuards) {
-        this.focusGuards = new FocusGuards(target, {
-          focusAfterAnchor: !opts.focusTrap,
-          anchor,
-          topLayer,
-          strategy: ABSOLUTE,
-          onFocusOut: () => {
-            if (wrapperIsDialog) {
-              instance.hide?.();
-            }
-          },
-        });
-      }
-    }
-
-    createWrapper(usePopoverApi) {
-      const { target, name, anchor, opts, placement, mode, moveToRoot } = this;
-
-      const style = {
-        zIndex: `var(${VAR_UI_PREFIX}floating-top-layer,999)`,
-        margin: 0,
-        padding: 0,
-        background: NONE,
-        maxWidth: NONE,
-        maxHeight: NONE,
-        overflow: "unset",
-        pointerEvents: NONE,
-        display: "flex",
-        justifyContent: CENTER,
-        alignItems: CENTER,
-        willChange: "transform",
-      };
-
-      if (placement === DIALOG) {
-        style.position = FIXED;
-        style.inset = 0;
-        style.height = AUTO;
-        style.width = AUTO;
-      } else {
-        style.position = ABSOLUTE;
-        style.inset = AUTO;
-        style.left = 0;
-        style.top = 0;
-        style.height = style.width = "fit-" + CONTENT;
-        style.minWidth = "max-" + CONTENT;
-      }
-
-      const attributes = {
-        style,
-        class: this[OPTION_FLOATING_CLASS],
-        [FLOATING_DATA_ATTRIBUTE]: name,
-        [DATA_UI_PREFIX + FLOATING + "-" + MODE]: mode,
-      };
-
-      if (usePopoverApi) {
-        attributes[POPOVER] = POPOVER_API_MODE_MANUAL;
-      }
-
-      if (opts.interactive !== undefined && !opts.interactive) {
-        attributes[INERT] = "";
-        attributes.style.pointerEvents = NONE;
-      } else {
-        target.style.pointerEvents = AUTO;
-      }
-
-      const wrapper = (this.wrapper = createElement(
-        mode === MODAL || mode === DIALOG ? DIALOG : DIV,
-        attributes,
-      ));
-
-      if (this.teleport) {
-        this.teleport.opts.to = wrapper;
-        this.teleport.move();
-      }
-
-      if (moveToRoot) {
-        getElement(opts.root)?.append(wrapper);
-      } else {
-        anchor.after(wrapper);
-      }
-
-      return wrapper;
-    }
     destroy() {
+      const { target } = this;
       this.off();
-      resizeObserver.unobserve(this.target);
-      this.wrapper.close?.();
-      if (this.wrapper.popover && POPOVER_API_SUPPORTED) {
-        this.wrapper.hidePopover();
-      }
-      this.base.style.pointerEvents = "";
+      resizeObserver.unobserve(target);
+
+      removeAttribute(
+        target,
+        DATA_UI_PREFIX + FLOATING,
+        CURRENT_PLACEMENT_ATTRIBUTE,
+      );
+
+      toggleTopLayer(this.instance, false);
+
+      CSS_VARIABLES.forEach((name) => target.style.removeProperty(name));
+
       this.focusGuards?.destroy();
-      this.wrapper.remove();
-      this.teleport.reset();
+
       Floating.instances.delete(this);
       this.parentFloating?.floatings?.delete(this);
     }
   }
 
-  var toggleHideModeState = (
+  var toggleStateMode = (
     s,
     instance,
     target = instance.base,
     subInstance = instance,
   ) => {
     const opts = instance.opts;
-    const mode = opts[HIDE_MODE];
+    const mode = opts[STATE_MODE];
+
     if (mode === ACTION_REMOVE) {
       if (s) {
         if (opts.keepPlace) {
@@ -2462,11 +2644,11 @@
     } else if (mode !== CLASS_HIDDEN_MODE && mode !== CLASS_SHOWN_MODE) {
       if (mode === MODE_HIDDEN_UNTIL_FOUND) {
         if (s) {
-          target.removeAttribute(HIDDEN);
+          target[HIDDEN] = null;
           instance.off(target, EVENT_BEFORE_MATCH);
         } else {
           target.setAttribute(HIDDEN, UNTIL_FOUND);
-          instance.on(target, EVENT_BEFORE_MATCH, (event) => {
+          instance._on(target, EVENT_BEFORE_MATCH, (event) => {
             instance.show(target, { animated: false, event });
           });
         }
@@ -2484,65 +2666,53 @@
   };
 
   var floatingTransition = (instance, { s, animated, silent, eventParams }) => {
-    const { transition, base, opts, toggler, emit, constructor, teleport } =
+    const { transition, base, opts, toggler, _emit, constructor, teleport } =
       instance;
     const name = constructor.NAME;
     const target = instance[name];
     const anchor = toggler ?? base;
 
-    s && toggleHideModeState(true, instance, target);
+    s && toggleStateMode(true, instance, target);
 
     if (s) {
-      togglePreventScroll(instance, true);
+      teleport.move(instance);
       instance[FLOATING] = new Floating({
-        teleport,
         base,
         anchor,
         target,
+        name,
         arrow: target.querySelector(getDataSelector(name, ARROW)),
         opts,
-        name,
         instance,
       }).init();
+      togglePreventScroll(instance, true);
     }
 
-    !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+    addFrameState(instance, s);
 
-    const wrapper = instance[FLOATING]?.wrapper;
-
-    if (!s && wrapper?.matches(":" + MODAL)) {
-      wrapper.close();
-      if (POPOVER_API_SUPPORTED) {
-        wrapper.popover = POPOVER_API_MODE_MANUAL;
-        wrapper.showPopover();
-      } else {
-        animated = false;
-      }
-    }
+    !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
     const promise = transition?.run(s, animated);
 
-    if (s && opts.outsideHide) {
-      instance.on(
-        doc,
-        EVENT_ACTION_OUTSIDE,
-        (event) =>
-          !closest(event.target, [toggler ?? base, target]) &&
-          instance.hide({ event }),
-      );
+    toggleLightDismiss(instance, s);
+
+    if (name === TOOLTIP) {
+      if (s) {
+        instance._on(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS, (event) => {
+          if (!event.isTrusted || event.keyCode !== KEY_ESC) return;
+          instance.hide({ event });
+        });
+      } else {
+        instance._off(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS);
+      }
     } else {
-      instance.off(doc, EVENT_ACTION_OUTSIDE);
+      toggleBackDismiss(s, instance);
     }
 
-    opts.escapeHide &&
-      addEscapeHide(
-        instance,
-        s,
-        instance.toggler ? [instance.toggler, instance.base] : doc,
-      );
-
     if (s) {
-      (opts.autofocus || opts.focusTrap) && callAutofocus(instance);
+      (opts.autofocus || opts.focusTrap) &&
+        eventParams?.event?.type !== EVENT_MOUSEENTER &&
+        callAutofocus(instance);
     } else {
       !s && target.contains(doc.activeElement) && focus(toggler);
     }
@@ -2553,14 +2723,15 @@
           await promise;
         }
         if (instance.placeholder) {
-          wrapper.replaceWith(instance.placeholder);
+          target.replaceWith(instance.placeholder);
         }
+        teleport.reset();
         instance[FLOATING]?.destroy();
         instance[FLOATING] = null;
-        toggleHideModeState(false, instance, target);
+        toggleStateMode(false, instance, target);
         togglePreventScroll(instance, false);
       }
-      emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+      _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
     })();
 
     return promise;
@@ -2571,13 +2742,14 @@
 
     instance.instances.set(id, instance);
     instance.isInit = true;
-    instance.emit(EVENT_INIT);
+    toggleInitClass(instance, true);
+    instance._emit(EVENT_INIT);
 
     const shown =
       callOrReturn(
         (opts.hashNavigation && checkHash(id)) || opts.shown,
         instance,
-      ) ?? isShown(stateElem, opts.hideMode);
+      ) ?? isShown(stateElem, opts.stateMode);
 
     if (shown) {
       show({
@@ -2589,38 +2761,25 @@
         __initial: true,
       });
     } else {
-      toggleHideModeState(false, instance, stateElem);
+      toggleStateMode(false, instance, stateElem);
     }
 
     return instance;
   };
 
-  var toggleConfirm = (s, instance) => {
-    if (s) {
-      instance.on(instance.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
-        if (instance.opts[CONFIRM]) {
-          const trigger = closest(event.target, instance.opts[CONFIRM]);
-          trigger && instance.emit(CONFIRM, { event, trigger });
-        }
-      });
-    } else {
-      instance.off(instance.base, EVENT_CLICK + UI_EVENT_PREFIX);
-    }
+  var toggleConfirm = (instance) => {
+    instance._on(instance.base, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+      const trigger = closest(event.target, instance.opts[CONFIRM]);
+      trigger && instance._emit(CONFIRM, { event, trigger });
+    });
   };
 
-  const EVENT_HASHCHANGE = "hashchange" + UI_EVENT_PREFIX;
   var addHashNavigation = (instance) => {
-    if (instance.opts[OPTION_HASH_NAVIGATION]) {
-      instance[PRIVATE_PREFIX + OPTION_HASH_NAVIGATION] = true;
-      instance.on(window, EVENT_HASHCHANGE, (event) => {
-        if (checkHash(instance.id)) {
-          instance.show({ event });
-        }
-      });
-    } else if (instance[PRIVATE_PREFIX + OPTION_HASH_NAVIGATION]) {
-      instance.off(window, EVENT_HASHCHANGE);
-      instance[PRIVATE_PREFIX + OPTION_HASH_NAVIGATION] = false;
-    }
+    instance._on(window, "hashchange" + UI_EVENT_PREFIX, (event) => {
+      if (checkHash(instance.id)) {
+        instance.show({ event });
+      }
+    });
   };
 
   const DEFAULT_PREFIX = upperFirst(DEFAULT);
@@ -2694,20 +2853,175 @@
       : ROOT_ELEM.style.removeProperty(PROPERTY_ROOT_SCROLLBAR_WIDTH);
   };
 
-  const findPreventScrollInstance = () =>
-    arrayFrom(Base.allInstances).find(
-      (inst) => inst.opts[OPTION_PREVENT_SCROLL] && inst.isOpen,
-    );
+  const checkPreventScroll = (instance) => {
+    const preventScrollOption = instance.opts[OPTION_PREVENT_SCROLL];
+    if (!instance.isOpen) return;
+    return preventScrollOption === AUTO
+      ? instance.opts[MODAL]
+      : preventScrollOption;
+  };
 
   var togglePreventScroll = (instance, s) => {
     if (
       (s &&
-        instance.opts[OPTION_PREVENT_SCROLL] &&
+        checkPreventScroll(instance) &&
         !ROOT_ELEM.classList.contains(PREVENT_SCROLL_CLASS)) ||
-      (!s && !findPreventScrollInstance())
+      (!s && !arrayFrom(Base.allInstances).find(checkPreventScroll))
     ) {
       updateBodyScrollbarWidth(s);
       ROOT_ELEM.classList.toggle(PREVENT_SCROLL_CLASS, s);
+    }
+  };
+
+  var toggleInitClass = (instance, s) => {
+    instance.base.classList.toggle(
+      UI_PREFIX + instance.constructor.NAME + "-" + ACTION_INIT,
+      s,
+    );
+  };
+
+  var addLightDismiss = (instance) => {
+    const { constructor, opts, _on, _emit } = instance;
+    const base = instance[constructor.NAME];
+    const contentElem = instance.main || base;
+
+    const events = [
+      EVENT_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
+      EVENT_KEYUP + EVENT_SUFFIX_LIGHT_DISMISS,
+      (opts[OPTION_LIGHT_DISMISS]?.contextMenuClick ?? true) &&
+        EVENT_CONTEXT_MENU_CLICK + EVENT_SUFFIX_LIGHT_DISMISS,
+    ];
+
+    _on(contentElem, EVENT_MOUSEDOWN + EVENT_SUFFIX_LIGHT_DISMISS, (e) => {
+      instance._mousedownEvent = e;
+    });
+
+    _on(document, events, (event) => {
+      const target = event.target;
+      if (
+        !instance.isOpen ||
+        instance._isOpening ||
+        (opts.awaitAnimation && instance.transition?.isAnimating)
+      )
+        return;
+
+      const _mousedownEvent = instance._mousedownEvent;
+      const isBaseModal = isModal(base);
+
+      let isClickOutside;
+
+      if (
+        !_mousedownEvent &&
+        (target === instance.toggler || target === instance.anchor)
+      ) {
+        instance._mousedownEvent = null;
+        return;
+      }
+
+      const backdrop = instance.backdrop;
+      const isBackdropClick = !_mousedownEvent && target === backdrop;
+      const isTargetNotInside =
+        (!backdrop || !base.contains(backdrop)) &&
+        !_mousedownEvent &&
+        !base.contains(target);
+      const targetIsBase = !backdrop && target === base;
+
+      if (
+        isBackdropClick ||
+        isTargetNotInside ||
+        (targetIsBase &&
+          (!_mousedownEvent
+            ? isClickOutsideElem(contentElem, event)
+            : isClickOutsideElem(contentElem, _mousedownEvent)))
+      ) {
+        isClickOutside = true;
+      }
+
+      if (isClickOutside && (target === backdrop || isBaseModal)) {
+        if (opts[OPTION_PREVENT_DISMISS]) {
+          instance._mousedownEvent = null;
+          animateClass(
+            contentElem,
+            camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENTED),
+          );
+          _emit(EVENT_DISMISS_PREVENTED, { event });
+          return;
+        }
+      }
+
+      if (!isClickOutside && !opts.modal && !target.closest("#" + instance.id)) {
+        const targetInstance =
+          constructor.get(target) ||
+          parents(
+            target,
+            `[${FLOATING_DATA_ATTRIBUTE}],.${UI_PREFIX + DIALOG}-init`,
+          ).find((parent) => Base.get(parent));
+
+        if ((!targetInstance || instance.floating) && !_mousedownEvent) {
+          isClickOutside = true;
+        }
+
+        if (
+          instance.floating &&
+          (instance.floating.anchor === target ||
+            instance.floating.anchor.contains(target))
+        ) {
+          return;
+        }
+      }
+
+      if (isClickOutside) {
+        instance.hide({ event });
+        if (constructor[PRIVATE_OPTION_CANCEL_ON_HIDE]) {
+          _emit(CANCEL, { event });
+        }
+      }
+
+      instance._mousedownEvent = null;
+    });
+  };
+
+  var toggleLightDismiss = (instance, s) => {
+    if (s) {
+      if (
+        instance.opts[OPTION_LIGHT_DISMISS] === AUTO
+          ? instance.opts[MODAL]
+          : instance.opts[OPTION_LIGHT_DISMISS]
+      ) {
+        addLightDismiss(instance);
+      }
+    } else {
+      instance._off("*", EVENT_SUFFIX_LIGHT_DISMISS);
+      instance._mousedownEvent = null;
+    }
+  };
+
+  var addAriaTargets = (instance) => {
+    const { base, opts } = instance;
+    for (const name of [ARIA_LABELLEDBY, ARIA_DESCRIBEDBY]) {
+      const suffix = ARIA_SUFFIX[name];
+      let elem = opts[suffix];
+      if (isString(elem)) {
+        elem = getOptionElem(instance, elem, base);
+      }
+      if (!isElement(elem)) {
+        elem = null;
+      }
+
+      instance[suffix] = elem;
+      if (!elem) return;
+      const id = elem ? (elem.id ||= uuidGenerator()) : elem;
+      setAttribute(base, name, id);
+    }
+  };
+
+  var addFrameState = (instance, s) => {
+    if (s) {
+      instance._isOpening = true;
+      requestAnimationFrame(() => (instance._isOpening = false));
+    } else {
+      instance._isClosing = true;
+      requestAnimationFrame(() => (instance._isClosing = false));
     }
   };
 
@@ -2718,7 +3032,6 @@
       ...DEFAULT_OPTIONS,
       eventPrefix: getEventsPrefix(COLLAPSE),
       [OPTION_HASH_NAVIGATION]: false,
-      dismiss: true,
       [OPTION_AUTODESTROY]: false,
       [TOGGLER]: ({ id }) => getDefaultToggleSelector(id, true),
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -2733,47 +3046,47 @@
 
       this.base.id = this.id;
 
-      this.emit(EVENT_BEFORE_INIT);
+      this._emit(EVENT_BEFORE_INIT);
 
       this._update();
+
+      this.opts[OPTION_HASH_NAVIGATION] && addHashNavigation(this);
+      this.opts[DISMISS] && addDismiss(this);
 
       return callShowInit(this);
     }
     _update() {
       const { base, opts } = this;
 
-      if (opts[HIDE_MODE] === HIDDEN && base[HIDDEN] === UNTIL_FOUND) {
-        opts[HIDE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
+      if (opts[STATE_MODE] === HIDDEN && base[HIDDEN] === UNTIL_FOUND) {
+        opts[STATE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
       }
 
       updateOptsByData(
         opts,
         base,
-        [HIDE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
+        [TRANSITION, STATE_MODE, OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
         [OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY],
       );
 
-      this[TELEPORT] = Teleport.createOrUpdate(
-        this[TELEPORT],
+      this.teleport = Teleport.createOrUpdate(
+        this.teleport,
         base,
-        opts[TELEPORT],
+        opts.teleport,
       )?.move(this);
 
-      if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-        toggleHideModeState(false, this);
+      if (opts[STATE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+        toggleStateMode(false, this);
       }
 
-      this[TRANSITION] = Transition.createOrUpdate(
-        this[TRANSITION],
+      this.transition = Transition.createOrUpdate(
+        this.transition,
         base,
-        opts[TRANSITION],
+        opts.transition,
         { cssVariables: true },
       );
 
       this.updateTriggers();
-
-      addDismiss(this);
-      addHashNavigation(this);
     }
     destroy(destroyOpts) {
       // eslint-disable-next-line prefer-const
@@ -2781,7 +3094,7 @@
 
       if (!this.isInit) return;
 
-      this.emit(EVENT_BEFORE_DESTROY);
+      this._emit(EVENT_BEFORE_DESTROY);
 
       if (opts.a11y) {
         const otherTogglers = arrayFrom(this.instances.values())
@@ -2819,7 +3132,7 @@
                 v ? arrayUnique(v.split(" ").concat(id)).join(" ") : id,
               );
               if (toggler.tagName !== BUTTON.toLowerCase()) {
-                setAttribute(toggler, ROLE, BUTTON);
+                toggler[ROLE] = BUTTON;
               }
             }
             toggleClass(
@@ -2827,7 +3140,7 @@
               opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
               !!this.isOpen,
             );
-            this.on(toggler, EVENT_CLICK, (event) => {
+            this._on(toggler, EVENT_CLICK, (event) => {
               event.preventDefault();
               this.toggle(null, { trigger: toggler, event });
             });
@@ -2837,7 +3150,7 @@
       ));
     }
     async toggle(s, params) {
-      const { base, togglers, opts, emit, isOpen, isAnimating } = this;
+      const { base, togglers, opts, _emit, isOpen, isAnimating } = this;
       const { awaitAnimation, a11y } = opts;
       const { animated, silent, trigger, event } =
         normalizeToggleParameters(params);
@@ -2849,26 +3162,26 @@
       this.isOpen = s;
 
       if (isAnimating && !awaitAnimation) {
-        await this[TRANSITION].cancel();
+        await this.transition.cancel();
       }
 
       const eventParams = { trigger, event };
 
-      !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-      s && toggleHideModeState(true, this);
+      s && toggleStateMode(true, this);
 
-      !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-      const promise = this[TRANSITION]?.run(s, animated);
+      const promise = this.transition?.run(s, animated);
 
       a11y && setAttribute(togglers, ARIA_EXPANDED, !!s);
       toggleClass(togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX], s);
       toggleClass(base, opts[COLLAPSE + CLASS_ACTIVE_SUFFIX], s);
 
       awaitPromise(promise, () => {
-        !s && toggleHideModeState(false, this);
-        !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+        !s && toggleStateMode(false, this);
+        !silent && _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
         if (!s && opts[OPTION_AUTODESTROY]) {
           opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });
         }
@@ -2902,7 +3215,7 @@
       [TOGGLER]: null,
       [TOGGLER + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [DROPDOWN + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-      [OPTION_PREVENT_SCROLL]: false,
+      [OPTION_PREVENT_SCROLL]: AUTO,
     };
 
     constructor(elem, opts) {
@@ -2911,15 +3224,17 @@
     init() {
       if (this.isInit) return;
 
-      this.base.id = this.id;
+      const { base, show, _on, opts } = this;
+
+      base.id = this.id;
+
+      this.teleport = new Teleport(base, { disableAttributes: true });
 
       this._update();
 
-      const { toggler, base, show, on } = this;
-
-      on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
-      on(toggler, EVENT_KEYDOWN, async (event) => {
-        let arrowActivation = this.opts.arrowActivation;
+      _on(base, EVENT_KEYDOWN, this._onKeydown.bind(this));
+      _on(this.toggler, EVENT_KEYDOWN, async (event) => {
+        let arrowActivation = opts.arrowActivation;
         const { keyCode } = event;
 
         if (DIRECTIONS[arrowActivation]) {
@@ -2931,7 +3246,7 @@
         if (arrowActivated) {
           event.preventDefault();
           if (!this.isOpen) {
-            await show({ event, trigger: toggler });
+            await show({ event, trigger: this.toggler });
           }
           if (this.isAnimating && !this.isOpen) return;
           this.focusableElems
@@ -2940,37 +3255,38 @@
         }
       });
 
-      this[TELEPORT] = new Teleport(base, { disableAttributes: true });
+      opts[DISMISS] && addDismiss(this);
 
       return callShowInit(this);
     }
     _update() {
-      const { base, opts, on, off, hide } = this;
+      const { base, opts, _on, _off, hide } = this;
       updateOptsByData(
         opts,
         base,
-        [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
-        [OPTION_PREVENT_SCROLL],
+        [TRANSITION, STATE_MODE, TRIGGER, ...TOP_LAYER_OPTIONS_NAMES],
+        TOP_LAYER_OPTIONS_NAMES,
       );
 
-      this[TRANSITION] = Transition.createOrUpdate(
-        this[TRANSITION],
+      this.transition = Transition.createOrUpdate(
+        this.transition,
         base,
-        opts[TRANSITION],
+        opts.transition,
       );
+
+      this.teleport.opts.to = opts.moveToRoot ? body : null;
 
       this.updateToggler();
 
       if (opts.itemClickHide) {
-        on(base, EVENT_CLICK, async (event) => {
+        _on(base, EVENT_CLICK, async (event) => {
           const trigger = closest(event.target, this.focusableElems);
           if (
             !trigger ||
             (opts.itemClickHide !== true &&
               (isFunction(opts.itemClickHide)
-                ? await !opts.itemClickHide({
+                ? await !opts.itemClickHide(this, {
                     trigger,
-                    dropdown: this,
                     event,
                   })
                 : !is(trigger, opts.itemClickHide)))
@@ -2979,12 +3295,13 @@
           hide({ event, trigger });
         });
       } else {
-        off(base, EVENT_CLICK);
+        _off(base, EVENT_CLICK);
       }
 
+      addPopoverAttribute(this);
       toggleOnInterection(this);
 
-      addDismiss(this, base);
+      addStatusClasses(this, MODAL, OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL);
     }
     updateToggler() {
       const { opts, id } = this;
@@ -3066,11 +3383,12 @@
       removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
       removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
       togglePreventScroll(this, false);
+      destroyTopLayer(base);
       return baseDestroy(this, destroyOpts);
     }
 
     async toggle(s, params) {
-      const { isOpen, isAnimating, toggler, base, opts, emit } = this;
+      const { isOpen, isAnimating, toggler, base, opts, _emit } = this;
       const { awaitAnimation, a11y } = opts;
       const { animated, silent, trigger, event } =
         normalizeToggleParameters(params);
@@ -3084,14 +3402,14 @@
       if (checkFloatings(this, s)) return;
 
       if (isAnimating && !awaitAnimation) {
-        await this[TRANSITION].cancel();
+        await this.transition.cancel();
       }
 
       const eventParams = { event, trigger };
 
-      !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-      a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
+      a11y && (toggler[ARIA_EXPANDED] = !!s);
 
       const promise = floatingTransition(this, {
         s,
@@ -3109,10 +3427,166 @@
     }
   }
 
-  const ARIA_SUFFIX = {
-    [ARIA_LABELLEDBY]: TITLE,
-    [ARIA_DESCRIBEDBY]: "description",
-  };
+  class Autoaction {
+    static Default = {
+      progress: getDataSelector(AUTOHIDE, PROGRESS),
+      safeArea: getDataSelector(AUTOHIDE, "safe-area"),
+      duration: 5000,
+      durationUpdate: null,
+      pauseOnMouseEnter: true,
+      resetOnMouseEnter: true,
+      pauseOnFocusEnter: true,
+      resetOnFocusEnter: true,
+      visibilityControl: false,
+      cssVariable: UI_PREFIX + AUTOHIDE + "-" + PROGRESS,
+    };
+    constructor(elem, action, opts, defaultOpts) {
+      const Default = this.constructor.Default;
+      opts = isNumber(opts)
+        ? { ...Default, duration: opts }
+        : mergeDeep(Default, defaultOpts, opts);
+      const { on, off, emit } = new EventHandler();
+      Object.assign(this, { elem, action, on, off, emit, opts });
+      [
+        "checkTime",
+        ACTION_PAUSE,
+        ACTION_RESUME,
+        ACTION_RESET,
+        ACTION_TOGGLE,
+      ].forEach((action) => (this[action] = this[action].bind(this)));
+
+      this.progressElem = getOption(false, this, opts.progress, elem);
+      this.safeAreaElem = getOption(false, this, opts.safeArea, elem);
+
+      if (opts.visibilityControl) {
+        on(doc, EVENT_VISIBILITY_CHANGE, () => this.toggle(!doc.hidden));
+      }
+    }
+    toggleInterections(s) {
+      const { opts, elem, on, off, resume, pause, reset, safeAreaElem } = this;
+      const {
+        pauseOnMouseEnter,
+        resetOnMouseEnter,
+        pauseOnFocusEnter,
+        resetOnFocusEnter,
+      } = opts;
+
+      if (
+        !pauseOnMouseEnter &&
+        !resetOnMouseEnter &&
+        !pauseOnFocusEnter &&
+        !resetOnFocusEnter
+      ) {
+        reset();
+        return;
+      }
+
+      const actionsElem = safeAreaElem || elem;
+
+      if (s) {
+        reset();
+        let interactedMouse, interactedFocus;
+        if (pauseOnFocusEnter || resetOnFocusEnter) {
+          interactedFocus = actionsElem.matches(SELECTOR_FOCUS_WITHIN);
+
+          if (interactedFocus) pause();
+
+          on(actionsElem, [EVENT_FOCUSIN, EVENT_FOCUSOUT], ({ type }) => {
+            interactedFocus = safeAreaElem
+              ? actionsElem.matches(SELECTOR_FOCUS_WITHIN)
+              : type === EVENT_FOCUSIN;
+
+            if (interactedFocus) {
+              resetOnFocusEnter && reset();
+              pauseOnFocusEnter && pause();
+            } else if (!interactedMouse) {
+              pauseOnFocusEnter && resume();
+            }
+          });
+        }
+        if (pauseOnMouseEnter || resetOnMouseEnter) {
+          if (actionsElem.matches(SELECTOR_HOVER)) pause();
+
+          const events = safeAreaElem
+            ? [EVENT_MOUSEOVER, EVENT_MOUSEOUT]
+            : [EVENT_MOUSEENTER, EVENT_MOUSELEAVE];
+
+          on(actionsElem, events, ({ type }) => {
+            interactedMouse = safeAreaElem
+              ? actionsElem.matches(SELECTOR_HOVER)
+              : type === EVENT_MOUSEENTER;
+
+            if (interactedMouse) {
+              resetOnMouseEnter && reset();
+              pauseOnMouseEnter && pause();
+            } else if (!interactedFocus) {
+              pauseOnMouseEnter && resume();
+            }
+          });
+        }
+      } else {
+        off();
+      }
+      return this;
+    }
+    checkTime() {
+      const { opts, elem, progressElem, paused, _prevProgress } = this;
+      if (paused) return;
+      const current = performance.now();
+      this.timeCurrent = Math.round(current - this.timeBegin);
+      const time = opts.duration - this.timeCurrent;
+      const progress = +Math.max(time / opts.duration, 0).toFixed(4);
+      this._prevProgress = progress;
+      if (progress && progress === _prevProgress) {
+        return requestAnimationFrame(this.checkTime);
+      }
+
+      if (opts.cssVariable) {
+        progressElem?.style.setProperty("--" + opts.cssVariable, progress);
+      }
+
+      callOrReturn(opts.durationUpdate, { elem, time, progress });
+
+      if (progress <= 0) {
+        this.action();
+      } else {
+        requestAnimationFrame(this.checkTime);
+      }
+    }
+    toggle(s = this.paused) {
+      return s ? this.resume() : this.pause();
+    }
+    pause() {
+      this.paused = true;
+      this.emit(EVENT_PAUSE);
+      return this;
+    }
+    resume() {
+      this.paused = false;
+      this.timeBegin = performance.now() - this.timeCurrent;
+      this.checkTime();
+      this.emit(EVENT_RESUME);
+      return this;
+    }
+    reset() {
+      this.paused = false;
+      this.timeBegin = performance.now();
+      this.checkTime();
+      this.emit(EVENT_RESET);
+      return this;
+    }
+    destroy() {
+      this.paused = true;
+      this.off();
+    }
+    static createOrUpdate(autoaction, elem, action, opts, defaultOpts) {
+      if (autoaction) {
+        return autoaction.destroy();
+      } else if (opts) {
+        return new Autoaction(elem, action, opts, defaultOpts);
+      }
+    }
+  }
 
   class Dialog extends ToggleMixin(Base, DIALOG) {
     static [PRIVATE_OPTION_CANCEL_ON_HIDE] = true;
@@ -3121,23 +3595,30 @@
       awaitPrevious: true,
       hidePrevious: true,
     };
+    static DefaultAutohide = {
+      pauseOnMouseEnter: false,
+      resetOnMouseEnter: false,
+      pauseOnFocusEnter: false,
+      resetOnFocusEnter: false,
+    };
     static Default = {
       ...DEFAULT_OPTIONS,
+      ...TOP_LAYER_OPTIONS,
+      [MODAL]: true,
+      [OPTION_LIGHT_DISMISS]: AUTO,
+      [OPTION_BACK_DISMISS]: AUTO,
       eventPrefix: getEventsPrefix(DIALOG),
-      escapeHide: true,
-      backdropHide: true,
       [OPTION_HASH_NAVIGATION]: false,
       returnFocus: true,
       preventHide: false,
-      dismiss: true,
-      [OPTION_PREVENT_SCROLL]: true,
+      [OPTION_PREVENT_DISMISS]: false,
+      [OPTION_PREVENT_SCROLL]: AUTO,
       confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${DIALOG}"]`,
       title: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_LABELLEDBY]),
       description: getDataSelector(DIALOG, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
       group: "",
-      awaitAnimation: false,
       [CONTENT]: getDataSelector(DIALOG, CONTENT),
       [BACKDROP]: getDataSelector(DIALOG, BACKDROP),
       [TOGGLER]: true,
@@ -3145,133 +3626,34 @@
       [DIALOG + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [CONTENT + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [BACKDROP + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-
       [OPTION_AUTODESTROY]: false,
-
+      autohide: false,
       autofocus: true,
-      focusTrap: true,
-
-      modal: true,
-      topLayer: true,
-      root: BODY,
+      focusTrap: AUTO,
       moveToRoot: true,
     };
+
+    get main() {
+      return this[CONTENT] || this.base;
+    }
 
     constructor(elem, opts) {
       super(elem, opts);
     }
 
-    _update() {
-      const { base, opts, id, on } = this;
-      updateOptsByData(
-        opts,
-        base,
-        [
-          MODAL,
-          BACKDROP,
-          OPTION_TOP_LAYER,
-          OPTION_PREVENT_SCROLL,
-          OPTION_HASH_NAVIGATION,
-          HIDE_MODE,
-          OPTION_GROUP,
-          OPTION_AUTODESTROY,
-          OPTION_MOVE_TO_ROOT,
-        ],
-        [
-          MODAL,
-          OPTION_TOP_LAYER,
-          OPTION_MOVE_TO_ROOT,
-          OPTION_PREVENT_SCROLL,
-          OPTION_HASH_NAVIGATION,
-          OPTION_AUTODESTROY,
-        ],
-      );
-      updateModule(this, OPTION_GROUP, NAME);
-
-      let backdrop;
-      if (isString(opts[BACKDROP])) {
-        backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
-          opts[BACKDROP],
-        );
-      }
-
-      this[BACKDROP] = backdrop;
-
-      this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
-
-      const isDialogElem = isDialog(base);
-
-      this[TELEPORT] = Teleport.createOrUpdate(
-        this[TELEPORT],
-        base,
-        opts.moveToRoot ? opts.root : false,
-        {
-          disableAttributes: true,
-        },
-      )?.move(this);
-
-      if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-        toggleHideModeState(false, this);
-      }
-
-      this[TRANSITION] = Transition.createOrUpdate(
-        this[TRANSITION],
-        this[CONTENT],
-        opts[TRANSITION],
-      );
-
-      this._togglers =
-        opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
-
-      if (isDialogElem) {
-        on(base, CANCEL + UI_EVENT_PREFIX, (e) => e.preventDefault());
-      } else if (opts.a11y) {
-        base.setAttribute(TABINDEX, -1);
-        base.setAttribute(ROLE, DIALOG);
-      }
-
-      base.popover =
-        opts.topLayer && (!isDialogElem || !opts.modal) && POPOVER_API_SUPPORTED
-          ? POPOVER_API_MODE_MANUAL
-          : null;
-
-      addHashNavigation(this);
-      addDismiss(this);
-    }
     init() {
-      const { opts, isInit, base, on, emit, hide, toggle } = this;
+      const { opts, isInit, _on, _emit, base, toggle } = this;
 
       if (isInit) return;
 
-      this.base.id = this.id;
+      base.id = this.id;
 
-      emit(EVENT_BEFORE_INIT);
+      _emit(EVENT_BEFORE_INIT);
 
       this._update();
-      this.updateAriaTargets();
 
-      on(
-        base,
-        [
-          EVENT_CLICK,
-          opts.backdropHide &&
-            (opts.backdropHide?.rightClick ?? true) &&
-            EVENT_RIGHT_CLICK,
-        ],
-        (event) => {
-          if (
-            this.opts.backdropHide &&
-            !this[CONTENT].contains(event.target) &&
-            !this._mousedownTarget
-          ) {
-            hide({ event });
-            emit(CANCEL, { event });
-          }
-          this._mousedownTarget = null;
-        },
-      );
-
-      on(body, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+      _on(document, EVENT_CLICK + UI_EVENT_PREFIX, (event) => {
+        if (this._isClosing) return;
         const togglers = this._togglers;
         const trigger = isString(togglers)
           ? event.target.closest(togglers)
@@ -3282,72 +3664,115 @@
         }
       });
 
+      if (opts.a11y && !isDialog(base)) {
+        base.setAttribute(TABINDEX, -1);
+        base[ROLE] = DIALOG;
+      }
+
+      opts[CONFIRM] && toggleConfirm(this);
+      opts[OPTION_HASH_NAVIGATION] && addHashNavigation(this);
+      opts[DISMISS] && addDismiss(this);
+
       return callShowInit(this);
+    }
+    _update() {
+      const { base, opts, id } = this;
+      updateOptsByData(
+        opts,
+        base,
+        [
+          TRANSITION,
+          STATE_MODE,
+          BACKDROP,
+          OPTION_GROUP,
+          OPTION_AUTODESTROY,
+          OPTION_HASH_NAVIGATION,
+          ...TOP_LAYER_OPTIONS_NAMES,
+        ],
+        [OPTION_HASH_NAVIGATION, OPTION_AUTODESTROY, ...TOP_LAYER_OPTIONS_NAMES],
+      );
+      updateModule(this, OPTION_GROUP, NAME);
+      updateModule(this, AUTOHIDE, DURATION);
+
+      let backdrop;
+      if (isString(opts[BACKDROP])) {
+        backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
+          opts[BACKDROP],
+        );
+      }
+
+      opts.a11y && addAriaTargets(this);
+
+      this[BACKDROP] = backdrop;
+
+      this[CONTENT] = getOptionElem(this, opts[CONTENT], base);
+
+      this.teleport = Teleport.createOrUpdate(
+        this.teleport,
+        base,
+        opts.moveToRoot ? opts.root : false,
+        {
+          disableAttributes: true,
+        },
+      )?.move(this);
+
+      if (opts[STATE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+        toggleStateMode(false, this);
+      }
+
+      this.transition = Transition.createOrUpdate(
+        this.transition,
+        this.main,
+        opts.transition,
+      );
+      this.autohide = Autoaction.createOrUpdate(
+        this.autohide,
+        this.main,
+        this.hide,
+        opts.autohide,
+      );
+
+      this._togglers =
+        opts.toggler === true ? getDefaultToggleSelector(id) : opts.toggler;
+
+      addPopoverAttribute(this);
+      addStatusClasses(
+        this,
+        BACKDROP,
+        MODAL,
+        OPTION_TOP_LAYER,
+        OPTION_PREVENT_SCROLL,
+      );
     }
     destroy(destroyOpts) {
       if (!this.isInit) return;
 
-      removeClass(this._togglers, this.opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
+      const { base, opts } = this;
+
+      removeClass(this._togglers, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
       [DIALOG, CONTENT, BACKDROP].forEach((name) =>
-        removeClass(this[name], this.opts[name + CLASS_ACTIVE_SUFFIX]),
+        removeClass(this[name], opts[name + CLASS_ACTIVE_SUFFIX]),
       );
 
       this.focusGuards?.destroy();
       this.focusGuards = null;
-      this.placeholder?.replaceWith(this.base);
+      this.placeholder?.replaceWith(base);
 
       this.isOpen = false;
 
-      this[DIALOG].hidePopover?.();
-      this[DIALOG].close?.();
-      this[DIALOG].popover = null;
+      destroyTopLayer(base);
 
       togglePreventScroll(this, false);
 
-      this.opts.a11y &&
-        removeAttribute(
-          this.base,
-          TABINDEX,
-          ROLE,
-          ARIA_LABELLEDBY,
-          ARIA_DESCRIBEDBY,
-        );
+      opts.a11y &&
+        removeAttribute(base, TABINDEX, ROLE, ARIA_LABELLEDBY, ARIA_DESCRIBEDBY);
 
       baseDestroy(this, destroyOpts);
       return this;
     }
 
-    updateAriaTargets() {
-      const { base, opts } = this;
-      for (const name of [ARIA_LABELLEDBY, ARIA_DESCRIBEDBY]) {
-        const suffix = ARIA_SUFFIX[name];
-        let elem = opts[suffix];
-        if (isString(elem)) {
-          elem = getOptionElem(this, elem, base);
-        }
-        if (!isElement(elem)) {
-          elem = null;
-        }
-        this[suffix] = elem;
-        if (!elem) return;
-        const id = elem ? (elem.id ||= uuidGenerator()) : elem;
-        setAttribute(base, name, id);
-      }
-      return this;
-    }
-
     async toggle(s, params) {
-      const {
-        opts,
-        isOpen,
-        emit,
-        on,
-        off,
-        isAnimating,
-        base,
-        content,
-        backdrop,
-      } = this;
+      const { opts, isOpen, _emit, isAnimating, backdrop, base, autohide } = this;
 
       let optReturnFocusAwait =
         opts.returnFocus && (opts.returnFocus?.await ?? opts.group.awaitPrevious);
@@ -3356,6 +3781,18 @@
         normalizeToggleParameters(params);
 
       s = !!(s ?? !isOpen);
+
+      if (!s) {
+        if (opts[OPTION_PREVENT_DISMISS] && event.type === EVENT_CLOSE) {
+          animateClass(
+            this.main,
+            camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENTED),
+          );
+          _emit(EVENT_DISMISS_PREVENTED, { event });
+          toggleBackDismiss(true, this);
+          return;
+        }
+      }
 
       if ((opts.awaitAnimation && isAnimating) || s === isOpen) return;
 
@@ -3367,12 +3804,12 @@
       }
 
       if (isAnimating && !opts.awaitAnimation) {
-        await this[TRANSITION]?.cancel();
+        await this.transition?.cancel();
       }
 
       const eventParams = { trigger, event };
 
-      !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
       if (
         !s &&
@@ -3382,12 +3819,13 @@
           : opts.preventHide)
       ) {
         this.groupClosing = false;
-        return emit(EVENT_HIDE_PREVENTED, eventParams);
+        animateClass(this.main, camelToKebab(UI_PREFIX + EVENT_HIDE_PREVENTED));
+        return _emit(EVENT_HIDE_PREVENTED, eventParams);
       }
 
-      this.isOpen = s;
+      addFrameState(this, s);
 
-      toggleConfirm(s, this);
+      this.isOpen = s;
 
       const backdropIsOpen = arrayFrom(this.instances.values()).find(
         (instance) =>
@@ -3415,67 +3853,61 @@
         optReturnFocusAwait = false;
       }
 
-      s && toggleHideModeState(true, this);
+      s && toggleStateMode(true, this);
 
-      !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
-      const promise = this[TRANSITION]?.run(s, animated);
+      const promise = this.transition?.run(s, animated);
+
+      !animated && this._toggleClasses(s, backdropIsOpen);
+
+      const focusTrap = opts.focusTrap === AUTO ? opts[MODAL] : opts.focusTrap;
 
       if (s) {
         if (opts.returnFocus) {
           this.returnFocusElem ||= doc.activeElement;
         }
-        this._toggleApi(true);
-      }
-
-      toggleClass(
-        getElements(this._togglers),
-        opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
-        s,
-      );
-      toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
-      toggleClass(content, opts[CONTENT + CLASS_ACTIVE_SUFFIX], s);
-      if (!backdropIsOpen) {
-        toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
-      }
-
-      if (__initial && !animated && backdrop) {
-        backdrop.style.transition = NONE;
-        backdrop.offsetWidth;
-        backdrop.style.transition = "";
-      }
-
-      s && togglePreventScroll(this, true);
-
-      if (!s && !optReturnFocusAwait) {
-        this._toggleApi(false);
+        toggleTopLayer(this, true);
+        togglePreventScroll(this, true);
+        if (focusTrap && !isModal(base)) {
+          this.focusGuards = new FocusGuards(base);
+        }
+      } else if (!optReturnFocusAwait) {
         this.returnFocus();
       }
 
-      opts.escapeHide && addEscapeHide(this, s, base);
+      animated && this._toggleClasses(s, backdropIsOpen);
+
+      if (__initial && !animated && backdrop) {
+        resetTransition(backdrop);
+      }
 
       if (s) {
-        (opts.autofocus || opts.focusTrap) && callAutofocus(this);
-        on(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX, (e) => {
-          this._mousedownTarget = e.target;
-        });
+        (opts.autofocus || focusTrap) && callAutofocus(this);
       } else {
-        this._mousedownTarget = null;
-        off(content, EVENT_MOUSEDOWN + UI_EVENT_PREFIX);
         this.returnFocusElem = null;
       }
+
+      toggleBackDismiss(s, this);
+
+      s && autohide && autohide.toggleInterections(true);
+
+      toggleLightDismiss(this, s);
 
       awaitPromise(promise, () => {
         if (!s) {
           if (optReturnFocusAwait) {
-            this._toggleApi(false);
             this.returnFocus();
           }
-          toggleHideModeState(false, this);
+          toggleTopLayer(this, false);
+          toggleStateMode(false, this);
           togglePreventScroll(this, false);
+          autohide && autohide.toggleInterections(false);
+          this.focusGuards?.destroy();
+          this.focusGuards = null;
         }
 
-        !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+        !silent && _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
 
         if (!s) {
           opts[OPTION_AUTODESTROY] && this.destroy({ remove: true });
@@ -3488,41 +3920,17 @@
 
       return this;
     }
-    _toggleApi(s) {
-      const { base, opts } = this;
-      const baseIsDialog = isDialog(base);
-      if (s) {
-        const isModal = baseIsDialog && opts.modal;
-        const isPopover = opts.topLayer && POPOVER_API_SUPPORTED;
-
-        if (baseIsDialog) {
-          if (isModal) {
-            if (base.open) base.close();
-            base.showModal();
-            Dialog.dispatchTopLayer(MODAL);
-          } else {
-            if (isPopover) {
-              base.showPopover();
-              base.open = true;
-              Dialog.dispatchTopLayer(POPOVER);
-            } else {
-              base.show();
-            }
-          }
-        } else if (isPopover) {
-          base.showPopover();
-          Dialog.dispatchTopLayer(POPOVER);
-        }
-        if (opts.focusTrap && !isModal) {
-          this.focusGuards = new FocusGuards(base);
-        }
-      } else {
-        base.close?.();
-        base.popover && base.hidePopover();
-        if (this.focusGuards) {
-          this.focusGuards?.destroy();
-          this.focusGuards = null;
-        }
+    _toggleClasses(s, backdropIsOpen) {
+      const { opts, base, content, backdrop } = this;
+      toggleClass(
+        getElements(this._togglers),
+        opts[TOGGLER + CLASS_ACTIVE_SUFFIX],
+        s,
+      );
+      toggleClass(base, opts[DIALOG + CLASS_ACTIVE_SUFFIX], s);
+      toggleClass(content, opts[CONTENT + CLASS_ACTIVE_SUFFIX], s);
+      if (!backdropIsOpen) {
+        toggleClass(backdrop, opts[BACKDROP + CLASS_ACTIVE_SUFFIX], s);
       }
     }
     returnFocus() {
@@ -3544,11 +3952,9 @@
   const TABPANEL = "tabpanel";
   const ACCORDION = "accordion";
 
-  const ELEMS = [ITEM, TAB, TABPANEL];
   const OPTION_TAB_ROLE = TAB + ROLE_SUFFIX;
   const OPTION_TABPANEL_ROLE = TABPANEL + ROLE_SUFFIX;
   const OPTION_TABPANEL_TABINDEX = TABPANEL + upperFirst(TABINDEX);
-  const OPTION_ARIA_ORIENTRATION = kebabToCamel(ARIA_ORIENTATION);
   const OPTION_STATE_ATTRIBUTE = "stateAttribute";
   const OPTION_ALWAYS_EXPANDED = "alwaysExpanded";
   const OPTION_MULTI_EXPAND = "multiExpand";
@@ -3576,7 +3982,7 @@
       [ROLE]: null,
       [OPTION_TAB_ROLE]: BUTTON,
       [OPTION_TABPANEL_ROLE]: REGION,
-      [OPTION_ARIA_ORIENTRATION]: false,
+      [ARIA_ORIENTATION]: false,
       [OPTION_STATE_ATTRIBUTE]: ARIA_EXPANDED,
       [TABINDEX]: false,
       [OPTION_TABPANEL_TABINDEX]: false,
@@ -3585,7 +3991,7 @@
       [ROLE]: TABLIST,
       [OPTION_TAB_ROLE]: TAB,
       [OPTION_TABPANEL_ROLE]: TABPANEL,
-      [OPTION_ARIA_ORIENTRATION]: true,
+      [ARIA_ORIENTATION]: true,
       [OPTION_STATE_ATTRIBUTE]: ARIA_SELECTED,
       [TABINDEX]: true,
       [OPTION_TABPANEL_TABINDEX]: true,
@@ -3599,7 +4005,6 @@
       eventPrefix: getEventsPrefix(TABLIST),
       siblings: true,
       [OPTION_MULTI_EXPAND]: false,
-      awaitAnimation: false,
       keyboard: true,
       [OPTION_HASH_NAVIGATION]: true,
       rtl: false,
@@ -3607,9 +4012,7 @@
       dismiss: false,
       [TAB]: getDataSelector(TABLIST, TAB),
       [TABPANEL]: getDataSelector(TABLIST, TABPANEL),
-      [ITEM]: getDataSelector(TABLIST, ITEM),
       [TAB + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
-      [ITEM + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       [TABPANEL + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
       ...DEFAULT_ACCORDION_OPTIONS,
     };
@@ -3629,7 +4032,8 @@
         opts,
         base,
         [
-          HIDE_MODE,
+          TRANSITION,
+          STATE_MODE,
           OPTION_HASH_NAVIGATION,
           OPTION_ALWAYS_EXPANDED,
           OPTION_MULTI_EXPAND,
@@ -3644,30 +4048,25 @@
       );
 
       if (a11y) {
-        setAttribute(base, ROLE, a11y[ROLE]);
-        a11y[OPTION_ARIA_ORIENTRATION] &&
-          setAttribute(
-            base,
-            ARIA_ORIENTATION,
-            opts[HORIZONTAL] ? HORIZONTAL : VERTICAL,
-          );
+        base[ROLE] = a11y[ROLE];
+        a11y[ARIA_ORIENTATION] &&
+          (base[ARIA_ORIENTATION] = opts[HORIZONTAL] ? HORIZONTAL : VERTICAL);
       }
 
       const shown = lastShownTab?.index ?? opts.shown;
 
       const tabWithState = tabs.map((tabObj, i) => {
-        const { tab, tabpanel, item, teleport } = tabObj;
+        const { tab, tabpanel, teleport } = tabObj;
 
         if (a11y) {
           removeAttribute(tab, ARIA_SELECTED, ARIA_EXPANDED);
           setAttribute(tab, ARIA_CONTROLS, tabpanel.id);
-          setAttribute(tab, ROLE, a11y[OPTION_TAB_ROLE]);
+          tab[ROLE] = a11y[OPTION_TAB_ROLE];
           if (!/BUTTON|A/.test(tab.nodeName) && !tab.hasAttribute(TABINDEX)) {
             tab.setAttribute(TABINDEX, 0);
           }
-          setAttribute(tabpanel, ROLE, a11y[OPTION_TABPANEL_ROLE]);
+          tabpanel[ROLE] = a11y[OPTION_TABPANEL_ROLE];
           setAttribute(tabpanel, ARIA_LABELLEDBY, tab.id);
-          setAttribute(item, ROLE, NONE);
         }
 
         tabObj.teleport = Teleport.createOrUpdate(
@@ -3684,7 +4083,7 @@
         } else if (shown !== null) {
           isOpenTabpanel = tabpanel.id === shown || i === shown;
         } else {
-          isOpenTabpanel = isShown(tabpanel, opts.hideMode);
+          isOpenTabpanel = isShown(tabpanel, opts.stateMode);
         }
 
         return [isOpenTabpanel, tabObj];
@@ -3694,10 +4093,10 @@
         tabWithState[0][0] = true;
       }
       tabWithState.forEach(([isOpen, tabInstance]) => {
-        tabInstance[TRANSITION] = Transition.createOrUpdate(
-          tabInstance[TRANSITION],
+        tabInstance.transition = Transition.createOrUpdate(
+          tabInstance.transition,
           tabInstance[TABPANEL],
-          opts[TRANSITION],
+          opts.transition,
           { cssVariables: true },
         );
         tabInstance.toggle(isOpen, {
@@ -3708,7 +4107,7 @@
       });
     }
     init() {
-      const { isInit, emit } = this;
+      const { isInit, _emit } = this;
       if (isInit) return;
 
       this.base.id = this.id;
@@ -3717,7 +4116,7 @@
         (name) => (this[name] = this[name].bind(this)),
       );
 
-      emit(EVENT_BEFORE_INIT);
+      _emit(EVENT_BEFORE_INIT);
 
       this.tabs = [];
       this.initTabs();
@@ -3728,7 +4127,8 @@
 
       this.instances.set(this.id, this);
       this.isInit = true;
-      return emit(EVENT_INIT);
+      toggleInitClass(this, true);
+      return _emit(EVENT_INIT);
     }
 
     destroy({ keepInstance = false, keepState = false } = {}) {
@@ -3738,12 +4138,12 @@
         opts: { a11y },
         isInit,
         off,
-        emit,
+        _emit,
       } = this;
 
       if (!isInit) return;
 
-      emit(EVENT_BEFORE_DESTROY);
+      _emit(EVENT_BEFORE_DESTROY);
 
       off(tabs);
 
@@ -3751,7 +4151,7 @@
         removeAttribute(
           tablist,
           a11y[ROLE] && ROLE,
-          a11y[OPTION_ARIA_ORIENTRATION] && ARIA_ORIENTATION,
+          a11y[ARIA_ORIENTATION] && ARIA_ORIENTATION,
         );
       }
 
@@ -3761,9 +4161,11 @@
         destroyInstance(this);
       }
 
+      toggleInitClass(this, false);
+
       this.isInit = false;
 
-      emit(EVENT_DESTROY);
+      _emit(EVENT_DESTROY);
 
       return this;
     }
@@ -3781,12 +4183,8 @@
     initTab(tab) {
       if (this.getTab(tab)) return;
 
-      const { tabs, tablist, opts, shownTabs, on, off, emit } = this;
+      const { tabs, tablist, opts, shownTabs, _on, _off, _emit } = this;
       const index = tabs.length;
-
-      const item = isString(opts[ITEM])
-        ? tab.closest(opts[ITEM])
-        : callOrReturn(opts[ITEM], { tablist, tab, index });
 
       const tabpanelId = tab.getAttribute(DATA_UI_PREFIX + TABLIST + "-" + TAB);
 
@@ -3805,8 +4203,8 @@
 
       if (!tabpanel) return;
 
-      if (opts[HIDE_MODE] === HIDDEN && tabpanel[HIDDEN] === UNTIL_FOUND) {
-        opts[HIDE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
+      if (opts[STATE_MODE] === HIDDEN && tabpanel[HIDDEN] === UNTIL_FOUND) {
+        opts[STATE_MODE] = MODE_HIDDEN_UNTIL_FOUND;
       }
 
       const uuid = uuidGenerator();
@@ -3822,15 +4220,15 @@
       }
 
       let isMouseDown;
-      on(tab, EVENT_FOCUS, (e) => {
+      _on(tab, EVENT_FOCUS, (e) => {
         !isMouseDown && this._onTabFocus(e);
       });
-      on(tab, EVENT_KEYDOWN, (e) => this._onTabKeydown(e));
-      on(tab, EVENT_MOUSEDOWN, () => {
+      _on(tab, EVENT_KEYDOWN, (e) => this._onTabKeydown(e));
+      _on(tab, EVENT_MOUSEDOWN, () => {
         isMouseDown = true;
         requestAnimationFrame(() => (isMouseDown = false));
       });
-      on(tab, EVENT_CLICK, (event) => {
+      _on(tab, EVENT_CLICK, (event) => {
         event.preventDefault();
         this.toggle(tab, null, { event, trigger: tab });
       });
@@ -3856,21 +4254,19 @@
             ROLE,
             a11y[OPTION_TABPANEL_TABINDEX] && TABINDEX,
             ARIA_LABELLEDBY,
-            a11y[OPTION_ARIA_HIDDEN] && ARIA_HIDDEN,
+            a11y[ARIA_HIDDEN] && ARIA_HIDDEN,
             HIDDEN,
             INERT,
           );
-          removeAttribute(item, ROLE);
         }
 
-        off(elems);
+        _off(elems);
         this.tabs = without(this.tabs, tabInstance);
         if (cleanStyles) {
-          ELEMS.forEach((name) =>
-            removeClass(tabInstance[name], opts[name + CLASS_ACTIVE_SUFFIX]),
-          );
-          tabInstance[TRANSITION]?.destroy();
-          tabInstance[TELEPORT]?.destroy();
+          removeClass(tab, opts[TAB + CLASS_ACTIVE_SUFFIX]);
+          removeClass(tabpanel, opts[TABPANEL + CLASS_ACTIVE_SUFFIX]);
+          tabInstance.transition?.destroy();
+          tabInstance.teleport?.destroy();
         }
 
         elems.forEach((elem) => {
@@ -3884,7 +4280,7 @@
           }
         });
 
-        emit(ACTION_DESTROY_TAB, tabInstance);
+        _emit(ACTION_DESTROY_TAB, tabInstance);
       };
 
       const toggleDisabled = (s = null) => {
@@ -3905,17 +4301,16 @@
         return !disabled;
       };
 
-      const elems = [tab, item, tabpanel].filter(Boolean);
+      const elems = [tab, tabpanel];
       const tabInstance = {
         id,
         uuid,
         tab,
-        item,
         tabpanel,
         elems,
         index,
-        transition: opts[TRANSITION]
-          ? new Transition(tabpanel, opts[TRANSITION])
+        transition: opts.transition
+          ? new Transition(tabpanel, opts.transition)
           : undefined,
         destroy: destroy.bind(this),
         toggleDisabled: toggleDisabled.bind(this),
@@ -3925,7 +4320,7 @@
         },
         get initialPlaceNode() {
           return (
-            tabInstance[TELEPORT]?.placeholder ??
+            tabInstance.teleport?.placeholder ??
             tabInstance.placeholder ??
             tabpanel
           );
@@ -3937,15 +4332,15 @@
       );
       tabInstance.is = this.isTab.bind(this, tabInstance);
 
-      addDismiss(this, tabpanel, tabInstance.hide);
+      opts[DISMISS] && addDismiss(this, tabpanel, tabInstance.hide);
 
-      if (opts[HIDE_MODE] === ACTION_REMOVE && tabpanel[HIDDEN]) {
-        toggleHideModeState(false, this, tabpanel, tabInstance);
+      if (opts[STATE_MODE] === ACTION_REMOVE && tabpanel[HIDDEN]) {
+        toggleStateMode(false, this, tabpanel, tabInstance);
       }
 
       tabs.push(tabInstance);
 
-      emit(ACTION_INIT_TAB, tabInstance);
+      _emit(ACTION_INIT_TAB, tabInstance);
 
       return tabInstance;
     }
@@ -4059,7 +4454,7 @@
 
       if (!tabInstance) return;
 
-      const { opts, shownTabs, emit } = this;
+      const { opts, shownTabs, _emit } = this;
       const { a11y, awaitAnimation } = opts;
       const { tab, isOpen, transition, index, tabpanel } = tabInstance;
 
@@ -4085,7 +4480,11 @@
       const eventParams = { event, trigger };
 
       !silent &&
-        emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, tabInstance, eventParams);
+        _emit(
+          s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE,
+          tabInstance,
+          eventParams,
+        );
 
       tabInstance.isOpen = s;
 
@@ -4108,19 +4507,14 @@
         if (s !== tabInstance.isOpen) return;
       }
 
-      s && toggleHideModeState(true, this, tabpanel, tabInstance);
+      s && toggleStateMode(true, this, tabpanel, tabInstance);
 
-      !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams);
+      !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, tabInstance, eventParams);
 
       const promise = transition?.run(s, animated);
 
-      ELEMS.forEach((elemName) =>
-        toggleClass(
-          tabInstance[elemName],
-          opts[elemName + CLASS_ACTIVE_SUFFIX],
-          s,
-        ),
-      );
+      toggleClass(tab, opts[TAB + CLASS_ACTIVE_SUFFIX], s);
+      toggleClass(tabpanel, opts[TABPANEL + CLASS_ACTIVE_SUFFIX], s);
 
       if (a11y) {
         a11y[OPTION_STATE_ATTRIBUTE] &&
@@ -4133,8 +4527,9 @@
       }
 
       awaitPromise(promise, () => {
-        !s && toggleHideModeState(false, this, tabpanel, tabInstance);
-        !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams);
+        !s && toggleStateMode(false, this, tabpanel, tabInstance);
+        !silent &&
+          _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, tabInstance, eventParams);
       });
 
       animated && opts.awaitAnimation && (await promise);
@@ -4173,136 +4568,6 @@
 
   Tablist.data(UI_PREFIX + ACCORDION, DEFAULT_ACCORDION_OPTIONS);
 
-  class Autoaction {
-    static Default = {
-      progressElem: getDataSelector(PROGRESS),
-      duration: 5000,
-      decimal: 4,
-      durationUpdate: null,
-      pauseOnMouse: true,
-      resetOnMouse: true,
-      pauseOnFocus: true,
-      resetOnFocus: true,
-      visibilityControl: false,
-      cssVariable: UI_PREFIX + PROGRESS,
-    };
-    constructor(elem, action, opts) {
-      const Default = this.constructor.Default;
-      opts = isNumber(opts)
-        ? { ...Default, duration: opts }
-        : mergeDeep(Default, opts);
-      const { on, off, emit } = new EventHandler();
-      Object.assign(this, { elem, action, on, off, emit, opts });
-      [
-        "checkTime",
-        ACTION_PAUSE,
-        ACTION_RESUME,
-        ACTION_RESET,
-        ACTION_TOGGLE,
-      ].forEach((action) => (this[action] = this[action].bind(this)));
-
-      this.progressElem = getOption(false, opts.progressElem, elem);
-
-      if (opts.visibilityControl) {
-        on(doc, EVENT_VISIBILITY_CHANGE, () => this.toggle(!doc.hidden));
-      }
-    }
-    toggleInterections(s) {
-      const { opts, elem, on, off, resume, pause, reset } = this;
-      const { pauseOnMouse, resetOnMouse, pauseOnFocus, resetOnFocus } = opts;
-
-      if (!pauseOnMouse && !resetOnMouse && !pauseOnFocus && !resetOnFocus)
-        return;
-
-      if (s) {
-        reset();
-        let interactedMouse, interactedFocus;
-        if (pauseOnFocus || resetOnFocus) {
-          on(elem, [EVENT_FOCUSIN, EVENT_FOCUSOUT], ({ type }) => {
-            interactedFocus = type === EVENT_FOCUSIN;
-            if (interactedFocus) {
-              resetOnFocus && reset();
-              pauseOnFocus && pause();
-            } else if (!interactedMouse) {
-              pauseOnFocus && resume();
-            }
-          });
-        }
-        if (pauseOnMouse || resetOnMouse) {
-          on(elem, [EVENT_MOUSEENTER, EVENT_MOUSELEAVE], ({ type }) => {
-            interactedMouse = type === EVENT_MOUSEENTER;
-            if (interactedMouse) {
-              resetOnMouse && reset();
-              pauseOnMouse && pause();
-            } else if (!interactedFocus) {
-              pauseOnMouse && resume();
-            }
-          });
-        }
-      } else {
-        off();
-      }
-      return this;
-    }
-    checkTime() {
-      const { opts, elem, progressElem, paused, _prevProgress } = this;
-      if (paused) return;
-      const current = performance.now();
-      this.timeCurrent = Math.round(current - this.timeBegin);
-      const time = opts.duration - this.timeCurrent;
-      const progress = +Math.max(time / opts.duration, 0).toFixed(opts.decimal);
-      this._prevProgress = progress;
-      if (progress && progress === _prevProgress) {
-        return requestAnimationFrame(this.checkTime);
-      }
-
-      if (opts.cssVariable) {
-        progressElem?.style.setProperty("--" + opts.cssVariable, progress);
-      }
-
-      callOrReturn(opts.durationUpdate, { elem, time, progress });
-
-      if (progress <= 0) {
-        this.action();
-      } else {
-        requestAnimationFrame(this.checkTime);
-      }
-    }
-    toggle(s = this.paused) {
-      return s ? this.resume() : this.pause();
-    }
-    pause() {
-      this.paused = true;
-      this.emit(EVENT_PAUSE);
-      return this;
-    }
-    resume() {
-      this.paused = false;
-      this.timeBegin = performance.now() - this.timeCurrent;
-      this.checkTime();
-      this.emit(EVENT_RESUME);
-      return this;
-    }
-    reset() {
-      this.paused = false;
-      this.timeBegin = performance.now();
-      this.checkTime();
-      this.emit(EVENT_RESET);
-      return this;
-    }
-    destroy() {
-      this.paused = true;
-      this.off();
-    }
-    static createOrUpdate(autoaction, elem, action, opts) {
-      if (autoaction) {
-        return autoaction.destroy();
-      } else if (opts !== false) {
-        return new Autoaction(elem, action, opts);
-      }
-    }
-  }
-
   const TOAST = "toast";
 
   const positions = {};
@@ -4312,11 +4577,11 @@
   const A11Y_DEFAULTS = {
     [STATUS]: {
       [ROLE]: STATUS,
-      [OPTION_ARIA_LIVE]: "polite",
+      [ARIA_LIVE]: "polite",
     },
     [ALERT]: {
       [ROLE]: ALERT,
-      [OPTION_ARIA_LIVE]: "assertive",
+      [ARIA_LIVE]: "assertive",
     },
   };
 
@@ -4331,14 +4596,14 @@
       container: "",
       template: "",
       appear: true,
-      dismiss: true,
       limit: false,
       limitAnimateEnter: true,
-      limitAnimateLeave: true,
-      autohide: false,
+      limitAnimateLeave: false,
+      autohide: 5000,
       topLayer: true,
       keepTopLayer: true,
       a11y: STATUS,
+      position: "top-end",
       [TOAST + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
     };
     constructor(elem, opts) {
@@ -4347,6 +4612,17 @@
         elem = null;
       }
       super(elem, opts);
+    }
+    init() {
+      if (this.isInit) return;
+
+      this.base.id = this.id;
+
+      this._update();
+
+      this.opts[DISMISS] && addDismiss(this);
+
+      return callShowInit(this);
     }
     _update() {
       const { opts, base, autohide, hide } = this;
@@ -4358,14 +4634,14 @@
       } else {
         this.root = opts.root ? getOptionElem(this, opts.root) : body;
       }
-      if (opts[HIDE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
-        toggleHideModeState(false, this);
+      if (opts[STATE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
+        toggleStateMode(false, this);
       }
 
-      this[TRANSITION] = Transition.createOrUpdate(
-        this[TRANSITION],
+      this.transition = Transition.createOrUpdate(
+        this.transition,
         base,
-        opts[TRANSITION],
+        opts.transition,
       );
       this.autohide = Autoaction.createOrUpdate(
         autohide,
@@ -4375,27 +4651,17 @@
       );
 
       if (a11y) {
-        base.setAttribute(ARIA_ATOMIC, true);
-        base.setAttribute(ROLE, a11y[ROLE]);
-        base.setAttribute(ARIA_LIVE, a11y[OPTION_ARIA_LIVE]);
+        base[ARIA_ATOMIC] = true;
+        base[ROLE] = a11y[ROLE];
+        base[ARIA_LIVE] = a11y[ARIA_LIVE];
       }
-
-      addDismiss(this);
     }
     destroy(destroyOpts) {
       if (!this.isInit) return;
       baseDestroy(this, { remove: true, ...destroyOpts });
       return this;
     }
-    init() {
-      if (this.isInit) return;
 
-      this.base.id = this.id;
-
-      this._update();
-
-      return callShowInit(this);
-    }
     async toggle(s, params) {
       const {
         transition,
@@ -4405,17 +4671,15 @@
         root,
         instances,
         constructor,
-        emit,
+        _emit,
       } = this;
       const { animated, silent, event, trigger } =
         normalizeToggleParameters(params);
 
-      const { limit, position, container, topLayer, keepTopLayer, hideMode } =
+      const { limit, position, container, topLayer, keepTopLayer, stateMode } =
         opts;
 
-      if (animated && transition?.isAnimating) return;
-
-      s ??= !isShown(base, hideMode);
+      s ??= !isShown(base, stateMode);
 
       let preventAnimation;
 
@@ -4429,6 +4693,7 @@
           );
           for (let i = 0; i < nots.length; i++) {
             if (i >= limit - 1) {
+              console.log(nots, i - (limit - 1));
               nots[i - (limit - 1)]?.hide(opts.limitAnimateLeave);
               if (!opts.limitAnimateEnter) {
                 preventAnimation = true;
@@ -4466,21 +4731,21 @@
 
       const eventParams = { event, trigger };
 
-      !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
       autohide && autohide.toggleInterections(s);
 
-      s && toggleHideModeState(true, this);
+      s && toggleStateMode(true, this);
 
-      !silent && emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_SHOW : EVENT_HIDE, eventParams);
 
       const promise = transition?.run(s, animated && !preventAnimation);
 
       toggleClass(base, opts[TOAST + CLASS_ACTIVE_SUFFIX], s);
 
       awaitPromise(promise, () => {
-        !s && toggleHideModeState(false, this);
-        !silent && emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
+        !s && toggleStateMode(false, this);
+        !silent && _emit(s ? EVENT_SHOWN : EVENT_HIDDEN, eventParams);
         !s && this.destroy({ remove: true });
       });
 
@@ -4536,7 +4801,7 @@
 
       if (a11y) {
         wrapper.setAttribute(TABINDEX, -1);
-        wrapper.setAttribute(ROLE, REGION);
+        wrapper[ROLE] = REGION;
       }
 
       rootWrappers.add({ wrapper, container, position, root, keepTopLayer });
@@ -4585,8 +4850,6 @@
     }
   }
 
-  const UI_TOOLTIP = UI_PREFIX + TOOLTIP;
-
   class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     static Default = {
       ...DEFAULT_OPTIONS,
@@ -4595,7 +4858,7 @@
       eventPrefix: getEventsPrefix(TOOLTIP),
       placement: TOP,
       template: (content) =>
-        `<div class="${UI_TOOLTIP}"><div class="${UI_TOOLTIP}-arrow" data-${UI_TOOLTIP}-arrow></div><div class="${UI_TOOLTIP}-content">${content}</div></div>`,
+        `<div class="${TOOLTIP}"><div class="${TOOLTIP}-${CONTENT}">${content}</div></div>`,
       interactive: false,
       removeTitle: true,
       tooltipClass: "",
@@ -4611,45 +4874,14 @@
     constructor(elem, opts) {
       super(elem, opts);
     }
-    _update() {
-      const { tooltip, base, opts } = this;
-
-      this.transition = Transition.createOrUpdate(
-        this[TRANSITION],
-        tooltip,
-        opts[TRANSITION],
-      );
-
-      addDismiss(this, tooltip);
-
-      toggleOnInterection(this, base, tooltip);
-
-      opts.a11y && setAttribute(tooltip, TOOLTIP);
-    }
-    destroy(destroyOpts) {
-      if (this.isInit) return;
-      const { anchor, tooltip, id, _cache, emit, opts } = this;
-      emit(EVENT_BEFORE_DESTROY);
-      if (opts.a11y) {
-        removeAttribute(tooltip, TOOLTIP);
-        setAttribute(anchor, ARIA_DESCRIBEDBY, (val) =>
-          val === id + "-" + TARGET ? _cache[OPTION_ARIA_DESCRIBEDBY] : val,
-        );
-      }
-
-      if (_cache[TITLE]) {
-        anchor[TITLE] = _cache[TITLE];
-      }
-      return baseDestroy(this, destroyOpts);
-    }
     init() {
-      const { opts, anchor, id, isInit, emit } = this;
+      const { opts, anchor, id, isInit, _emit } = this;
 
       if (isInit) return;
 
       anchor.id = id;
 
-      emit(EVENT_BEFORE_INIT);
+      _emit(EVENT_BEFORE_INIT);
 
       this._cache = { [TITLE]: anchor[TITLE] };
 
@@ -4671,15 +4903,60 @@
         true,
       );
 
+      this.teleport = new Teleport(target, { disableAttributes: true });
+
       this._update();
 
-      this.teleport = new Teleport(target, { disableAttributes: true });
+      opts[DISMISS] && addDismiss(this, target);
 
       return callShowInit(this, target);
     }
+    _update() {
+      const { tooltip, base, opts, teleport } = this;
+
+      updateOptsByData(opts, base, [
+        TRANSITION,
+        [TRIGGER, kebabToCamel(TOOLTIP + "-" + TRIGGER)],
+      ]);
+
+      tooltip.toggleAttribute(INERT, !opts.interactive);
+
+      this.transition = Transition.createOrUpdate(
+        this.transition,
+        tooltip,
+        opts.transition,
+      );
+
+      teleport.opts.to = opts.moveToRoot ? body : base;
+      teleport.opts.position = opts.moveToRoot ? BEFORE + END : AFTER + END;
+
+      addPopoverAttribute(this, tooltip);
+      toggleOnInterection(this, base, tooltip);
+
+      addStatusClasses(this, OPTION_TOP_LAYER);
+
+      opts.a11y && setAttribute(tooltip, TOOLTIP);
+    }
+    destroy(destroyOpts) {
+      if (this.isInit) return;
+      const { anchor, tooltip, id, _cache, _emit, opts } = this;
+      _emit(EVENT_BEFORE_DESTROY);
+      if (opts.a11y) {
+        removeAttribute(tooltip, TOOLTIP);
+        setAttribute(anchor, ARIA_DESCRIBEDBY, (val) =>
+          val === id + "-" + TARGET ? _cache[OPTION_ARIA_DESCRIBEDBY] : val,
+        );
+      }
+
+      if (_cache[TITLE]) {
+        anchor[TITLE] = _cache[TITLE];
+      }
+      destroyTopLayer(tooltip);
+      return baseDestroy(this, destroyOpts);
+    }
 
     async toggle(s, params) {
-      const { anchor, tooltip, id, opts, emit, _cache, isOpen, isAnimating } =
+      const { anchor, tooltip, id, opts, _emit, _cache, isOpen, isAnimating } =
         this;
       const awaitAnimation = opts.awaitAnimation;
       const { animated, trigger, silent, event } =
@@ -4699,12 +4976,12 @@
       if (opts.interactive && checkFloatings(this, s)) return;
 
       if (isAnimating && !awaitAnimation) {
-        await this[TRANSITION].cancel();
+        await this.transition.cancel();
       }
 
       const eventParams = { event, trigger };
 
-      !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
       const promise = floatingTransition(this, {
         s,
@@ -4741,7 +5018,6 @@
       ...DEFAULT_OPTIONS,
       ...DEFAULT_FLOATING_OPTIONS,
       eventPrefix: getEventsPrefix(POPOVER),
-      dismiss: true,
       autofocus: true,
       interactive: true,
       trigger: CLICK,
@@ -4751,7 +5027,9 @@
       confirm: `[${DATA_UI_PREFIX + CONFIRM}],[${
       DATA_UI_PREFIX + CONFIRM
     }="${POPOVER}"]`,
-      [OPTION_PREVENT_SCROLL]: false,
+      title: getDataSelector(POPOVER, ARIA_SUFFIX[ARIA_LABELLEDBY]),
+      description: getDataSelector(POPOVER, ARIA_SUFFIX[ARIA_DESCRIBEDBY]),
+      [OPTION_PREVENT_SCROLL]: AUTO,
     };
 
     constructor(elem, opts) {
@@ -4760,11 +5038,16 @@
     init() {
       if (this.isInit) return;
 
-      this.base.id = this.id;
+      const { base, opts } = this;
+
+      base.id = this.id;
+
+      this.teleport = new Teleport(base, { disableAttributes: true });
 
       this._update();
 
-      this.teleport = new Teleport(this.base, { disableAttributes: true });
+      opts[CONFIRM] && toggleConfirm(this);
+      opts[DISMISS] && addDismiss(this);
 
       return callShowInit(this);
     }
@@ -4773,20 +5056,27 @@
       updateOptsByData(
         opts,
         base,
-        [TRIGGER, HIDE_MODE, OPTION_PREVENT_SCROLL],
-        [OPTION_PREVENT_SCROLL],
+        [TRANSITION, STATE_MODE, TRIGGER, ...TOP_LAYER_OPTIONS_NAMES],
+        TOP_LAYER_OPTIONS_NAMES,
       );
 
-      this[TRANSITION] = Transition.createOrUpdate(
-        this[TRANSITION],
+      base.toggleAttribute(INERT, !opts.interactive);
+
+      this.transition = Transition.createOrUpdate(
+        this.transition,
         base,
-        opts[TRANSITION],
+        opts.transition,
       );
+
+      this.teleport.opts.to = opts.moveToRoot ? body : null;
 
       this.updateToggler();
+      opts.a11y && addAriaTargets(this);
 
-      addDismiss(this);
+      addPopoverAttribute(this);
       toggleOnInterection(this);
+
+      addStatusClasses(this, MODAL, OPTION_TOP_LAYER, OPTION_PREVENT_SCROLL);
     }
     updateToggler() {
       const { opts, id } = this;
@@ -4801,21 +5091,38 @@
     destroy(destroyOpts) {
       if (!this.isInit) return;
       const { opts, toggler, base } = this;
-      this.emit(EVENT_BEFORE_DESTROY);
-      opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
+      this._emit(EVENT_BEFORE_DESTROY);
+      opts.a11y &&
+        removeAttribute(
+          toggler,
+          ARIA_CONTROLS,
+          ARIA_EXPANDED,
+          ARIA_LABELLEDBY,
+          ARIA_DESCRIBEDBY,
+        );
       removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
       removeClass(base, opts[POPOVER + CLASS_ACTIVE_SUFFIX]);
       togglePreventScroll(this, false);
+      destroyTopLayer(base);
       return baseDestroy(this, destroyOpts);
     }
 
     async toggle(s, params) {
-      const { isOpen, isAnimating, toggler, base, opts, emit } = this;
+      const { isOpen, isAnimating, toggler, base, opts, _emit } = this;
       const { awaitAnimation, a11y } = opts;
       const { animated, silent, trigger, event } =
         normalizeToggleParameters(params);
 
       s ??= !isOpen;
+
+      if (!s) {
+        if (opts[OPTION_PREVENT_DISMISS] && event.type === EVENT_CLOSE) {
+          animateClass(base, camelToKebab(UI_PREFIX + EVENT_DISMISS_PREVENTED));
+          _emit(EVENT_DISMISS_PREVENTED, { event });
+          toggleBackDismiss(true, this);
+          return;
+        }
+      }
 
       if ((awaitAnimation && isAnimating) || s === isOpen) return;
 
@@ -4824,16 +5131,14 @@
       if (opts.interactive && checkFloatings(this, s)) return;
 
       if (isAnimating && !awaitAnimation) {
-        await this[TRANSITION].cancel();
+        await this.transition.cancel();
       }
 
       const eventParams = { event, trigger };
 
-      !silent && emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
+      !silent && _emit(s ? EVENT_BEFORE_SHOW : EVENT_BEFORE_HIDE, eventParams);
 
-      a11y && toggler.setAttribute(ARIA_EXPANDED, !!s);
-
-      toggleConfirm(s, this);
+      a11y && (toggler[ARIA_EXPANDED] = !!s);
 
       const promise = floatingTransition(this, {
         s,
