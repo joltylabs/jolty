@@ -9,6 +9,7 @@ import { setAttribute } from "../dom/index.js";
 
 export default (instance) => {
   const { base, opts } = instance;
+
   for (const name of [ARIA_LABELLEDBY, ARIA_DESCRIBEDBY]) {
     const suffix = ARIA_SUFFIX[name];
     let elem = opts[suffix];

@@ -132,7 +132,7 @@ class Autoaction {
     const current = performance.now();
     this.timeCurrent = Math.round(current - this.timeBegin);
     const time = opts.duration - this.timeCurrent;
-    const progress = +Math.max(time / opts.duration, 0).toFixed(4);
+    const progress = +Math.max(time / opts.duration, 0).toFixed(3);
     this._prevProgress = progress;
     if (progress && progress === _prevProgress) {
       return requestAnimationFrame(this.checkTime);

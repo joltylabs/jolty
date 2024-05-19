@@ -2,7 +2,13 @@
   "name": "jolty",
   "version": "0.5.1",
   "type": "module",
-  "main": "src/index.esm.js",
+  "umd:main": "dist/jolty.min.js",
+  "module": "dist/jolty.esm.js",
+  "main": "dist/jolty.js",
+  "umd:name": "jolty",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rollup -c"
   },
