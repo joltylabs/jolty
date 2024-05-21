@@ -172,7 +172,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     const { anchor, tooltip, id, opts, _emit, _cache, isOpen, isAnimating } =
       this;
     const awaitAnimation = opts.awaitAnimation;
-    const { animated, trigger, silent, event } =
+    let { animated, trigger, silent, event } =
       normalizeToggleParameters(params);
 
     s ??= !isOpen;
@@ -190,6 +190,15 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
 
     if (isAnimating && !awaitAnimation) {
       await this.transition.cancel();
+    }
+
+    const openTooltip = [...Tooltip.instances.values()].find(
+      (tooltip) => tooltip.isOpen && tooltip !== this,
+    );
+    console.log(openTooltip);
+    if (openTooltip) {
+      animated = false;
+      openTooltip.hide(false);
     }
 
     const eventParams = { event, trigger };

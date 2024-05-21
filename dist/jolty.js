@@ -998,7 +998,7 @@
   var getDefaultToggleSelector = (id, multiply) =>
     `[${DATA_UI_PREFIX + ACTION_TOGGLE}${
     multiply ? "~" : ""
-  }="${id}"],[href="#${id}"]`;
+  }="${id}"],[href$="#${id}"]`;
 
   const registerProperty = CSS.registerProperty;
 
@@ -2998,6 +2998,7 @@
 
   var addAriaTargets = (instance) => {
     const { base, opts } = instance;
+
     for (const name of [ARIA_LABELLEDBY, ARIA_DESCRIBEDBY]) {
       const suffix = ARIA_SUFFIX[name];
       let elem = opts[suffix];
@@ -3535,7 +3536,7 @@
       const current = performance.now();
       this.timeCurrent = Math.round(current - this.timeBegin);
       const time = opts.duration - this.timeCurrent;
-      const progress = +Math.max(time / opts.duration, 0).toFixed(4);
+      const progress = +Math.max(time / opts.duration, 0).toFixed(3);
       this._prevProgress = progress;
       if (progress && progress === _prevProgress) {
         return requestAnimationFrame(this.checkTime);
@@ -4601,7 +4602,7 @@
       limitAnimateLeave: false,
       autohide: 5000,
       topLayer: true,
-      keepTopLayer: true,
+      keepTopLayer: false,
       a11y: STATUS,
       position: "top-end",
       [TOAST + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
@@ -4959,7 +4960,7 @@
       const { anchor, tooltip, id, opts, _emit, _cache, isOpen, isAnimating } =
         this;
       const awaitAnimation = opts.awaitAnimation;
-      const { animated, trigger, silent, event } =
+      let { animated, trigger, silent, event } =
         normalizeToggleParameters(params);
 
       s ??= !isOpen;
@@ -4977,6 +4978,15 @@
 
       if (isAnimating && !awaitAnimation) {
         await this.transition.cancel();
+      }
+
+      const openTooltip = [...Tooltip.instances.values()].find(
+        (tooltip) => tooltip.isOpen && tooltip !== this,
+      );
+      console.log(openTooltip);
+      if (openTooltip) {
+        animated = false;
+        openTooltip.hide(false);
       }
 
       const eventParams = { event, trigger };

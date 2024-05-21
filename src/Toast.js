@@ -81,7 +81,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     limitAnimateLeave: false,
     autohide: 5000,
     topLayer: true,
-    keepTopLayer: true,
+    keepTopLayer: false,
     a11y: STATUS,
     position: "top-end",
     [TOAST + CLASS_ACTIVE_SUFFIX]: CLASS_ACTIVE,
