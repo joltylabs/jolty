@@ -49,4 +49,22 @@ export default [
     },
     plugins: [resolve(), commonjs(), terser()],
   },
+  {
+    input: "src/index.esm.js",
+    output: {
+      file: "dist/jolty.cjs.js",
+      format: "cjs",
+      sourcemap: true,
+    },
+    plugins: [resolve(), commonjs()],
+  },
+  {
+    input: "src/index.esm.js",
+    output: {
+      file: "dist/jolty.cjs.min.js",
+      format: "cjs",
+      sourcemap: true,
+    },
+    plugins: [resolve(), commonjs(), terser()],
+  },
 ];

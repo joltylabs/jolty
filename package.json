@@ -1,16 +1,24 @@
 {
   "name": "jolty",
-  "version": "0.5.1",
+  "version": "0.6.0-alpha.1",
   "type": "module",
-  "umd:main": "dist/jolty.min.js",
+  "main": "dist/jolty.cjs.js",
   "module": "dist/jolty.esm.js",
-  "main": "dist/jolty.js",
+  "umd:main": "dist/jolty.min.js",
   "umd:name": "jolty",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
+  "exports": {
+    ".": {
+      "import": "./src/index.esm.js"
+    },
+    "./*": "./src/*"
+  },
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
