@@ -246,7 +246,7 @@ export default function ({
 
       if (isMainDir) {
         mo += currentSize[size];
-        mo = mo - border[dir] - border[MIRROR[dir]] - 0.1;
+        mo = mo - border[dir] - border[MIRROR[dir]] - 0.5;
       }
 
       arrowPosition = hor ? [mo, so] : [so, mo];
