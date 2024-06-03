@@ -1,10 +1,4 @@
-import {
-  UI_PREFIX,
-  POSITION,
-  TELEPORT,
-  doc,
-  DATA_UI_PREFIX,
-} from "./constants";
+import { UI_PREFIX, POSITION, TELEPORT, DATA_UI_PREFIX } from "./constants";
 import { isString, isObject } from "./is";
 import { mergeDeep, callOrReturn, getDatasetValue } from "./utils";
 
@@ -39,10 +33,12 @@ class Teleport {
     const { opts, elem } = this;
     const { position } = opts;
     let to = callOrReturn(opts.to, ...toParameters);
-    to = isString(to) ? doc.querySelector(to) : to;
+    to = isString(to) ? document.querySelector(to) : to;
 
     if (!to) return;
-    this.placeholder = doc.createComment(UI_PREFIX + TELEPORT + ":" + elem.id);
+    this.placeholder = document.createComment(
+      UI_PREFIX + TELEPORT + ":" + elem.id,
+    );
 
     if (this.placeholder) {
       elem.before(this.placeholder);

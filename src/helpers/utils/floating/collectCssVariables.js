@@ -4,9 +4,11 @@ import {
   ARROW_PADDING,
   ARROW_WIDTH,
   BOUNDARY_OFFSET,
-  CLIP_PATH_PROPERTY,
+  CLIP_PATH,
+  NONE,
   OFFSET,
   PADDING,
+  WEBKIT_PREFIX,
 } from "../../constants/index.js";
 
 import { getPropertyValue } from "../../dom/index.js";
@@ -15,6 +17,10 @@ import valuesToArray from "../valuesToArray.js";
 import kebabToCamel from "../kebabToCamel.js";
 
 export default (anchorStyles, targetStyles, target, PREFIX) => {
+  const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
+    ? CLIP_PATH
+    : WEBKIT_PREFIX + CLIP_PATH;
+
   const valuesNames = [
     PADDING,
     OFFSET,

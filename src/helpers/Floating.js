@@ -19,7 +19,6 @@ import {
   PADDING,
   OFFSET,
   ARROW,
-  POPOVER_API_SUPPORTED,
   OPTION_TOP_LAYER,
   EVENT_KEYDOWN,
   FOCUSABLE_ELEMENTS_SELECTOR,
@@ -29,7 +28,6 @@ import {
   MODAL,
   RIGHT,
   BOTTOM,
-  body,
   AUTO,
 } from "./constants";
 import {
@@ -37,11 +35,11 @@ import {
   returnArray,
   isOverflowElement,
   observeResize,
-  resizeObserver,
-  ResetFloatingCssVariables,
+  resetFloatingCssVariables,
   collectCssVariables,
   arrayFrom,
   camelToKebab,
+  isPopoverApiSupported,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import {
@@ -57,8 +55,7 @@ import {
 import { isDialog } from "./is/index.js";
 import FocusGuards from "./modules/FocusGuards.js";
 import { toggleTopLayer } from "./modules/toggleTopLayer.js";
-
-ResetFloatingCssVariables();
+import { getResizeObserver } from "./utils/observeResize.js";
 
 const OPTIONS = [
   FLIP,
@@ -85,9 +82,15 @@ const CSS_VARIABLES = [
   TRANSFORM_ORIGIN,
 ].map((name) => VAR_UI_PREFIX + FLOATING + "-" + name);
 
+let isFloatingsInitialized = false;
 export default class Floating {
   static instances = new Set();
   constructor({ target, anchor, arrow, opts, name = "", base, instance }) {
+    if (!isFloatingsInitialized) {
+      resetFloatingCssVariables();
+      isFloatingsInitialized = true;
+    }
+
     const { on, off } = new EventHandler();
 
     Object.assign(this, {
@@ -110,7 +113,11 @@ export default class Floating {
 
     target.setAttribute(DATA_UI_PREFIX + FLOATING, name);
 
-    const anchorScrollParents = parents(anchor, isOverflowElement, body);
+    const anchorScrollParents = parents(
+      anchor,
+      isOverflowElement,
+      document.body,
+    );
     const anchorStyles = getComputedStyle(anchor);
     const targetStyles = getComputedStyle(target);
 
@@ -154,10 +161,10 @@ export default class Floating {
 
     const targetIsModal = opts[MODAL] && isDialog(target);
 
-    const usePopoverApi = topLayer && !targetIsModal && POPOVER_API_SUPPORTED;
+    const usePopoverApi = topLayer && !targetIsModal && isPopoverApiSupported();
 
     const inTopLayer =
-      (topLayer && POPOVER_API_SUPPORTED) || targetIsModal || moveToRoot;
+      (topLayer && isPopoverApiSupported()) || targetIsModal || moveToRoot;
 
     const focusTrap = opts.focusTrap === AUTO ? opts[MODAL] : opts.focusTrap;
 
@@ -340,7 +347,7 @@ export default class Floating {
   destroy() {
     const { target } = this;
     this.off();
-    resizeObserver.unobserve(target);
+    getResizeObserver().unobserve(target);
 
     removeAttribute(
       target,

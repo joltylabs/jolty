@@ -1,9 +1,9 @@
 import { isString } from "../is";
 import { addClass, addStyle, setAttribute } from "../dom";
-import { CLASS, STYLE, DIV, doc } from "../constants";
+import { CLASS, STYLE, DIV } from "../constants";
 import camelToKebab from "./camelToKebab";
 export default (type = DIV, props, ...content) => {
-  const elem = doc.createElement(type);
+  const elem = document.createElement(type);
   if (props) {
     if (isString(props)) {
       props = { class: props };

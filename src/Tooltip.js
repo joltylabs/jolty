@@ -21,7 +21,6 @@ import {
   CLASS_ACTIVE,
   TRANSITION,
   TRIGGER,
-  body,
   INERT,
   BEFORE,
   END,
@@ -140,7 +139,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
       opts.transition,
     );
 
-    teleport.opts.to = opts.moveToRoot ? body : base;
+    teleport.opts.to = opts.moveToRoot ? document.body : base;
     teleport.opts.position = opts.moveToRoot ? BEFORE + END : AFTER + END;
 
     addPopoverAttribute(this, tooltip);

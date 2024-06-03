@@ -22,7 +22,6 @@ import {
   KEY_TAB,
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
-  doc,
   STATE_MODE,
   TRANSITION,
   TRIGGER,
@@ -33,7 +32,6 @@ import {
   UP,
   OPTION_PREVENT_SCROLL,
   TOP_LAYER_OPTIONS_NAMES,
-  body,
   AUTO,
   DISMISS,
   MODAL,
@@ -159,7 +157,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
       opts.transition,
     );
 
-    this.teleport.opts.to = opts.moveToRoot ? body : null;
+    this.teleport.opts.to = opts.moveToRoot ? document.body : null;
 
     this.updateToggler();
 
@@ -228,7 +226,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
     const firstIndex = 0;
     const lastIndex = focusableElems.length - 1;
     const currentIndex = focusableElems.findIndex(
-      (elem) => elem === doc.activeElement,
+      (elem) => elem === document.activeElement,
     );
 
     const nextIndex = currentIndex + 1 > lastIndex ? 0 : currentIndex + 1;

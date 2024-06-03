@@ -19,18 +19,14 @@ import {
   PRIVATE_OPTION_CANCEL_ON_HIDE,
   OPTION_PREVENT_SCROLL,
   TOP_LAYER_OPTIONS_NAMES,
-  body,
   AUTO,
   DISMISS,
   MODAL,
   ARIA_LABELLEDBY,
   ARIA_DESCRIBEDBY,
   ARIA_SUFFIX,
-  OPTION_BACK_DISMISS,
-  PREVENT,
   EVENT_CLOSE,
   UI_PREFIX,
-  EVENT_BACK_DISMISS_PREVENTED,
   INERT,
   OPTION_TOP_LAYER,
   OPTION_PREVENT_DISMISS,
@@ -131,7 +127,7 @@ class Popover extends ToggleMixin(Base, POPOVER) {
       opts.transition,
     );
 
-    this.teleport.opts.to = opts.moveToRoot ? body : null;
+    this.teleport.opts.to = opts.moveToRoot ? document.body : null;
 
     this.updateToggler();
     opts.a11y && addAriaTargets(this);

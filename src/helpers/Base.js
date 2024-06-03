@@ -10,11 +10,8 @@ import {
   ACTION_OFF,
   ACTION_EMIT,
   ACTION_ONCE,
-  doc,
-  POPOVER_API_SUPPORTED,
   UI_PREFIX,
   POPOVER,
-  ROOT_ELEM,
 } from "./constants";
 import { isArray, isFunction, isHTML, isObject, isString } from "./is";
 import { getElement, fragment } from "./dom";
@@ -25,13 +22,10 @@ import {
   getDataSelector,
   arrayFrom,
   getDatasetValue,
+  isPopoverApiSupported,
 } from "./utils";
 import { EventHandler } from "./EventHandler";
 import Breakpoints from "./Breakpoints";
-
-if (!POPOVER_API_SUPPORTED) {
-  ROOT_ELEM.classList.add(UI_PREFIX + "no-" + POPOVER);
-}
 
 function getDataValue(_data, dataName, elem) {
   const value = callOrReturn(_data[dataName], elem);
@@ -41,10 +35,20 @@ function getDataValue(_data, dataName, elem) {
     : value;
 }
 
+function initOnce() {
+  if (!isPopoverApiSupported()) {
+    document.documentElement.classList.add(UI_PREFIX + "no-" + POPOVER);
+  }
+  isInitOnce = true;
+}
+
+let isInitOnce = false;
 class Base {
   static allInstances = new Set();
   static components = {};
   constructor(elem, opts) {
+    if (!isInitOnce) initOnce();
+
     if (isFunction(opts)) {
       opts = opts(elem);
     }
@@ -78,7 +82,7 @@ class Base {
         elem = fragment(elem);
         this._fromHTML = true;
       } else if (isString(elem)) {
-        elem = doc.querySelector(elem);
+        elem = document.querySelector(elem);
       }
 
       if (!elem) return;
@@ -256,7 +260,7 @@ class Base {
   static getOrCreate(elem, opts) {
     return this.get(elem, opts) || new this(elem, opts);
   }
-  static initAll(root = doc) {
+  static initAll(root = document) {
     return arrayFrom(root.querySelectorAll(getDataSelector(this.NAME))).map(
       (elem) => this.getOrCreate(elem),
     );

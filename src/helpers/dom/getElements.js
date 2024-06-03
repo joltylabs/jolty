@@ -1,4 +1,4 @@
-import { doc, DOCUMENT, WINDOW } from "../constants/index.js";
+import { DOCUMENT, WINDOW } from "../constants/index.js";
 import isElement from "../is/isElement.js";
 import isString from "../is/isString.js";
 import isHTML from "../is/isHTML.js";
@@ -9,19 +9,23 @@ import returnArray from "../utils/returnArray.js";
 import arrayUnique from "../utils/arrayUnique.js";
 import fragment from "./fragment.js";
 
-export default function getElements(selector, context = doc, findSelf = false) {
+export default function getElements(
+  selector,
+  context = document,
+  findSelf = false,
+) {
   if (isElement(selector)) {
     return [selector];
   }
   let result = selector;
   if (isString(context)) {
-    context = doc.querySelector(context);
+    context = document.querySelector(context);
   }
   if (!isElement(context) || !selector) return [];
   if (isString(selector)) {
     selector = selector.trim();
     if (selector === DOCUMENT) {
-      result = doc;
+      result = document;
     } else if (selector === WINDOW) {
       result = window;
     } else if (isHTML(selector)) {

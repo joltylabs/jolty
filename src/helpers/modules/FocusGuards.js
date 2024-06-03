@@ -3,8 +3,6 @@ import {
   AFTER,
   BEFORE,
   DATA_UI_PREFIX,
-  doc,
-  FIXED,
   FOCUS,
   FOCUSABLE_ELEMENTS_SELECTOR,
   TABINDEX,
@@ -32,7 +30,7 @@ export default class FocusGuards {
       if (opts.focusAfterAnchor && returnElem) {
         if (!isGuardBefore) {
           const globalReturnElems = [
-            ...doc.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
+            ...document.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR),
           ];
           returnElem =
             globalReturnElems[

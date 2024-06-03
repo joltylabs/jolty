@@ -1,2 +1,1 @@
-import { body } from "../constants";
-export default (elem) => elem && body.contains(elem);
+export default (elem) => elem && document.body.contains(elem);

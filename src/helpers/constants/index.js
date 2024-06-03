@@ -1,6 +1,3 @@
-import kebabToCamel from "../utils/kebabToCamel";
-import upperFirst from "../utils/upperFirst";
-
 export const UI = "ui";
 export const UI_PREFIX = UI + "-";
 export const UI_EVENT_PREFIX = "." + UI;
@@ -110,27 +107,24 @@ export const ARROW_HEIGHT = ARROW + "-" + HEIGHT;
 export const TRUE = "true";
 export const FALSE = "false";
 
-export const doc = document;
-export const body = doc.body;
-export const ROOT_ELEM = doc.documentElement;
 export const BODY = "body";
 
 export const ENTER = "enter";
 export const LEAVE = "leave";
-export const BEFORE_ENTER = BEFORE + upperFirst(ENTER);
-export const ENTER_ACTIVE = ENTER + upperFirst(ACTIVE);
+export const BEFORE_ENTER = "beforeEnter";
+export const ENTER_ACTIVE = "enterActive";
 export const ENTER_FROM = ENTER + "From";
 export const ENTER_TO = ENTER + "To";
-export const AFTER_ENTER = AFTER + upperFirst(ENTER);
-export const BEFORE_LEAVE = BEFORE + upperFirst(LEAVE);
-export const LEAVE_ACTIVE = LEAVE + upperFirst(ACTIVE);
+export const AFTER_ENTER = "afterEnter";
+export const BEFORE_LEAVE = "beforeLeave";
+export const LEAVE_ACTIVE = "leaveActive";
 export const LEAVE_FROM = LEAVE + "From";
 export const LEAVE_TO = LEAVE + "To";
-export const AFTER_LEAVE = AFTER + upperFirst(LEAVE);
+export const AFTER_LEAVE = "afterLeave";
 export const STATE_MODE = "stateMode";
 export const DURATION = "duration";
-export const DURATION_ENTER = DURATION + upperFirst(ENTER);
-export const DURATION_LEAVE = DURATION + upperFirst(LEAVE);
+export const DURATION_ENTER = "durationEnter";
+export const DURATION_LEAVE = "durationLeave";
 
 export const ACTION_INIT = "init";
 export const ACTION_DESTROY = "destroy";
@@ -233,7 +227,7 @@ export const PREVENT = "prevent";
 export const OPTION_PREVENT_SCROLL = PREVENT + "Scroll";
 export const OPTION_HASH_NAVIGATION = "hashNavigation";
 export const POSITION = "position";
-export const OPTION_ARIA_DESCRIBEDBY = kebabToCamel(ARIA_DESCRIBEDBY);
+export const OPTION_ARIA_DESCRIBEDBY = "ariaDescribedby";
 export const OPTION_TOP_LAYER = "topLayer";
 export const OPTION_MOVE_TO_ROOT = "moveToRoot";
 export const OPTION_LIGHT_DISMISS = "lightDismiss";
@@ -333,14 +327,6 @@ export const MIRROR = {
   x: "y",
   y: "x",
 };
-
-export const CLIP_PATH_PROPERTY = CSS.supports(CLIP_PATH + ":" + NONE)
-  ? CLIP_PATH
-  : WEBKIT_PREFIX + CLIP_PATH;
-
-export const POPOVER_API_SUPPORTED =
-  // eslint-disable-next-line no-prototype-builtins
-  HTMLElement.prototype.hasOwnProperty(POPOVER);
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = `:is(:is(a,area)[href],:is(select,textarea,button,input:not([type="hidden"])):not(disabled),details:not(:has(>summary)),iframe,:is(audio,video)[controls],[contenteditable],[tabindex]):not([inert],[inert] *,[tabindex^="-"],[${DATA_UI_PREFIX}focus-guard])`;
 

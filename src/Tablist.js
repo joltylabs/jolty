@@ -43,7 +43,6 @@ import {
   A11Y,
   CLASS_ACTIVE_SUFFIX,
   ROLE_SUFFIX,
-  doc,
   UI_PREFIX,
   STATE_MODE,
   ACTION_REMOVE,
@@ -345,7 +344,7 @@ class Tablist extends Base {
 
     let tabpanel;
     if (tabpanelId) {
-      tabpanel = doc.getElementById(tabpanelId);
+      tabpanel = document.getElementById(tabpanelId);
     } else if (isString(opts[TABPANEL])) {
       if (opts.siblings) {
         tabpanel = next(tab, opts[TABPANEL]);

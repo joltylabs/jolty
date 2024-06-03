@@ -5,7 +5,6 @@ import {
   OPTION_PREVENT_SCROLL,
   PX,
   ROOT,
-  ROOT_ELEM,
   SCROLL,
   UI_PREFIX,
   VAR_UI_PREFIX,
@@ -20,11 +19,13 @@ const PROPERTY_ROOT_SCROLLBAR_WIDTH =
 const PREVENT_SCROLL_CLASS = UI_PREFIX + ACTION_PREVENT + "-" + SCROLL;
 const updateBodyScrollbarWidth = (s) => {
   return s
-    ? ROOT_ELEM.style.setProperty(
+    ? document.documentElement.style.setProperty(
         PROPERTY_ROOT_SCROLLBAR_WIDTH,
-        window.innerWidth - ROOT_ELEM.clientWidth + PX,
+        window.innerWidth - document.documentElement.clientWidth + PX,
       )
-    : ROOT_ELEM.style.removeProperty(PROPERTY_ROOT_SCROLLBAR_WIDTH);
+    : document.documentElement.style.removeProperty(
+        PROPERTY_ROOT_SCROLLBAR_WIDTH,
+      );
 };
 
 const checkPreventScroll = (instance) => {
@@ -39,10 +40,10 @@ export default (instance, s) => {
   if (
     (s &&
       checkPreventScroll(instance) &&
-      !ROOT_ELEM.classList.contains(PREVENT_SCROLL_CLASS)) ||
+      !document.documentElement.classList.contains(PREVENT_SCROLL_CLASS)) ||
     (!s && !arrayFrom(Base.allInstances).find(checkPreventScroll))
   ) {
     updateBodyScrollbarWidth(s);
-    ROOT_ELEM.classList.toggle(PREVENT_SCROLL_CLASS, s);
+    document.documentElement.classList.toggle(PREVENT_SCROLL_CLASS, s);
   }
 };

@@ -1,9 +1,14 @@
-import { doc } from "../constants";
 import isString from "../is/isString.js";
 import returnArray from "./returnArray.js";
 import callOrReturn from "./callOrReturn.js";
 
-export default function (multiply, instance, option, root = doc, ...params) {
+export default function (
+  multiply,
+  instance,
+  option,
+  root = document,
+  ...params
+) {
   if (!option) return;
   option = callOrReturn(option, instance, ...params);
   if (isString(option)) {

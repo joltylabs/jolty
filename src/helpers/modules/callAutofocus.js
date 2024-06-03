@@ -1,6 +1,5 @@
 import {
   FOCUSABLE_ELEMENTS_SELECTOR,
-  doc,
   AUTOFOCUS,
   DATA_UI_PREFIX,
 } from "../constants";
@@ -20,7 +19,7 @@ export default (instance, elem = instance.base) => {
     elem,
   );
 
-  focusElem ||= elem.contains(doc.activeElement) && doc.activeElement;
+  focusElem ||= elem.contains(document.activeElement) && document.activeElement;
 
   if (!focusElem && !isDialog(elem)) {
     focusElem = elem.querySelector(FOCUSABLE_ELEMENTS_SELECTOR) ?? elem;

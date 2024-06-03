@@ -23,7 +23,6 @@ import {
   TOGGLER,
   CLASS_ACTIVE_SUFFIX,
   DIALOG,
-  doc,
   UI_EVENT_PREFIX,
   OPTION_PREVENT_SCROLL,
   DATA_UI_PREFIX,
@@ -207,7 +206,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     let backdrop;
     if (isString(opts[BACKDROP])) {
-      backdrop = (opts[BACKDROP][0] === "#" ? doc : base).querySelector(
+      backdrop = (opts[BACKDROP][0] === "#" ? document : base).querySelector(
         opts[BACKDROP],
       );
     }
@@ -376,7 +375,7 @@ class Dialog extends ToggleMixin(Base, DIALOG) {
 
     if (s) {
       if (opts.returnFocus) {
-        this.returnFocusElem ||= doc.activeElement;
+        this.returnFocusElem ||= document.activeElement;
       }
       toggleTopLayer(this, true);
       togglePreventScroll(this, true);

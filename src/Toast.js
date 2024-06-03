@@ -5,10 +5,8 @@ import {
   EVENT_BEFORE_HIDE,
   EVENT_HIDE,
   EVENT_HIDDEN,
-  body,
   DEFAULT_OPTIONS,
   STATE_MODE,
-  POPOVER_API_SUPPORTED,
   POPOVER_API_MODE_MANUAL,
   POPOVER,
   ACTION_REMOVE,
@@ -35,6 +33,7 @@ import {
   getOptionElem,
   isShown,
   awaitPromise,
+  isPopoverApiSupported,
 } from "./helpers/utils";
 import {
   addDismiss,
@@ -112,7 +111,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
     if (!opts.root && inDOM(base)) {
       this.root = base.parentElement;
     } else {
-      this.root = opts.root ? getOptionElem(this, opts.root) : body;
+      this.root = opts.root ? getOptionElem(this, opts.root) : document.body;
     }
     if (opts[STATE_MODE] === ACTION_REMOVE && base[HIDDEN]) {
       toggleStateMode(false, this);
@@ -191,7 +190,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
             keepTopLayer,
           }));
 
-          if (POPOVER_API_SUPPORTED && topLayer) {
+          if (isPopoverApiSupported && topLayer) {
             wrapper[POPOVER] = POPOVER_API_MODE_MANUAL;
           } else {
             wrapper[POPOVER] = null;
@@ -200,7 +199,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
           if (wrapper && wrapper.parentElement !== root) {
             root.append(wrapper);
           }
-          if (POPOVER_API_SUPPORTED && topLayer) {
+          if (isPopoverApiSupported && topLayer) {
             wrapper.hidePopover();
             wrapper.showPopover();
           }
@@ -253,7 +252,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
 
   static getContainer({
     position,
-    root = body,
+    root = document.body,
     container = "",
     keepTopLayer,
     a11y,
@@ -318,7 +317,7 @@ class Toast extends ToggleMixin(Base, TOAST) {
       set.forEach(({ wrapper, root, keepTopLayer }) => {
         if (
           keepTopLayer &&
-          POPOVER_API_SUPPORTED &&
+          isPopoverApiSupported() &&
           wrapper.popover &&
           root.contains(wrapper)
         ) {

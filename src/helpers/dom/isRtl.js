@@ -1,5 +1,6 @@
-const supportsDir = CSS.supports("selector(:dir(rtl))");
+import { isCSSDirSupported } from "../utils/index.js";
+
 export default (elem) =>
-  supportsDir
+  isCSSDirSupported()
     ? elem.matches(":dir(rtl)")
     : elem.closest("[dir]")?.dir === "rtl";

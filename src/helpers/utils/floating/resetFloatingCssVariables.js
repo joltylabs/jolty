@@ -1,6 +1,5 @@
 import {
   BOUNDARY_OFFSET,
-  doc,
   DROPDOWN,
   FLIP,
   OFFSET,
@@ -15,9 +14,8 @@ import {
 } from "../../constants/index.js";
 import createElement from "../createElement.js";
 
-const registerProperty = CSS.registerProperty;
-
 export default () => {
+  const registerProperty = CSS.registerProperty;
   let css = "";
   [TOOLTIP, DROPDOWN, POPOVER].forEach((name) => {
     const PREFIX = VAR_UI_PREFIX + name + "-";
@@ -37,6 +35,6 @@ export default () => {
   });
 
   if (!registerProperty) {
-    doc.head.appendChild(createElement(STYLE, false, `*{${css}}`));
+    document.head.appendChild(createElement(STYLE, false, `*{${css}}`));
   }
 };

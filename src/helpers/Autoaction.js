@@ -12,7 +12,6 @@ import {
   ACTION_RESET,
   ACTION_TOGGLE,
   EVENT_VISIBILITY_CHANGE,
-  doc,
   AUTOHIDE,
   EVENT_MOUSEOVER,
   EVENT_MOUSEOUT,
@@ -56,7 +55,9 @@ class Autoaction {
     this.safeAreaElem = getOption(false, this, opts.safeArea, elem);
 
     if (opts.visibilityControl) {
-      on(doc, EVENT_VISIBILITY_CHANGE, () => this.toggle(!doc.hidden));
+      on(document, EVENT_VISIBILITY_CHANGE, () =>
+        this.toggle(!document.hidden),
+      );
     }
   }
   toggleInterections(s) {

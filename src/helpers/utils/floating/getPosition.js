@@ -16,7 +16,6 @@ import isArray from "../../is/isArray.js";
 import createInset from "./createInset.js";
 
 const { min, max } = Math;
-const viewRect = visualViewport;
 
 export default function ({
   anchorRect,
@@ -34,6 +33,8 @@ export default function ({
   border,
   isRtl = false,
 }) {
+  const viewRect = visualViewport;
+
   boundaryOffset = createInset(boundaryOffset, false, isRtl);
 
   flip = isArray(flip) ? flip : [flip];
@@ -246,8 +247,10 @@ export default function ({
 
       if (isMainDir) {
         mo += currentSize[size];
-        mo = mo - border[dir] - border[MIRROR[dir]] - 0.5;
+        mo = mo - border[dir] - border[MIRROR[dir]];
       }
+
+      mo += isMainDir ? -0.25 : 0.25;
 
       arrowPosition = hor ? [mo, so] : [so, mo];
     }

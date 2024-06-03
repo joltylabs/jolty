@@ -2,7 +2,6 @@ import {
   ACTION_REMOVE,
   CLASS_HIDDEN_MODE,
   CLASS_SHOWN_MODE,
-  doc,
   EVENT_BEFORE_MATCH,
   FLOATING_DATA_ATTRIBUTE,
   HIDDEN,
@@ -35,7 +34,7 @@ export default (
     } else {
       if (opts.keepPlace) {
         target.replaceWith(
-          (subInstance[PLACEHOLDER] ||= doc.createComment(
+          (subInstance[PLACEHOLDER] ||= document.createComment(
             UI_PREFIX + PLACEHOLDER + ":" + target.id,
           )),
         );

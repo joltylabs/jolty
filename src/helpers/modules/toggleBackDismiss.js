@@ -6,7 +6,7 @@ import {
   UI_EVENT_PREFIX,
 } from "../constants";
 import { isDialog } from "../is/index.js";
-import CloseWatcher from "../CloseWatcher.js";
+import getCloseWatcher from "../CloseWatcher.js";
 
 export default function (s, instance) {
   const { base, _on, _off, opts } = instance;
@@ -26,6 +26,7 @@ export default function (s, instance) {
         ? opts[MODAL]
         : opts[OPTION_BACK_DISMISS]
     ) {
+      const CloseWatcher = getCloseWatcher();
       instance._closeWatcher = new CloseWatcher();
       instance._closeWatcher.onclose = (event) => {
         instance.hide({ event });

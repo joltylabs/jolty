@@ -2,7 +2,6 @@ import {
   EVENT_SHOW,
   EVENT_HIDE,
   ARROW,
-  doc,
   EVENT_SHOWN,
   EVENT_HIDDEN,
   FLOATING,
@@ -57,12 +56,16 @@ export default (instance, { s, animated, silent, eventParams }) => {
 
   if (name === TOOLTIP) {
     if (s) {
-      instance._on(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS, (event) => {
-        if (!event.isTrusted || event.keyCode !== KEY_ESC) return;
-        instance.hide({ event });
-      });
+      instance._on(
+        document,
+        EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS,
+        (event) => {
+          if (!event.isTrusted || event.keyCode !== KEY_ESC) return;
+          instance.hide({ event });
+        },
+      );
     } else {
-      instance._off(doc, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS);
+      instance._off(document, EVENT_KEYDOWN + "." + OPTION_BACK_DISMISS);
     }
   } else {
     toggleBackDismiss(s, instance);
@@ -73,7 +76,7 @@ export default (instance, { s, animated, silent, eventParams }) => {
       eventParams?.event?.type !== EVENT_MOUSEENTER &&
       callAutofocus(instance);
   } else {
-    !s && target.contains(doc.activeElement) && focus(toggler);
+    !s && target.contains(document.activeElement) && focus(toggler);
   }
 
   (async () => {
