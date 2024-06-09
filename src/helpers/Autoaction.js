@@ -156,21 +156,21 @@ class Autoaction {
   }
   pause() {
     this.paused = true;
-    this._emit(EVENT_PAUSE);
+    this.emit(EVENT_PAUSE);
     return this;
   }
   resume() {
     this.paused = false;
     this.timeBegin = performance.now() - this.timeCurrent;
     this.checkTime();
-    this._emit(EVENT_RESUME);
+    this.emit(EVENT_RESUME);
     return this;
   }
   reset() {
     this.paused = false;
     this.timeBegin = performance.now();
     this.checkTime();
-    this._emit(EVENT_RESET);
+    this.emit(EVENT_RESET);
     return this;
   }
   destroy() {
