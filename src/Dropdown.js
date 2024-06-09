@@ -263,7 +263,7 @@ class Dropdown extends ToggleMixin(Base, DROPDOWN) {
   destroy(destroyOpts) {
     if (!this.isInit) return;
     const { opts, toggler, base } = this;
-    this.emit(EVENT_BEFORE_DESTROY);
+    this._emit(EVENT_BEFORE_DESTROY);
     opts.a11y && removeAttribute(toggler, ARIA_CONTROLS, ARIA_EXPANDED);
     removeClass(toggler, opts[TOGGLER + CLASS_ACTIVE_SUFFIX]);
     removeClass(base, opts[DROPDOWN + CLASS_ACTIVE_SUFFIX]);
