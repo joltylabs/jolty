@@ -1,6 +1,6 @@
 {
   "name": "jolty",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "main": "dist/jolty.cjs.js",
   "module": "dist/jolty.esm.js",
   "umd:main": "dist/jolty.min.js",
@@ -11,9 +11,10 @@
   ],
   "exports": {
     ".": {
-      "import": "./src/index.esm.js"
+      "import": "./dist/jolty.esm.js",
+      "require": "./dist/jolty.cjs.js"
     },
-    "./*": "./src/*"
+    "./*": "./dist/*"
   },
   "scripts": {
     "build": "rollup -c",
