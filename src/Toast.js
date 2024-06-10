@@ -172,7 +172,6 @@ class Toast extends ToggleMixin(Base, TOAST) {
         );
         for (let i = 0; i < nots.length; i++) {
           if (i >= limit - 1) {
-            console.log(nots, i - (limit - 1));
             nots[i - (limit - 1)]?.hide(opts.limitAnimateLeave);
             if (!opts.limitAnimateEnter) {
               preventAnimation = true;

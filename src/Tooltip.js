@@ -194,7 +194,7 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     const openTooltip = [...Tooltip.instances.values()].find(
       (tooltip) => tooltip.isOpen && tooltip !== this,
     );
-    console.log(openTooltip);
+
     if (openTooltip) {
       animated = false;
       openTooltip.hide(false);
