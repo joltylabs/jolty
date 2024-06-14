@@ -27,6 +27,7 @@ import {
   AFTER,
   DISMISS,
   OPTION_TOP_LAYER,
+  UI_PREFIX,
 } from "./helpers/constants";
 
 import Base from "./helpers/Base.js";
@@ -70,7 +71,9 @@ class Tooltip extends ToggleMixin(Base, TOOLTIP) {
     eventPrefix: getEventsPrefix(TOOLTIP),
     placement: TOP,
     template: (content) =>
-      `<div class="${TOOLTIP}"><div class="${TOOLTIP}-${CONTENT}">${content}</div></div>`,
+      `<div class="${UI_PREFIX + TOOLTIP}"><div class="${
+        UI_PREFIX + TOOLTIP
+      }-${CONTENT}">${content}</div></div>`,
     interactive: false,
     removeTitle: true,
     tooltipClass: "",
