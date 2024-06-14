@@ -1,6 +1,6 @@
 {
   "name": "jolty",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "main": "dist/jolty.cjs.js",
   "module": "dist/jolty.esm.js",
   "umd:main": "dist/jolty.min.js",
