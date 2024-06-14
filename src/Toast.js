@@ -22,6 +22,7 @@ import {
   CLASS_ACTIVE_SUFFIX,
   CLASS_ACTIVE,
   DISMISS,
+  UI_PREFIX,
 } from "./helpers/constants";
 import { isArray, isObject, isString } from "./helpers/is";
 import { fragment, inDOM, toggleClass } from "./helpers/dom";
@@ -48,10 +49,17 @@ import Transition from "./helpers/Transition.js";
 import Autoaction from "./helpers/Autoaction.js";
 
 const TOAST = "toast";
+const TOASTS = UI_PREFIX + "toasts";
 
 const positions = {};
 const wrappers = new Map();
-const _containers = {};
+const _containers = {
+  "": ({ position, name }) => {
+    const nameClass = name ? TOASTS + `--${name}` : "";
+    const positionClass = position ? TOASTS + `--${position}` : "";
+    return `<div class="${TOASTS} ${nameClass} ${positionClass}"></div>`;
+  },
+};
 
 const A11Y_DEFAULTS = {
   [STATUS]: {
