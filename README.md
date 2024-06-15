@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://jolty-ui.com/">
-    <img src="https://jolty-ui.com/logo.svg" alt="Bootstrap logo" width="200" height="200">
+    <img src="https://jolty-ui.com/logo.svg" alt="Jolty logo" width="200" height="200">
   </a>
 </p>
 <h3 align="center">Jolty</h3>
